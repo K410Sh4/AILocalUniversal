@@ -81,16 +81,20 @@ def test_reranker_can_reorder_candidates_without_changing_membership() -> None:
     document, chunks = build_document()
     index.add_document(document, chunks)
 
-    hits = HybridRetriever(
+    vector = FakeVectorBackend(
+        [SearchHit(chunks[1], 0.9), SearchHit(chunks[0], 0.8)]
+    )
+    baseline = HybridRetriever(index, vector_backend=vector).search("gato", limit=2)
+    reranked = HybridRetriever(
         index,
-        vector_backend=FakeVectorBackend(
-            [SearchHit(chunks[1], 0.9), SearchHit(chunks[0], 0.8)]
-        ),
+        vector_backend=vector,
         reranker=ReverseReranker(),
     ).search("gato", limit=2)
 
-    assert hits[0].chunk.chunk_id == "chunk-2"
-    assert [hit.rank for hit in hits] == [1, 2]
+    assert [hit.chunk.chunk_id for hit in reranked] == [
+        hit.chunk.chunk_id for hit in reversed(baseline)
+    ]
+    assert [hit.rank for hit in reranked] == [1, 2]
     index.close()
 
 
