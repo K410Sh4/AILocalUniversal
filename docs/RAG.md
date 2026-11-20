@@ -97,7 +97,7 @@ A UI não aciona automaticamente o RAG no Chat, não injeta trechos no prompt e 
 - prepara uma mensagem de contexto em papel `user`, delimitada como material documental não confiável e orienta o modelo a não obedecer instruções contidas nas fontes;
 - expõe a validação estrutural das citações.
 
-Esta ponte é testável e reutilizável, mas ainda não é chamada pelo `MainWindow`, `CognitiveTaskExecutor` nem pelo fluxo normal do Chat. A interface não ingere documentos nem injeta RAG automaticamente nesta branch.
+Esta ponte é chamada pelo `MainWindow` no fluxo de mensagens quando o usuário ativa o RAG. A recuperação acontece antes da seleção/execução do modelo de chat e o mesmo contexto é passado ao executor sequencial quando a tarefa possui subtarefas.
 
 ## Limites desta entrega
 
@@ -117,3 +117,20 @@ Esta ponte é testável e reutilizável, mas ainda não é chamada pelo `MainWin
 6. Corpus de avaliação RAG com precision@k, recall@k, MRR, cobertura, fidelidade, conflitos e resistência a prompt injection.
 
 Nenhuma dessas capacidades pendentes deve ser anunciada como concluída.
+
+
+ 
+## Integração ao Chat e validação de citações
+
+- O controle "Usar conhecimento local" é persistido em AppConfig.knowledge_enabled e permanece desativado por padrão, inclusive em configurações antigas.
+- A recuperação é executada por KnowledgeRetrievalWorker, fora da thread da interface.
+- Evidências são anexadas à CognitiveTask; plano/trace registra contagens e estado sem duplicar chunks.
+- O conteúdo recuperado é fornecido como mensagem documental não confiável. O prompt orienta o modelo a citar identificadores existentes e a declarar insuficiência/conflito.
+- Ao concluir, EvidenceValidator confere os identificadores citados e a relação entre evidência, chunk, hash, offsets e documento indexado.
+- Fontes recuperadas são exibidas abaixo da resposta e a tabela de evidências aparece no Cognitive Inspector.
+- Citações desconhecidas falham na validação estrutural; ausência de citação gera needs_review.
+- factual_status permanece not_independently_verified: integridade do vínculo e hash não prova entailment ou verdade factual.
+
+## Limites de conclusão da Fase 3
+
+O núcleo lexical/vetorial, a biblioteca, a recuperação no Chat com ativação explícita e a exibição/validação estrutural das fontes compõem a entrega da Fase 3. Reranker concreto, benchmark de qualidade em corpus representativo, orçamento por tokenizer real, OCR e verificação semântica independente são evoluções posteriores; não são anunciados como concluídos nesta entrega.
