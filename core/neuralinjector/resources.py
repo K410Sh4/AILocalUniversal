@@ -598,7 +598,8 @@ def build_compatibility_report(
             (
                 "fechar aplicativos e serviços que não estejam em uso e medir novamente",
                 "descarregar modelos já residentes no backend e repetir a avaliação",
-                "usar um computador com mais RAM; swap não substitui memória física para inferência",
+                "usar um computador com mais RAM; swap não substitui memória física "
+                "para inferência",
             )
         )
     if budget.ram_limit_mb < requirements.min_ram_mb:
