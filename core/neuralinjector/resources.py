@@ -126,6 +126,7 @@ class ResourceBudget:
     context_tokens: int
     parallelism: int
     selected_backend: str = "cpu"
+    cpu_threads: int = 1
 
 
 @dataclass(frozen=True)
@@ -138,16 +139,76 @@ class HardwareProfile:
     preferred_backends: tuple[str, ...] = ("gpu", "cpu")
     min_vram_mb: int = 0
     quantization_policy: QuantizationPolicy = field(default_factory=QuantizationPolicy)
+    description: str = ""
+    min_context_tokens: int = 512
+    priorities: tuple[str, ...] = ("quality", "latency", "memory")
+    max_cpu_threads: int = 8
+    allow_cpu_fallback: bool = True
+    require_gpu: bool = False
+    disable_optional_components: bool = True
+    reduce_context: bool = True
+    reduce_parallelism: bool = True
+    allow_artifact_fallback: bool = True
+    benchmark_allowed: tuple[str, ...] = ("none", "quick", "full")
 
     def __post_init__(self) -> None:
         if self.min_ram_mb < 0 or self.min_vram_mb < 0:
             raise ValueError("profile requirements cannot be negative")
         if not 0 < self.max_ram_fraction <= 1:
             raise ValueError("max_ram_fraction must be in (0, 1]")
-        if self.context_tokens < 1 or self.parallelism < 1:
-            raise ValueError("context and parallelism must be positive")
-        if not self.preferred_backends:
-            raise ValueError("preferred_backends cannot be empty")
+        if self.context_tokens < 1 or self.min_context_tokens < 1:
+            raise ValueError("context limits must be positive")
+        if self.min_context_tokens > self.context_tokens:
+            raise ValueError("minimum context cannot exceed target context")
+        if self.parallelism < 1 or self.max_cpu_threads < 1:
+            raise ValueError("parallelism and CPU threads must be positive")
+        if not self.preferred_backends or not self.priorities or not self.benchmark_allowed:
+            raise ValueError("profile lists cannot be empty")
+
+    def to_dict(self) -> dict[str, object]:
+        """Serialize the canonical Python profile into the public JSON contract."""
+        return {
+            "profile_id": self.profile_id,
+            "profile_version": "1.0.0",
+            "description": self.description,
+            "requirements": {
+                "min_ram_mb": self.min_ram_mb,
+                "min_vram_mb": self.min_vram_mb,
+                "min_disk_mb": 0,
+                "min_context_tokens": self.min_context_tokens,
+            },
+            "objectives": {
+                "priority": list(self.priorities),
+                "interactive": True,
+            },
+            "budget": {
+                "max_ram_fraction": self.max_ram_fraction,
+                "target_context_tokens": self.context_tokens,
+                "max_parallelism": self.parallelism,
+                "max_cpu_threads": self.max_cpu_threads,
+            },
+            "execution": {
+                "preferred_backends": list(self.preferred_backends),
+                "allow_cpu_fallback": self.allow_cpu_fallback,
+                "require_gpu": self.require_gpu,
+            },
+            "degradation": {
+                "disable_optional_components": self.disable_optional_components,
+                "reduce_context": self.reduce_context,
+                "reduce_parallelism": self.reduce_parallelism,
+                "allow_artifact_fallback": self.allow_artifact_fallback,
+            },
+            "benchmark": {
+                "default": "none",
+                "allowed": list(self.benchmark_allowed),
+            },
+            "quantization_policy": {
+                "preferred": list(self.quantization_policy.preferred),
+                "low_memory_preferred": list(self.quantization_policy.low_memory_preferred),
+                "low_memory_threshold_mb": self.quantization_policy.low_memory_threshold_mb,
+                "allow_lower_precision_fallback": self.quantization_policy.allow_lower_precision_fallback,
+            },
+        }
 
 
 @dataclass(frozen=True)
@@ -163,6 +224,8 @@ class CompatibilityReport:
     protection_mode: str = ProtectionMode.ADAPTIVE.value
     eligible_profiles: tuple[str, ...] = ()
     quantization_candidate: str | None = None
+    user_message: str = ""
+    recommendations: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -378,21 +441,39 @@ QUALITY_QUANTIZATION = QuantizationPolicy(
 
 CANONICAL_PROFILES = (
     HardwareProfile(
-        "ultra_light", 1536, 0.35, 1024, 1, ("cpu",), 0, ULTRA_LIGHT_QUANTIZATION
+        "ultra_light", 1536, 0.35, 1024, 1, ("cpu",), 0, ULTRA_LIGHT_QUANTIZATION,
+        description="Contenção extrema para hosts com pouca RAM; CPU-first.",
+        min_context_tokens=512, priorities=("memory", "reliability"),
+        max_cpu_threads=2, benchmark_allowed=("none", "quick"),
     ),
     HardwareProfile(
-        "minimal", 2048, 0.55, 2048, 1, ("cpu", "gpu"), 0, LOW_MEMORY_QUANTIZATION
+        "minimal", 2048, 0.55, 2048, 1, ("cpu", "gpu"), 0, LOW_MEMORY_QUANTIZATION,
+        description="Prioriza contenção de memória em máquinas modestas.",
+        min_context_tokens=1024, priorities=("memory", "reliability", "latency"),
+        max_cpu_threads=4,
     ),
     HardwareProfile(
-        "balanced", 4096, 0.65, 4096, 1, ("gpu", "cpu"), 0, LOW_MEMORY_QUANTIZATION
+        "balanced", 4096, 0.65, 4096, 1, ("gpu", "cpu"), 0, LOW_MEMORY_QUANTIZATION,
+        description="Equilíbrio entre qualidade, latência e uso de memória.",
+        min_context_tokens=2048, max_cpu_threads=8,
     ),
     HardwareProfile(
-        "performance", 8192, 0.75, 8192, 2, ("gpu", "cpu"), 0, QUALITY_QUANTIZATION
+        "performance", 8192, 0.75, 8192, 2, ("gpu", "cpu"), 0, QUALITY_QUANTIZATION,
+        description="Prioriza latência com recursos suficientes.",
+        min_context_tokens=4096, priorities=("latency", "quality", "memory"),
+        max_cpu_threads=16,
     ),
     HardwareProfile(
-        "max_quality", 16384, 0.80, 16384, 4, ("gpu", "cpu"), 0, QUALITY_QUANTIZATION
+        "max_quality", 16384, 0.80, 16384, 4, ("gpu", "cpu"), 0, QUALITY_QUANTIZATION,
+        description="Prioriza qualidade e contexto em workstations.",
+        min_context_tokens=8192, max_cpu_threads=16,
     ),
 )
+
+
+def serialize_hardware_profile(profile: HardwareProfile) -> dict[str, object]:
+    """Public serializer used to keep JSON examples and Python presets identical."""
+    return profile.to_dict()
 
 
 def _reasons(profile: HardwareProfile, hw: HardwareSnapshot) -> list[str]:
@@ -493,12 +574,27 @@ def build_compatibility_report(
         context_tokens=max(requirements.min_context_tokens, profile.context_tokens),
         parallelism=min(profile.parallelism, max(1, hw.cpu_cores)),
         selected_backend=selected_backend,
+        cpu_threads=min(profile.max_cpu_threads, max(1, hw.cpu_cores)),
     )
 
     if hw.vram_available_mb is None or hw.vram_available_mb == 0:
         fallbacks.append("VRAM desconhecida ou indisponível; usar apenas backend CPU registrado")
     if profile.profile_id in {"ultra_light", "minimal"}:
         fallbacks.append("desativar componentes opcionais e limitar novas tarefas concorrentes")
+    absolute_floor_failed = (
+        hw.ram_total_mb < 1536 or hw.ram_available_mb < 1536
+    )
+    if absolute_floor_failed:
+        reasons.append(
+            "host abaixo do piso absoluto de 1536 MiB de RAM total e disponível"
+        )
+        fallbacks.extend(
+            (
+                "fechar aplicativos e serviços que não estejam em uso e medir novamente",
+                "descarregar modelos já residentes no backend e repetir a avaliação",
+                "usar um computador com mais RAM; swap não substitui memória física para inferência",
+            )
+        )
     if budget.ram_limit_mb < requirements.min_ram_mb:
         fallbacks.append("buscar artefato alternativo validado; não violar requisito mínimo")
 
@@ -520,10 +616,40 @@ def build_compatibility_report(
             benchmark_result = dict(benchmark(mode_benchmark.value))
 
     compatible = not reasons
-    activation_allowed = compatible or mode is ProtectionMode.PERMISSIVE
-    if not compatible and mode is ProtectionMode.PERMISSIVE:
+    activation_allowed = compatible or (
+        mode is ProtectionMode.PERMISSIVE and not absolute_floor_failed
+    )
+    if not compatible and mode is ProtectionMode.PERMISSIVE and activation_allowed:
         fallbacks.append(
             "modo permissivo: tentativa autorizada apesar das incompatibilidades reportadas"
+        )
+
+    if compatible:
+        user_message = (
+            f"Configuração compatível: perfil {profile.profile_id}, "
+            f"contexto até {budget.context_tokens} tokens e "
+            f"{budget.cpu_threads} thread(s) de CPU."
+        )
+        recommendations: tuple[str, ...] = ()
+    elif absolute_floor_failed:
+        user_message = (
+            "O AILocal Universal bloqueou a carga porque a memória disponível "
+            "está abaixo do piso mínimo de 1,5 GiB. Continuar nessas condições "
+            "pode provocar encerramento do processo ou travamento do sistema."
+        )
+        recommendations = (
+            "Feche aplicativos pesados e serviços desnecessários.",
+            "Descarregue modelos que já estejam carregados no Ollama.",
+            "Tente novamente após a memória disponível superar 1,5 GiB.",
+            "Use um modelo menor/quantizado já instalado ou aumente a RAM física.",
+        )
+    else:
+        user_message = (
+            "A configuração solicitada não atende aos requisitos de hardware "
+            "ou backend. A ativação foi bloqueada pelo modo de proteção."
+        )
+        recommendations = tuple(fallbacks) or (
+            "Escolha um perfil mais econômico ou ajuste os requisitos do pacote.",
         )
 
     return CompatibilityReport(
@@ -542,6 +668,8 @@ def build_compatibility_report(
             if not _reasons(candidate, hw)
         ),
         quantization_candidate=quantization,
+        user_message=user_message,
+        recommendations=recommendations,
     )
 
 
