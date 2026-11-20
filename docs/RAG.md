@@ -85,7 +85,7 @@ A aba PySide6 **Conhecimento** oferece:
 
 As operações de armazenamento e inferência são executadas em workers Qt. Se a geração de embeddings falhar durante a ingestão, a versão lexical permanece e a UI informa que a indexação foi parcial. Se a busca vetorial falhar na consulta, a biblioteca tenta a busca lexical e mostra um aviso. A reindexação é necessária para que documentos existentes tenham vetores no novo modelo escolhido.
 
-A UI não aciona automaticamente o RAG no Chat, não injeta trechos no prompt e não muda o comportamento do botão Enviar. Ela permite administrar e testar a biblioteca isoladamente.
+A aba Conhecimento administra a biblioteca e permite prévia de busca. Separadamente, o Chat oferece o controle explícito `Usar conhecimento local`, desativado por padrão; quando ativado, recupera evidências antes de chamar o modelo.
 
 ## Ponte para o CognitiveTask
 
@@ -101,7 +101,7 @@ Esta ponte é chamada pelo `MainWindow` no fluxo de mensagens quando o usuário 
 
 ## Limites desta entrega
 
-- Nenhuma integração automática ao fluxo do Chat: a aba Conhecimento gerencia/testa a biblioteca, mas não injeta trechos no prompt nem altera o botão Enviar.
+- O RAG no Chat é opt-in e permanece desativado por padrão. A recuperação roda em worker Qt e o fallback sem contexto local é registrado quando houver falha.
 - Não há reranker concreto, OCR ou tratamento de PDF escaneado.
 - O usuário deve instalar e selecionar um modelo de embeddings; a aplicação não baixa modelos automaticamente.
 - O CI atual inclui 142 testes automatizados aprovados. O usuário também executou 132 testes no Python 3.14 e aprovou o smoke test operacional no Arch com Ollama real antes da nova UI. A aba Conhecimento aguarda validação visual/operacional no Arch. Ainda faltam benchmarks de qualidade em corpus representativo e avaliação factual/entailment.
@@ -113,10 +113,10 @@ Esta ponte é chamada pelo `MainWindow` no fluxo de mensagens quando o usuário 
 2. Reranker concreto, opcional e avaliado por qualidade/latência.
 3. Política de deduplicação, busca híbrida, filtros e orçamento por tokenizer/backend.
 4. Integração ao Cognitive Pipeline, CognitiveTask e Validation Layer.
-5. Integração de fontes/citações ao Chat e ao Cognitive Inspector; a biblioteca e a aba de gestão/prévia já existem, mas seguem independentes da conversa.
+5. Benchmark de fontes/citações no Chat e no Cognitive Inspector com corpus representativo; a integração opt-in inicial já existe, mas ainda precisa de validação operacional após o pull.
 6. Corpus de avaliação RAG com precision@k, recall@k, MRR, cobertura, fidelidade, conflitos e resistência a prompt injection.
 
-Nenhuma dessas capacidades pendentes deve ser anunciada como concluída.
+Nenhuma dessas capacidades pendentes deve ser anunciada como concluída. A integração opt-in inicial ao Chat foi implementada; sua aceitação depende do CI atualizado e do teste operacional no Arch.
 
 
  
