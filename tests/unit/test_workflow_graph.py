@@ -263,3 +263,30 @@ def test_graph_metadata_must_be_an_object():
         WorkflowGraph.from_dict(data)
 
     assert exc_info.value.reason_code == "INVALID_GRAPH_METADATA"
+
+
+
+def test_unhashable_hardware_profile_config_is_rejected():
+    data = load_template().to_dict()
+    hardware = next(
+        node for node in data["nodes"] if node["type"] == "hardware.profile"
+    )
+    hardware["config"]["profile"] = ["auto"]
+
+    with pytest.raises(GraphError) as exc_info:
+        WorkflowGraph.from_dict(data)
+
+    assert exc_info.value.reason_code == "INVALID_HARDWARE_PROFILE"
+
+
+def test_unhashable_protection_mode_config_is_rejected():
+    data = load_template().to_dict()
+    hardware = next(
+        node for node in data["nodes"] if node["type"] == "hardware.profile"
+    )
+    hardware["config"]["protection_mode"] = {"mode": "protected"}
+
+    with pytest.raises(GraphError) as exc_info:
+        WorkflowGraph.from_dict(data)
+
+    assert exc_info.value.reason_code == "INVALID_PROTECTION_MODE"
