@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-import re
 from html import escape
+import re
 
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QTextDocument
