@@ -54,11 +54,13 @@ A branch `feature/rag-v1` inicia a camada de conhecimento sem acoplá-la ainda �
 - SHA-256 do arquivo, URI de origem, localização por página, seção e offsets Unicode.
 - Chunking com limites e sobreposição configuráveis, sem cruzar páginas ou seções Markdown.
 - Índice lexical SQLite FTS5, persistente e filtrável por documento.
-- Contratos para backend vetorial e reranker, com fusão RRF quando um backend vetorial é fornecido.
+- Embeddings via Ollama `/api/embed`, com modelo explicitamente escolhido e separado do modelo de chat.
+- Armazenamento vetorial local SQLite, busca por similaridade cosseno, filtros e reindexação.
+- Busca lexical e vetorial combinadas por RRF; reranker concreto ainda pendente.
 - Context Composer com citações estáveis e orçamento explícito em caracteres.
 - Evidence Validator que verifica integridade/proveniência das citações, sem afirmar que a alegação foi provada pela fonte.
 
-**Limites desta entrega:** ainda não há provedor de embeddings local, índice vetorial real, reranker concreto, OCR, recuperação conectada ao Cognitive Pipeline ou interface de gestão documental. O orçamento do Context Composer é em caracteres, não tokens. Consulte [docs/RAG.md](docs/RAG.md).
+**Limites desta entrega:** embeddings e recuperação vetorial têm testes simulados, mas ainda precisam de validação com Ollama real no Arch. Não há reranker concreto, OCR, integração ao Cognitive Pipeline/Chat ou interface de gestão documental. O orçamento do Context Composer é em caracteres, não tokens. Consulte [docs/RAG.md](docs/RAG.md).
 
 ## Arquitetura
 
@@ -132,6 +134,18 @@ ollama pull qwen2.5:7b
 ~~~
 
 O modelo acima é apenas um exemplo; escolha um modelo compatível com a memória do seu computador.
+
+## Preparar um modelo de embeddings
+
+O modelo de chat e o modelo de embeddings são funções distintas. Instale no Ollama um modelo compatível com embeddings e configure seu nome em `OllamaEmbeddingProvider`. A aplicação não baixa modelos automaticamente.
+
+Substitua `NOME_DO_MODELO` pelo identificador publicado do modelo escolhido:
+
+~~~bash
+ollama pull NOME_DO_MODELO
+~~~
+
+Use a mesma família/modelo e dimensões ao indexar documentos e ao consultar; vetores de modelos ou dimensões diferentes não são comparáveis. O endpoint de embeddings usa por padrão o Ollama local em `127.0.0.1:11434`.
 
 ## Suporte opcional a PDF
 

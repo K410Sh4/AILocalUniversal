@@ -75,12 +75,17 @@ As fases são entregas progressivas. Uma funcionalidade só é considerada concl
 - [x] Validação estrutural de referências, hash e trecho original.
 - [x] Testes unitários de loaders, chunking, indexação, recuperação, contexto e proveniência.
 
-### 3.2 — Recuperação semântica e integração (pendente)
+### 3.2 — Recuperação semântica e integração
 
-- [ ] Implementar provedor de embeddings local com suporte a embeddings via Ollama.
-- [ ] Implementar armazenamento vetorial substituível e persistente.
+- [x] Provedor de embeddings via Ollama `/api/embed`, com batch, dimensões configuráveis e rejeição de entradas excessivas sem truncamento silencioso.
+- [x] Armazenamento vetorial SQLite com vetores float32 normalizados, busca cosseno, filtros e substituição transacional de documentos.
+- [x] LocalVectorIndexer e backend vetorial que confere chunk_id, document_id e source_sha256 antes de devolver evidências.
+- [x] Fusão lexical/vetorial por RRF quando o backend vetorial é fornecido.
+- [x] Testes simulados do provider, persistência, filtros, reindexação e integração lexical/vetorial.
+- [ ] Escolher e comparar modelos de embeddings locais em hardware leve, intermediário e potente.
 - [ ] Implementar reranker concreto, opcional e mensurável.
-- [ ] Definir política de deduplicação, filtros e fusão híbrida com benchmarks.
+- [ ] Definir política de deduplicação e orçamento de tokens com benchmarks.
+- [ ] Validar ingestão e busca vetorial com Ollama real no Arch Linux.
 - [ ] Integrar loaders/ingestor/retriever ao CognitiveTask e ao Cognitive Pipeline.
 - [ ] Integrar Context Composer ao prompt do modelo e transportar Evidence para a Validation Layer.
 - [ ] Exibir fontes, páginas e citações no Chat e no Cognitive Inspector.

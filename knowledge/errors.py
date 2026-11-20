@@ -23,3 +23,7 @@ class EmptyDocumentError(DocumentLoadError):
 
 class KnowledgeIndexError(KnowledgeError):
     """Falha no armazenamento ou na pesquisa do índice."""
+
+
+class EmbeddingError(KnowledgeError):
+    """Falha na geração, validação ou leitura de embeddings."""

@@ -7,6 +7,12 @@ from knowledge.ingestion import DocumentIngestor
 from knowledge.loaders import LoaderRegistry, MarkdownLoader, PdfLoader, TextLoader
 from knowledge.retrieval import HybridRetriever
 from knowledge.validation import EvidenceValidator
+from knowledge.vectors import (
+    LocalVectorIndexer,
+    OllamaEmbeddingProvider,
+    SQLiteVectorSearchBackend,
+    SQLiteVectorStore,
+)
 
 __all__ = [
     "DocumentChunker",
@@ -15,8 +21,12 @@ __all__ = [
     "EvidenceValidator",
     "HybridRetriever",
     "LoaderRegistry",
+    "LocalVectorIndexer",
     "MarkdownLoader",
+    "OllamaEmbeddingProvider",
     "PdfLoader",
     "SQLiteKnowledgeIndex",
+    "SQLiteVectorSearchBackend",
+    "SQLiteVectorStore",
     "TextLoader",
 ]

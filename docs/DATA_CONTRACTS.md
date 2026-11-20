@@ -92,3 +92,28 @@ ContextBundle contém texto de contexto, Evidence do contrato CognitiveTask, reg
 ### Evidence validation
 
 EvidenceValidator verifica se a citação aponta para o chunk indexado e se conteúdo, hash e offsets permanecem consistentes. O relatório mantém factual_status como not_independently_verified: a integridade da referência não prova que uma afirmação é consequência lógica ou factual da fonte.
+
+
+## Embeddings e recuperação vetorial — Fase 3
+
+### OllamaEmbeddingProvider
+
+- model_name identifica explicitamente o modelo de embeddings; não se presume que o modelo de chat também gere embeddings.
+- embed(texts) envia lotes ao endpoint Ollama `/api/embed` e retorna um vetor por texto na mesma ordem.
+- batch_size, dimensions, max_input_chars e keep_alive são configuráveis.
+- truncate é falso por padrão para evitar truncamento silencioso.
+- Cada vetor deve ter dimensão consistente e componentes numéricos finitos; vetor vazio ou de norma zero é rejeitado.
+
+### SQLiteVectorStore
+
+- Chave lógica: chunk_id + model_name.
+- Metadados: document_id, source_sha256 e dimensions.
+- Vetores são normalizados e armazenados como float32.
+- search calcula similaridade cosseno, permite filtro por documento e não trata score como probabilidade.
+- replace_documents substitui vetores de todos os chunks dos documentos fornecidos para aquele modelo, removendo entradas obsoletas.
+
+### SearchHit vetorial
+
+O backend vetorial recupera o chunk correspondente no índice lexical e valida document_id e source_sha256 antes de devolver SearchHit. Uma entrada vetorial sem chunk correspondente ou com hash divergente é descartada.
+
+A geração e recuperação vetorial estão implementadas em branch de desenvolvimento, mas ainda não integradas ao Cognitive Pipeline/Chat. A compatibilidade de um modelo de embeddings e a qualidade da recuperação precisam ser medidas no ambiente-alvo.

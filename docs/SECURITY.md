@@ -40,3 +40,12 @@ Considerar peers desconhecidos, dispositivos comprometidos, prompt injection, ar
 - A indexação armazena texto extraído, metadados, hashes e localizadores no SQLite local. O usuário deve proteger e fazer backup do diretório de dados da aplicação.
 - SHA-256 detecta alteração de conteúdo, mas não autentica autoria nem prova integridade antes da ingestão.
 - A validação atual confere vínculos e offsets de citações; não é verificação semântica de alegações.
+
+
+## Embeddings e armazenamento vetorial
+
+- O provedor usa por padrão `http://127.0.0.1:11434`, mas permite configurar outra URL. O usuário deve confirmar que o endpoint configurado é confiável antes de enviar documentos.
+- Não há download automático do modelo de embeddings. O modelo deve ser instalado e escolhido explicitamente.
+- `truncate=False` é o padrão; entradas maiores que o limite configurado ou recusadas pelo runtime geram erro em vez de serem truncadas silenciosamente.
+- Vetores e metadados ficam no SQLite local. O arquivo de índice é criado com permissões privadas no Linux; diretórios e backups devem permanecer protegidos.
+- O hash associa o vetor à versão exata do chunk, mas não autentica o documento nem comprova a verdade semântica das alegações.
