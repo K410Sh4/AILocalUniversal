@@ -11,8 +11,8 @@ import shutil
 import subprocess
 from dataclasses import dataclass, field
 from enum import Enum
+from collections.abc import Callable, Iterable, Mapping
 from pathlib import Path
-from typing import Callable, Iterable, Mapping
 
 
 class BenchmarkMode(str, Enum):
@@ -270,7 +270,7 @@ def _detect_nvidia(timeout_seconds: float) -> list[GPUDevice]:
 def detect_gpu_devices(*, timeout_seconds: float = 1.0) -> tuple[GPUDevice, ...]:
     """Best-effort GPU inventory; unknown memory remains unknown, never zero-filled."""
     devices = _detect_nvidia(timeout_seconds)
-    detected_vendors = {device.vendor for device in devices}
+    nvidia_smi_vendors = {device.vendor for device in devices}
 
     # Linux DRM exposes PCI vendor IDs and, on supported AMD cards, VRAM counters.
     for device_path in glob.glob("/sys/class/drm/card[0-9]*/device"):
@@ -281,7 +281,7 @@ def detect_gpu_devices(*, timeout_seconds: float = 1.0) -> tuple[GPUDevice, ...]
             0x10DE: "nvidia",
             0x8086: "intel",
         }.get(vendor_id)
-        if vendor is None or vendor in detected_vendors:
+        if vendor is None or vendor in nvidia_smi_vendors:
             continue
 
         total_bytes = _read_int(Path(device_path) / "mem_info_vram_total")
@@ -312,8 +312,6 @@ def detect_gpu_devices(*, timeout_seconds: float = 1.0) -> tuple[GPUDevice, ...]
                 detection_source="linux-drm-sysfs",
             )
         )
-        detected_vendors.add(vendor)
-
     return tuple(devices)
 
 
