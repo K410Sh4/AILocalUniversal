@@ -1,7 +1,13 @@
 {
   "profile_id": "balanced",
   "profile_version": "1.0.0",
-  "description": "Perfil declarativo equilibrado; os valores efetivos devem ser negociados com o backend.",
+  "description": "Equilíbrio entre qualidade, latência e uso de memória.",
+  "requirements": {
+    "min_ram_mb": 4096,
+    "min_vram_mb": 0,
+    "min_disk_mb": 0,
+    "min_context_tokens": 2048
+  },
   "objectives": {
     "priority": [
       "quality",
@@ -10,14 +16,49 @@
     ],
     "interactive": true
   },
-  "constraints": {
-    "max_ram_gb": null,
-    "max_vram_gb": null,
-    "target_context_tokens": 4096
+  "budget": {
+    "max_ram_fraction": 0.65,
+    "target_context_tokens": 4096,
+    "max_parallelism": 1
   },
-  "backend_overrides": {},
+  "execution": {
+    "preferred_backends": [
+      "gpu",
+      "cpu"
+    ],
+    "allow_cpu_fallback": true,
+    "require_gpu": false
+  },
+  "degradation": {
+    "disable_optional_components": true,
+    "reduce_context": true,
+    "reduce_parallelism": true,
+    "allow_artifact_fallback": true
+  },
+  "benchmark": {
+    "default": "none",
+    "allowed": [
+      "none",
+      "quick",
+      "full"
+    ]
+  },
+  "quantization_policy": {
+    "preferred": [
+      "Q5_K_M",
+      "Q4_K_M",
+      "Q4_0"
+    ],
+    "low_memory_preferred": [
+      "Q4_K_M",
+      "Q4_0",
+      "Q3_K_M",
+      "Q2_K"
+    ],
+    "low_memory_threshold_mb": 8192,
+    "allow_lower_precision_fallback": true
+  },
   "notes": [
-    "Este perfil não promete uma velocidade específica.",
-    "O runtime deve validar e traduzir apenas opções que realmente suporta."
+    "O perfil negocia opções com o backend; não promete velocidade específica."
   ]
 }
