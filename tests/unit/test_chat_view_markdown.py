@@ -156,3 +156,13 @@ def test_transcript_default_font_is_slightly_larger_and_code_remains_readable() 
 
     assert "font-size:11pt" in rendered
     assert "font-size:10pt" in rendered
+
+
+def test_display_latex_unknown_command_does_not_break_regex_replacement() -> None:
+    rendered = markdown_to_html(
+        "Equação com comando não mapeado:\\n\\n"
+        + r"\\[ \\SomeUnknownMacro{x} \\]"
+    )
+
+    assert 'class="math-display"' in rendered
+    assert r"\\SomeUnknownMacro" in rendered
