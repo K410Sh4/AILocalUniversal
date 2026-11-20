@@ -178,3 +178,9 @@ Consulte docs/SECURITY.md.
 
 - Blocos matemáticos display usam fundo ardósia suave, borda neutra e espaçamento vertical para integrar as equações ao balão da resposta sem perder destaque tipográfico.
 \n\n### Cognitive Task Executor\n\nPedidos decompostos em duas ou mais partes são executados sequencialmente. Subtarefas matemáticas ou conversões elegíveis podem usar ferramentas locais de baixo risco; as demais são enviadas individualmente ao mesmo modelo selecionado. Após todas as partes concluídas, uma chamada adicional produz a síntese final. O Inspector acompanha estados e resultados intermediários. Saídas de modelo ficam marcadas como não verificadas independentemente; não há paralelismo ou roteamento multi-modelo nesta etapa.\n
+
+## Licença e propriedade intelectual
+
+O código e os materiais originais do AILocal Universal são proprietários e reservados ao titular identificado como `K410Sh4`. Consulte [LICENSE](LICENSE), [NOTICE.md](NOTICE.md), [política de licenciamento](docs/LICENSING.md) e [registro de ativos originais](docs/PROJECT_IP_REGISTER.md).
+
+Bibliotecas, frameworks, motores, modelos, pesos, datasets e conteúdo de terceiros não são relicenciados por este projeto. Consulte [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) antes de distribuir ou integrar componentes.
