@@ -602,8 +602,14 @@ class NeuralMapView(QWidget):
         self.grid_button.setText("Grade")
         self.grid_button.setCheckable(True)
         self.grid_button.setChecked(True)
-        self.undo_button = self.undo_stack.createUndoAction(self, "Desfazer")
-        self.redo_button = self.undo_stack.createRedoAction(self, "Refazer")
+        self.undo_button = QPushButton("Desfazer")
+        self.redo_button = QPushButton("Refazer")
+        self.undo_button.setEnabled(False)
+        self.redo_button.setEnabled(False)
+        self.undo_button.clicked.connect(self.undo_stack.undo)
+        self.redo_button.clicked.connect(self.undo_stack.redo)
+        self.undo_stack.canUndoChanged.connect(self.undo_button.setEnabled)
+        self.undo_stack.canRedoChanged.connect(self.redo_button.setEnabled)
         for widget in (
             self.new_button,
             self.open_button,
