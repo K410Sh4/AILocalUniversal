@@ -4,9 +4,9 @@ from pathlib import Path
 import pytest
 
 from core.neuralinjector.resources import (
+    CANONICAL_PROFILES,
     AdaptiveResourceManager,
     BenchmarkMode,
-    CANONICAL_PROFILES,
     GPUDevice,
     HardwareSnapshot,
     ProtectionMode,
