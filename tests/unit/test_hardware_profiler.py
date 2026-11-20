@@ -54,3 +54,33 @@ def test_hardware_profiler_handles_missing_proc_and_gpu_data(tmp_path) -> None:
     assert profile.operating_system
     assert profile.architecture
     assert profile.accelerators == ()
+
+
+
+def test_hardware_profiler_identifies_known_rx_5700_xt_subsystem(tmp_path) -> None:
+    meminfo = tmp_path / "meminfo"
+    meminfo.write_text("MemTotal: 16384000 kB\nMemAvailable: 8192000 kB\n", encoding="ascii")
+    cpuinfo = tmp_path / "cpuinfo"
+    cpuinfo.write_text("model name : Test CPU\n", encoding="utf-8")
+    drm = tmp_path / "drm"
+    device = drm / "card0" / "device"
+    device.mkdir(parents=True)
+    (device / "vendor").write_text("0x1002\n", encoding="ascii")
+    (device / "device").write_text("0x731f\n", encoding="ascii")
+    (device / "subsystem_vendor").write_text("0x1002\n", encoding="ascii")
+    (device / "subsystem_device").write_text("0x0b36\n", encoding="ascii")
+
+    profile = HardwareProfiler(
+        meminfo_path=meminfo,
+        cpuinfo_path=cpuinfo,
+        drm_root=drm,
+        data_path=tmp_path,
+    ).probe()
+
+    if profile.operating_system == "Linux":
+        assert len(profile.accelerators) == 1
+        gpu = profile.accelerators[0]
+        assert gpu.name == "AMD Radeon RX 5700 XT (Reference)"
+        assert gpu.pci_device_id == "0x731f"
+        assert gpu.pci_subsystem_vendor_id == "0x1002"
+        assert gpu.pci_subsystem_device_id == "0x0b36"
