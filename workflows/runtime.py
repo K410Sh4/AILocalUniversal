@@ -468,11 +468,12 @@ class GraphRuntime:
         if node.node_type == "output.trace":
             return {"trace": {"trace_id": context.trace_id}}
 
+        if context.dry_run and node.node_type.startswith("specialist."):
+            # Dry-run is a hard no-I/O mode; registered handlers must not be invoked.
+            return self._dry_run_specialist(node, inputs, context)
         handler = self.handlers.get(node.node_type)
         if handler is not None:
             return await handler(node, inputs, context)
-        if context.dry_run and node.node_type.startswith("specialist."):
-            return self._dry_run_specialist(node, inputs, context)
         raise GraphError(
             "ENGINE_UNAVAILABLE",
             f"Não há backend registrado para o nó '{node.label}' ({node.config.get('engine', 'n/a')}).",
