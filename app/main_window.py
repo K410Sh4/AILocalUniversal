@@ -453,6 +453,20 @@ class MainWindow(QMainWindow):
     ) -> None:
         if self._knowledge_worker is not None and self._knowledge_worker.isRunning():
             return
+        if self.knowledge_view.is_busy:
+            task.execution_trace.append(
+                {
+                    "stage": "knowledge_retrieval",
+                    "status": "skipped",
+                    "timestamp": datetime.now(UTC).isoformat(),
+                    "details": {"reason": "knowledge_library_busy"},
+                }
+            )
+            self.chat_view.set_status(
+                "Biblioteca ocupada; seguindo sem contexto RAG nesta mensagem."
+            )
+            self._continue_send_message(text, task)
+            return
         self._active_knowledge_bundle = None
         self._pending_knowledge_message = None
         self._pending_knowledge_text = text
@@ -630,10 +644,17 @@ class MainWindow(QMainWindow):
             )
         if system_parts:
             messages.append({"role": "system", "content": "\n\n".join(system_parts)})
+        history_messages = conversation.messages[: self._current_assistant_index]
         if self._pending_knowledge_message is not None:
-            messages.append(self._pending_knowledge_message)
+            if history_messages:
+                messages.extend(history_messages[:-1])
+                messages.append(self._pending_knowledge_message)
+                messages.append(history_messages[-1])
+            else:
+                messages.append(self._pending_knowledge_message)
             self._pending_knowledge_message = None
-        messages.extend(conversation.messages[: self._current_assistant_index])
+        else:
+            messages.extend(history_messages)
 
         request = EngineRequest(
             model=model,
@@ -809,6 +830,15 @@ class MainWindow(QMainWindow):
                     ],
                 }
             task.validation_report = dict(task.validation_report or {})
+            task.validation_report.setdefault("status", citation_report.get("status", "needs_review"))
+            task.validation_report.setdefault(
+                "structural_status",
+                citation_report.get("structural_status", "passed"),
+            )
+            task.validation_report.setdefault(
+                "factual_status",
+                "not_independently_verified",
+            )
             task.validation_report["evidence_citations"] = citation_report
             task.execution_trace.append(
                 {
