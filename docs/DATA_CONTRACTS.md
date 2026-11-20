@@ -25,3 +25,6 @@ Contrato de engine fornece identificação, health check, inventário de modelos
 ## Versionamento
 
 Mudanças incompatíveis no formato serializado exigem incremento de versão e migração explícita. Componentes não devem depender de campos internos não documentados.
+
+
+O campo token_budget do planejador inicial é uma estimativa indicativa para a rota. Nesta versão ele ainda não limita o parâmetro de geração do Engine Adapter.

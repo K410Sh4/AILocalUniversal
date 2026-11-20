@@ -43,4 +43,4 @@ async def test_high_risk_marker_prevents_deterministic_shortcut() -> None:
     assert task.risk is not None and task.risk > 0.5
     assert task.result is None
     assert task.execution_plan[0]["route"] == "llm_assisted"
-    assert task.execution_plan[0]["reason"] == "risk_marker_requires_model_review"
+    assert task.execution_plan[1]["reason"] == "risk_marker_requires_model_review"

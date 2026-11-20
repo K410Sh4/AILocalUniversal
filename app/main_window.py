@@ -314,12 +314,12 @@ class MainWindow(QMainWindow):
         )
         if route == "deterministic_only" and cognitive_task.result is not None:
             conversation = self.current_conversation
-            normalized_text = cognitive_task.normalized_text or text.strip()
+            original_text = cognitive_task.original_text.strip()
             conversation.messages.append(
-                {"role": "user", "content": normalized_text}
+                {"role": "user", "content": original_text}
             )
             if conversation.title == "Nova conversa":
-                conversation.title = normalized_text.splitlines()[0][:48]
+                conversation.title = original_text.splitlines()[0][:48]
             conversation.messages.append(
                 {
                     "role": "assistant",
