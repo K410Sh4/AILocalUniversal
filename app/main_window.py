@@ -21,7 +21,11 @@ from engines.ollama_engine import OllamaEngine
 from engines.registry import EngineRegistry
 from storage.configuration import AppConfig, ConfigurationError, ConfigurationStore
 from storage.conversations import Conversation, ConversationStore
-from workers.ollama_workers import OllamaChatWorker, OllamaStatusWorker
+from workers.ollama_workers import (
+    OllamaChatWorker,
+    OllamaStatusWorker,
+    OllamaTaskExecutorWorker,
+)
 
 
 class MainWindow(QMainWindow):
@@ -45,7 +49,7 @@ class MainWindow(QMainWindow):
         self._replace_engine()
         self.models: list[ModelInfo] = []
         self._status_worker: OllamaStatusWorker | None = None
-        self._chat_worker: OllamaChatWorker | None = None
+        self._chat_worker: OllamaChatWorker | OllamaTaskExecutorWorker | None = None
         self._current_assistant_index: int | None = None
         self.last_cognitive_task: CognitiveTask | None = None
 
@@ -353,6 +357,13 @@ class MainWindow(QMainWindow):
         try:
             model = self._resolve_model()
         except ModelSelectionError as exc:
+            cognitive_task.status = TaskStatus.FAILED
+            cognitive_task.result = {
+                "route": "llm_assisted",
+                "status": "failed",
+                "error": str(exc),
+            }
+            self.cognitive_view.set_task(cognitive_task)
             self._record_cognitive_event(
                 "model_selection",
                 "failed",
@@ -404,12 +415,9 @@ class MainWindow(QMainWindow):
         subtask_count = len(cognitive_task.subtask_plan)
         if subtask_count > 1:
             system_parts.append(
-                "A solicitação do usuário contém "
-                f"{subtask_count} partes identificadas pelo planejador local. "
-                "Responda cobrindo cada parte explicitamente, na ordem apresentada pelo usuário, "
-                "e depois sintetize as relações entre elas quando isso for útil. "
-                "A decomposição é apenas uma estrutura auxiliar: preserve o sentido e as "
-                "restrições do pedido original."
+                "O sistema executará as partes desta solicitação individualmente, em sequência. "
+                "Quando receber uma instrução de subtarefa, responda somente àquela parte, "
+                "sem tentar resolver as demais. Depois haverá uma etapa separada de síntese."
             )
         if system_parts:
             messages.append({"role": "system", "content": "\n\n".join(system_parts)})
@@ -420,27 +428,49 @@ class MainWindow(QMainWindow):
             messages=messages,
             options={"keep_alive": self.config.keep_alive},
         )
-        worker = OllamaChatWorker(self.engine, request, self)
+        cognitive_task.status = TaskStatus.RUNNING
+        self.cognitive_view.set_task(cognitive_task)
+        if subtask_count > 1:
+            worker = OllamaTaskExecutorWorker(
+                self.engine,
+                cognitive_task,
+                model,
+                messages,
+                {"keep_alive": self.config.keep_alive},
+                self,
+            )
+            worker.progress.connect(self._on_executor_progress)
+            worker.completed.connect(self._on_executor_completed)
+            run_label = f"Executando {subtask_count} subtarefas em sequência"
+            self._record_cognitive_event(
+                "task_executor",
+                "started",
+                {
+                    "model": model,
+                    "subtask_count": subtask_count,
+                    "strategy": "sequential",
+                },
+            )
+        else:
+            worker = OllamaChatWorker(self.engine, request, self)
+            worker.completed.connect(self._on_chat_completed)
+            run_label = f"Gerando com {model}…"
+            self._record_cognitive_event(
+                "ollama_chat",
+                "started",
+                {"model": model},
+            )
+
         self._chat_worker = worker
         worker.token.connect(self._on_chat_token)
-        worker.completed.connect(self._on_chat_completed)
         worker.failed.connect(self._on_chat_error)
         worker.cancelled.connect(self._on_chat_cancelled)
         worker.finished.connect(lambda w=worker: self._chat_finished(w))
         self.chat_view.set_busy(True)
-        self.chat_view.set_status(f"Gerando com {model}…")
-        plan_label = (
-            f"{len(cognitive_task.subtask_plan)} partes • "
-            if len(cognitive_task.subtask_plan) > 1
-            else ""
-        )
+        self.chat_view.set_status(run_label)
+        plan_label = f"{subtask_count} partes • " if subtask_count > 1 else ""
         self.statusBar().showMessage(
             f"Plano cognitivo: {cognitive_task.intent} • {plan_label}modelo {model}"
-        )
-        self._record_cognitive_event(
-            "ollama_chat",
-            "started",
-            {"model": model},
         )
         worker.start()
 
@@ -463,6 +493,77 @@ class MainWindow(QMainWindow):
         task.execution_trace.append(event)
         self.cognitive_view.set_task(task)
         self.cognitive_view.set_runtime_status(f"{stage}: {status}")
+
+    def _on_executor_progress(self, payload: object) -> None:
+        if not isinstance(payload, dict):
+            return
+        try:
+            updated_task = CognitiveTask.from_dict(payload)
+        except (KeyError, TypeError, ValueError):
+            return
+        if (
+            self.last_cognitive_task is not None
+            and updated_task.task_id != self.last_cognitive_task.task_id
+        ):
+            return
+        self.last_cognitive_task = updated_task
+        self.cognitive_view.set_task(updated_task)
+        event = updated_task.execution_trace[-1] if updated_task.execution_trace else {}
+        details = event.get("details", {})
+        if event.get("status") == "subtask_started":
+            order = details.get("order", "?")
+            total = details.get("total", len(updated_task.subtask_plan))
+            item = next(
+                (
+                    subtask
+                    for subtask in updated_task.subtask_plan
+                    if subtask.get("id") == details.get("subtask_id")
+                ),
+                {},
+            )
+            label = f"Subtarefa {order}/{total}: {item.get('text', '')}"
+            self.chat_view.set_status(label[:180])
+            self.cognitive_view.set_runtime_status(label)
+        elif event.get("status") == "subtask_completed":
+            self.cognitive_view.set_runtime_status(
+                f"Subtarefa {details.get('order', '?')} concluída "
+                f"({details.get('execution_kind', 'execução')})."
+            )
+        elif event.get("status") == "synthesis_started":
+            self.chat_view.set_status("Sintetizando resultados…")
+            self.cognitive_view.set_runtime_status("Síntese final em andamento.")
+        else:
+            self.cognitive_view.set_runtime_status(
+                f"{event.get('stage', 'execução')}: {event.get('status', 'atualizado')}"
+            )
+
+    def _on_executor_completed(self, payload: object) -> None:
+        if not isinstance(payload, dict) or not isinstance(payload.get("task"), dict):
+            self._on_chat_error("O executor terminou sem devolver o estado da tarefa.")
+            return
+        try:
+            updated_task = CognitiveTask.from_dict(payload["task"])
+        except (KeyError, TypeError, ValueError) as exc:
+            self._on_chat_error(f"Não foi possível reconstruir a tarefa executada: {exc}")
+            return
+        self.last_cognitive_task = updated_task
+        self.cognitive_view.set_task(updated_task)
+        self._record_cognitive_event(
+            "task_executor",
+            "completed",
+            {
+                "subtask_count": len(updated_task.subtask_plan),
+                "model": next(
+                    (
+                        step.get("model")
+                        for step in updated_task.execution_plan
+                        if step.get("component") == "cognitive_task_executor"
+                    ),
+                    None,
+                ),
+            },
+        )
+        self._on_chat_completed(payload.get("metadata", {}))
 
     def _assistant_message(self) -> dict[str, str] | None:
         index = self._current_assistant_index
@@ -498,12 +599,17 @@ class MainWindow(QMainWindow):
                     ),
                     None,
                 )
-                self.last_cognitive_task.result = {
-                    "route": "llm_assisted",
-                    "status": "completed",
-                    "model": selected_model,
-                    "content": assistant_message.get("content", ""),
-                }
+                result = dict(self.last_cognitive_task.result or {})
+                result.update(
+                    {
+                        "route": "llm_assisted",
+                        "status": "completed",
+                        "model": selected_model,
+                        "content": assistant_message.get("content", ""),
+                    }
+                )
+                self.last_cognitive_task.result = result
+                self.last_cognitive_task.status = TaskStatus.COMPLETED
         self._record_cognitive_event(
             "ollama_chat",
             "completed",
@@ -527,11 +633,16 @@ class MainWindow(QMainWindow):
 
     def _on_chat_error(self, message: str) -> None:
         if self.last_cognitive_task is not None:
-            self.last_cognitive_task.result = {
-                "route": "llm_assisted",
-                "status": "failed",
-                "error": message,
-            }
+            result = dict(self.last_cognitive_task.result or {})
+            result.update(
+                {
+                    "route": "llm_assisted",
+                    "status": "failed",
+                    "error": message,
+                }
+            )
+            self.last_cognitive_task.result = result
+            self.last_cognitive_task.status = TaskStatus.FAILED
         self._record_cognitive_event("ollama_chat", "failed", {"error": message})
         self._discard_empty_assistant_message()
         self._persist_conversations()
@@ -541,17 +652,20 @@ class MainWindow(QMainWindow):
 
     def _on_chat_cancelled(self) -> None:
         if self.last_cognitive_task is not None:
-            self.last_cognitive_task.result = {
-                "route": "llm_assisted",
-                "status": "cancelled",
-            }
+            result = dict(self.last_cognitive_task.result or {})
+            result.update({"route": "llm_assisted", "status": "cancelled"})
+            self.last_cognitive_task.result = result
+            self.last_cognitive_task.status = TaskStatus.CANCELLED
         self._record_cognitive_event("ollama_chat", "cancelled")
         self._discard_empty_assistant_message()
         self._persist_conversations()
         self.chat_view.set_status("Geração cancelada")
         self.statusBar().showMessage("Geração cancelada", 5000)
 
-    def _chat_finished(self, worker: OllamaChatWorker) -> None:
+    def _chat_finished(
+        self,
+        worker: OllamaChatWorker | OllamaTaskExecutorWorker,
+    ) -> None:
         if self._chat_worker is worker:
             self._chat_worker = None
             self._current_assistant_index = None

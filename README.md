@@ -175,3 +175,4 @@ Consulte docs/SECURITY.md.
 **AILocal Universal — inteligência local coordenada por software, ferramentas e recursos reais.**
 
 - Blocos matemáticos display usam fundo ardósia suave, borda neutra e espaçamento vertical para integrar as equações ao balão da resposta sem perder destaque tipográfico.
+\n\n### Cognitive Task Executor\n\nPedidos decompostos em duas ou mais partes são executados sequencialmente. Subtarefas matemáticas ou conversões elegíveis podem usar ferramentas locais de baixo risco; as demais são enviadas individualmente ao mesmo modelo selecionado. Após todas as partes concluídas, uma chamada adicional produz a síntese final. O Inspector acompanha estados e resultados intermediários. Saídas de modelo ficam marcadas como não verificadas independentemente; não há paralelismo ou roteamento multi-modelo nesta etapa.\n

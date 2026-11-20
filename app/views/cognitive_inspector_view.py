@@ -126,7 +126,7 @@ class CognitiveInspectorView(QWidget):
         capabilities_layout.addWidget(self.capabilities_table)
 
         self.subtasks_table = self._create_table(
-            ["#", "Subtarefa", "Intenção", "Dependências", "Estado"]
+            ["#", "Subtarefa", "Intenção", "Dependências", "Estado", "Execução", "Verificação", "Resultado"]
         )
         self.plan_table = self._create_table(
             ["Etapa", "Componente", "Estratégia / detalhe"]
@@ -249,13 +249,44 @@ class CognitiveInspectorView(QWidget):
             dependencies = ", ".join(
                 str(value).rsplit(":", 1)[-1] for value in item.get("depends_on", [])
             ) or "Nenhuma"
+            result = item.get("result", {})
+            result_content = str(result.get("content", "")) if isinstance(result, dict) else ""
+            execution_kind = str(item.get("execution_kind", "—"))
+            execution_label = {
+                "deterministic_tool": "Ferramenta local",
+                "llm": "Modelo",
+            }.get(execution_kind, execution_kind)
+            status_label = {
+                "pending": "Pendente",
+                "running": "Em execução",
+                "completed": "Concluída",
+                "failed": "Falhou",
+                "blocked": "Bloqueada",
+                "cancelled": "Cancelada",
+                "skipped": "Ignorada",
+            }.get(str(item.get("status", "")), str(item.get("status", "—")))
+            verification_label = {
+                "not_independently_verified": "Não verificada",
+                "verified": "Verificada",
+            }.get(
+                str(item.get("verification_status", "")),
+                str(item.get("verification_status", "—")),
+            )
+            result_summary = (
+                result_content.replace("\n", " ")[:140]
+                if result_content
+                else str(item.get("error", "—"))
+            )
             subtask_rows.append(
                 [
                     str(item.get("order", "")),
                     str(item.get("text", "")),
                     str(item.get("intent", "—")),
                     dependencies,
-                    str(item.get("status", "—")),
+                    status_label,
+                    execution_label,
+                    verification_label,
+                    result_summary,
                 ]
             )
         self._populate_table(self.subtasks_table, subtask_rows)

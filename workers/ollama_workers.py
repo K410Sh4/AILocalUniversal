@@ -3,10 +3,13 @@
 from __future__ import annotations
 
 import asyncio
+import copy
 from typing import Any
 
 from PySide6.QtCore import QThread, Signal
 
+from core.cognitive_task import CognitiveTask
+from core.task_executor import CognitiveTaskExecutor
 from engines.base import EngineAdapter, EngineRequest
 
 
@@ -81,3 +84,38 @@ class OllamaChatWorker(_AsyncWorker):
             if event.done:
                 metadata = event.metadata
         self.completed.emit(metadata)
+
+
+class OllamaTaskExecutorWorker(_AsyncWorker):
+    """Executa subtarefas em sequência e transmite somente a síntese final ao Chat."""
+
+    token = Signal(str)
+    progress = Signal(object)
+
+    def __init__(
+        self,
+        engine: EngineAdapter,
+        task: CognitiveTask,
+        model: str,
+        context_messages: list[dict[str, Any]],
+        request_options: dict[str, Any],
+        parent=None,
+    ) -> None:
+        super().__init__(engine, parent)
+        self.task_data = copy.deepcopy(task.to_dict())
+        self.model = model
+        self.context_messages = copy.deepcopy(context_messages)
+        self.request_options = copy.deepcopy(request_options)
+
+    async def execute(self) -> None:
+        task = CognitiveTask.from_dict(self.task_data)
+        executor = CognitiveTaskExecutor(self.engine)
+        metadata = await executor.execute(
+            task,
+            model=self.model,
+            context_messages=self.context_messages,
+            request_options=self.request_options,
+            on_update=self.progress.emit,
+            on_token=self.token.emit,
+        )
+        self.completed.emit({"task": task.to_dict(), "metadata": metadata})

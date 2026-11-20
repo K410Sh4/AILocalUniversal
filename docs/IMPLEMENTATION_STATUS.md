@@ -41,3 +41,4 @@ Este arquivo diferencia código existente de funcionalidades futuras.
 - Equações display usam uma única célula, sem linhas espaçadoras com bordas herdadas; o respiro é fornecido pela margem do bloco e pelo padding interno. O destaque prioriza tipografia e paleta ardósia neutra.
 
 - Tipografia padrão do transcript elevada de 10pt para 11pt; títulos, código e listas ajustados proporcionalmente. Blocos matemáticos usam somente uma célula, sem linhas espaçadoras com bordas herdadas.
+\n- Cognitive Task Executor: execução sequencial, dependências, atalho determinístico de baixo risco, chamadas LLM individuais, síntese final, estados por subtarefa e atualização do Inspector; validação independente permanece pendente.\n

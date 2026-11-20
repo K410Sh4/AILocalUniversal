@@ -31,4 +31,4 @@ Contrato de engine fornece identificação, health check, inventário de modelos
 Mudanças incompatíveis no formato serializado exigem incremento de versão e migração explícita. Componentes não devem depender de campos internos não documentados.
 
 
-O campo token_budget do planejador inicial é uma estimativa indicativa para a rota. Nesta versão ele ainda não limita o parâmetro de geração do Engine Adapter.
+O campo token_budget do planejador inicial é uma estimativa indicativa para a rota. Nesta versão ele ainda não limita o parâmetro de geração do Engine Adapter.\n\n## Execução de subtarefas\n\nCada item de subtask_plan mantém status, execution_kind, result e verification_status. O estado completed indica que a etapa produziu uma saída, não que o conteúdo foi validado. Nesta versão a verificação é registrada como not_independently_verified. Falhas bloqueiam etapas ainda pendentes; cancelamento marca a etapa ativa como cancelled e as restantes como skipped. A síntese final fica em CognitiveTask.result.\n
