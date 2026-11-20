@@ -64,7 +64,12 @@
         "priority": {
           "type": "array",
           "items": {
-            "enum": ["memory", "reliability", "latency", "quality"]
+            "enum": [
+              "memory",
+              "reliability",
+              "latency",
+              "quality"
+            ]
           },
           "minItems": 1,
           "uniqueItems": true
@@ -80,7 +85,8 @@
       "required": [
         "max_ram_fraction",
         "target_context_tokens",
-        "max_parallelism"
+        "max_parallelism",
+        "max_cpu_threads"
       ],
       "properties": {
         "max_ram_fraction": {
@@ -93,6 +99,10 @@
           "minimum": 1
         },
         "max_parallelism": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "max_cpu_threads": {
           "type": "integer",
           "minimum": 1
         }
@@ -110,7 +120,10 @@
         "preferred_backends": {
           "type": "array",
           "items": {
-            "enum": ["cpu", "gpu"]
+            "enum": [
+              "cpu",
+              "gpu"
+            ]
           },
           "minItems": 1,
           "uniqueItems": true
@@ -150,12 +163,20 @@
       ],
       "properties": {
         "default": {
-          "enum": ["none", "quick", "full"]
+          "enum": [
+            "none",
+            "quick",
+            "full"
+          ]
         },
         "allowed": {
           "type": "array",
           "items": {
-            "enum": ["none", "quick", "full"]
+            "enum": [
+              "none",
+              "quick",
+              "full"
+            ]
           },
           "minItems": 1,
           "uniqueItems": true
