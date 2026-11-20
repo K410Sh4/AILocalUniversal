@@ -19,13 +19,13 @@ from core.neuralinjector.resources import (
 from engines.base import EngineAdapter, EngineRequest, ModelInfo
 from engines.model_selector import ModelSelectionError, choose_model
 from engines.ollama_engine import OllamaEngine, OllamaResourceProtectionError
-from workflows.handlers import build_specialist_registry
-from workflows.runtime import GraphRunResult, GraphRuntime
-from workers.neuralmap_worker import NeuralMapWorker
 from engines.registry import EngineRegistry
 from storage.configuration import AppConfig, ConfigurationError, ConfigurationStore
 from storage.conversations import Conversation, ConversationStore
+from workers.neuralmap_worker import NeuralMapWorker
 from workers.ollama_workers import OllamaChatWorker, OllamaStatusWorker
+from workflows.handlers import build_specialist_registry
+from workflows.runtime import GraphRunResult, GraphRuntime
 
 
 class MainWindow(QMainWindow):
