@@ -67,14 +67,17 @@ As fases representam entregas e validações progressivas. Um componente só ser
 ## Trilha proposta — NeuralPlugin / NeuralInjector
 
 - [x] Definir cinco perfis canônicos, orçamento de recursos, benchmark opt-in e degradação graciosa.
+- [x] Tornar Python a fonte canônica dos perfis e verificar a sincronização dos JSON por testes e script de geração.
 - [x] Adicionar detecção opcional de GPU (NVIDIA via nvidia-smi e Linux DRM/sysfs), separada do registro de backends executáveis.
 - [x] Adicionar políticas declarativas de quantização, seleção condicionada às capacidades reportadas pelo backend e modos permissive/adaptive/protected.
 - [x] Adicionar avaliador de pressão de memória com histerese e recomendações que não interrompem gerações em andamento.
 - [x] Adicionar monitor periódico opt-in, com callback, provedor substituível e início explícito.
-- [x] Adicionar ao adaptador Ollama leitura de modelos carregados (/api/ps) e helper explícito para aplicar limite num_ctx.
-- [ ] Integrar automaticamente o planejador e o orçamento ao fluxo principal de chat e às configurações da aplicação.
+- [x] Adicionar ao adaptador Ollama telemetria (/api/ps) e tradução do orçamento para num_ctx/num_thread por requisição.
+- [x] Integrar preflight de recursos ao fluxo de chat e expor perfil/modo de proteção nas Configurações.
+- [x] Implementar recusa de piso absoluto de 1,5 GiB com explicação e recomendações no diálogo.
 - [ ] Integrar o monitor ao ciclo de vida da aplicação, incluindo amostragem de VRAM por provedor e executor seguro das ações recomendadas.
-- [ ] Implementar aplicação real de quantização/offloading quando o backend oferecer suporte e integrar llama.cpp.
+- [ ] Criar EngineAdapter llama.cpp completo; o mapeador de opções do construtor já está coberto por testes.
+- [ ] Implementar resolução de artefatos quantizados e offloading somente quando o backend oferecer suporte explícito.
 - [ ] Validar testes e benchmarks em hardware leve, intermediário e potente.
 
 Esta trilha foi adicionada como proposta documental e **não altera o compromisso nem o estado das Fases 0 a 6**. A implementação depende de revisão da especificação, decisões de compatibilidade e critérios de segurança.
