@@ -142,7 +142,9 @@ O orçamento é traduzido para:
 
 Um limite menor que o usuário já tenha definido é preservado. O adaptador não aumenta um `num_ctx` ou `num_thread` já configurado para um valor maior que o orçamento.
 
-A documentação e os tipos da API do Ollama definem `num_ctx` e `num_thread` entre as opções do runner. A aplicação não depende de alterar o Modelfile para esses dois parâmetros por requisição.
+A API pública do Ollama expõe `num_ctx` e `num_thread` no objeto `options`; os tipos oficiais classificam ambos como opções do runner que precisam ser definidas quando o modelo é carregado. Referências: [documentação de opções da API](https://github.com/ollama/ollama/blob/main/docs/api.md#generate-request-with-options) e [tipo Runner no código da API](https://github.com/ollama/ollama/blob/main/api/types.go).
+
+O AILocal inclui os valores na solicitação antes do chat, mas a efetivação de uma alteração em um modelo que já esteja residente depende do ciclo de vida do runner no servidor. Esta versão não força descarregar/recarregar o modelo para trocar `num_ctx` ou `num_thread`; a aplicação e os testes HTTP simulados comprovam a tradução do payload, não a aplicação efetiva no processo Ollama. Isso ainda requer teste de integração com serviço real.
 
 ### 6.2 Operações que continuam sob controle do Ollama
 
@@ -171,7 +173,7 @@ O repositório inclui `engines/llama_cpp_options.py`, que traduz um `ResourceBud
 
 A camada de GPU é omitida por padrão; só é incluída se o chamador fornecer explicitamente uma contagem validada. O helper não presume que uma GPU detectada seja utilizável.
 
-**Limite atual:** esta é a tradução testável de opções do construtor, não um `EngineAdapter` llama.cpp completo e ainda não está conectada ao seletor de backend da interface. As opções de contexto e threads do llama.cpp são aplicadas ao construir/recriar a instância do modelo; não são parâmetros de amostragem de cada token.
+**Limite atual:** esta é a tradução testável de opções do construtor, não um `EngineAdapter` llama.cpp completo e ainda não está conectada ao seletor de backend da interface. A API oficial do llama-cpp-python declara `n_ctx`, `n_threads` e `n_gpu_layers` no construtor de `Llama` ([referência](https://llama-cpp-python.readthedocs.io/en/latest/api-reference/)). As opções de contexto e threads são aplicadas ao construir/recriar a instância do modelo; não são parâmetros de amostragem de cada token.
 
 A quantização é incorporada ao arquivo GGUF selecionado. `n_ctx`, `n_threads` ou `n_gpu_layers` não convertem um arquivo FP16 em Q4 nem trocam uma variante Q4 por Q8.
 
