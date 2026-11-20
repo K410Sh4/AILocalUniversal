@@ -12,11 +12,11 @@ from core.neuralinjector.resources import (
     ResourceMonitor,
     ResourcePressure,
     ResourceRequirements,
+    CANONICAL_PROFILES,
     build_compatibility_report,
     detect_hardware,
     select_profile,
     serialize_hardware_profile,
-    CANONICAL_PROFILES,
 )
 
 
@@ -92,7 +92,7 @@ def test_minimum_disk_is_checked_when_measured():
     assert any("disco abaixo" in item for item in report.reasons)
 
 
-def test_permissive_mode_requires_an_explicit_override():
+def test_permissive_mode_cannot_override_absolute_memory_floor():
     report = build_compatibility_report(
         hw(1024, 700),
         protection_mode=ProtectionMode.PERMISSIVE,
