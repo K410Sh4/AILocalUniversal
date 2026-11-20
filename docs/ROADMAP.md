@@ -66,6 +66,8 @@ As fases representam entregas e validações progressivas. Um componente só ser
 
 ## Trilha proposta — NeuralPlugin / NeuralInjector
 
+- [x] Definir perfis canônicos, orçamento de recursos, política de benchmark e degradação graciosa (contrato + planejador inicial).
+
 Esta trilha foi adicionada como proposta documental e **não altera o compromisso nem o estado das Fases 0 a 6**. A implementação depende de revisão da especificação, decisões de compatibilidade e critérios de segurança.
 
 - [ ] Revisar e estabilizar a NIP 0.1.0.
@@ -75,7 +77,7 @@ Esta trilha foi adicionada como proposta documental e **não altera o compromiss
 - [ ] Criar NeuralPlugin Manager com importação em modo dry-run, ativação, desativação e rollback.
 - [ ] Compor regras por modelo com prioridades, dependências e detecção de conflitos.
 - [ ] Integrar adaptadores apenas nos backends que declararem suporte.
-- [ ] Implementar seleção adaptativa com benchmarks reproduzíveis.
+- [ ] Integrar seleção adaptativa ao runtime/backend e adicionar benchmarks reproduzíveis. (Planejador inicial já adicionado.)
 - [ ] Pesquisar transformações estruturais e restauração com validação de arquitetura/tensores.
 
 Documentação: [NeuralPlugin Manager](NEURALPLUGIN.md), [NIP 0.1.0](NEURALINJECTOR_NIP_0.1.0.md), [schemas](../schemas/) e [exemplo](../examples/neuralinjector/).
