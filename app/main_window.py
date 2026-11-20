@@ -13,6 +13,7 @@ from app.views.chat_view import ChatView
 from app.views.cognitive_inspector_view import CognitiveInspectorView
 from app.views.knowledge_view import KnowledgeView
 from app.views.models_view import ModelsView
+from app.views.model_hub_view import ModelHubView
 from core.cognitive_pipeline import analyze_request
 from core.cognitive_task import CognitiveTask, TaskStatus
 from core.input_processing import InputValidationError
@@ -21,6 +22,9 @@ from engines.base import EngineAdapter, EngineRequest, ModelInfo
 from engines.model_selector import ModelSelectionError, choose_model
 from engines.ollama_engine import OllamaEngine
 from engines.registry import EngineRegistry
+from model_hub.compatibility import CompatibilityEngine
+from model_hub.hardware import HardwareProfiler
+from model_hub.registry import ModelRegistry, ModelRegistryError
 from storage.configuration import AppConfig, ConfigurationError, ConfigurationStore
 from storage.conversations import Conversation, ConversationStore
 from workers.knowledge_workers import KnowledgeRetrievalWorker
@@ -51,6 +55,9 @@ class MainWindow(QMainWindow):
         self.engine: EngineAdapter
         self._replace_engine()
         self.models: list[ModelInfo] = []
+        self._ollama_healthy = False
+        self.model_hub_registry = ModelRegistry()
+        self.hardware_profiler = HardwareProfiler()
         self._status_worker: OllamaStatusWorker | None = None
         self._knowledge_worker: KnowledgeRetrievalWorker | None = None
         self._pending_knowledge_text: str | None = None
@@ -71,6 +78,7 @@ class MainWindow(QMainWindow):
 
         self.chat_view = ChatView()
         self.models_view = ModelsView()
+        self.model_hub_view = ModelHubView()
         self.cognitive_view = CognitiveInspectorView()
         self.knowledge_view = KnowledgeView(
             ollama_url=self.config.base_url,
@@ -80,6 +88,7 @@ class MainWindow(QMainWindow):
         tabs = QTabWidget()
         tabs.addTab(self.chat_view, "Chat")
         tabs.addTab(self.models_view, "Modelos")
+        tabs.addTab(self.model_hub_view, "NeuralModel Hub")
         tabs.addTab(self.cognitive_view, "Cognitivo")
         tabs.addTab(self.knowledge_view, "Conhecimento")
         self.setCentralWidget(tabs)
@@ -88,6 +97,8 @@ class MainWindow(QMainWindow):
         self.chat_view.cancel_requested.connect(self.cancel_generation)
         self.chat_view.refresh_models_requested.connect(self.refresh_backend)
         self.models_view.refresh_requested.connect(self.refresh_backend)
+        self.model_hub_view.refresh_requested.connect(self._refresh_model_hub)
+        self.model_hub_view.refresh_requested.connect(self.refresh_backend)
         self.chat_view.settings_requested.connect(self.open_settings)
         self.chat_view.new_conversation_requested.connect(self.new_conversation)
         self.chat_view.conversation_selected.connect(self.select_conversation)
@@ -104,6 +115,7 @@ class MainWindow(QMainWindow):
         self._render_current_conversation()
         self.chat_view.set_mode(self.config.mode)
         self.statusBar().showMessage("Pronto")
+        self._refresh_model_hub()
         self.refresh_backend()
 
     def _load_config(self) -> AppConfig:
@@ -146,6 +158,34 @@ class MainWindow(QMainWindow):
         engine = OllamaEngine(self.config.base_url)
         self.engine_registry.register(engine)
         self.engine = self.engine_registry.get("ollama")
+
+    def _refresh_model_hub(self) -> None:
+        """Atualiza o perfil local e a avaliação conservadora do catálogo."""
+        try:
+            profile = self.hardware_profiler.probe()
+            records = self.model_hub_registry.list_records()
+            runtime_availability = {"ollama"} if self._ollama_healthy else None
+            evaluator = CompatibilityEngine()
+            compatibility = {
+                record.record_id: evaluator.assess(
+                    record,
+                    profile,
+                    available_runtimes=runtime_availability,
+                )
+                for record in records
+            }
+            self.model_hub_view.set_data(
+                profile,
+                records,
+                compatibility,
+                runtime_available={"ollama"} if self._ollama_healthy else set(),
+                registry_warning=self.model_hub_registry.load_warning,
+            )
+        except (OSError, ValueError, RuntimeError) as exc:
+            self.statusBar().showMessage(
+                f"Não foi possível atualizar o NeuralModel Hub: {exc}",
+                10000,
+            )
 
     def refresh_backend(self) -> None:
         if self._status_worker is not None and self._status_worker.isRunning():
@@ -191,6 +231,16 @@ class MainWindow(QMainWindow):
         )
         self.chat_view.set_models(names, selected)
         self.models_view.set_models(self.models, healthy)
+        self._ollama_healthy = healthy
+        if healthy:
+            try:
+                self.model_hub_registry.sync_runtime_inventory("ollama", self.models)
+            except (OSError, ModelRegistryError, ValueError) as exc:
+                self.statusBar().showMessage(
+                    f"Inventário recebido, mas catálogo local não salvo: {exc}",
+                    10000,
+                )
+        self._refresh_model_hub()
         if healthy:
             if chat_models:
                 message = (
@@ -215,10 +265,12 @@ class MainWindow(QMainWindow):
             self.statusBar().showMessage(message)
 
     def _on_backend_error(self, message: str) -> None:
+        self._ollama_healthy = False
         self.models = []
         self.chat_view.set_models([])
         self.models_view.set_models([], False)
         self.knowledge_view.set_embedding_models([], self.config.embedding_model)
+        self._refresh_model_hub()
         self.chat_view.set_status("Erro ao consultar Ollama")
         self.statusBar().showMessage(message, 10000)
 
@@ -281,6 +333,7 @@ class MainWindow(QMainWindow):
                     self._status_worker.wait(1500)
                 self._replace_engine()
                 self.models = []
+                self._ollama_healthy = False
                 self.chat_view.set_models([])
                 self.models_view.set_models([], False)
             self.refresh_backend()
