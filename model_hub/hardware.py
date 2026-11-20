@@ -16,6 +16,12 @@ _VENDOR_NAMES = {
     "0x1af4": "VirtIO",
 }
 
+# PCI subsystem IDs observed on the reference RX 5700 XT supplied by this
+# device's board vendor. Unknown subsystem IDs intentionally remain generic.
+_SUBSYSTEM_NAMES = {
+    ("0x1002", "0x731f", "0x1002", "0x0b36"): "AMD Radeon RX 5700 XT (Reference)",
+}
+
 
 @dataclass(frozen=True, slots=True)
 class AcceleratorInfo:
@@ -25,6 +31,8 @@ class AcceleratorInfo:
     name: str
     pci_vendor_id: str | None = None
     pci_device_id: str | None = None
+    pci_subsystem_vendor_id: str | None = None
+    pci_subsystem_device_id: str | None = None
     driver: str | None = None
     vram_total_bytes: int | None = None
     vram_used_bytes: int | None = None
@@ -131,9 +139,26 @@ class HardwareProfiler:
             vendor_id = vendor_id.lower()
             vendor = _VENDOR_NAMES.get(vendor_id, f"PCI {vendor_id}")
             device_id = self._read_text(device_path / "device")
+            subsystem_vendor_id = self._read_text(device_path / "subsystem_vendor")
+            subsystem_device_id = self._read_text(device_path / "subsystem_device")
+            normalized_device_id = device_id.lower() if device_id else None
+            normalized_subsystem_vendor_id = (
+                subsystem_vendor_id.lower() if subsystem_vendor_id else None
+            )
+            normalized_subsystem_device_id = (
+                subsystem_device_id.lower() if subsystem_device_id else None
+            )
             bus_id = device_path.resolve(strict=False).name
             product_name = self._read_text(device_path / "product_name")
-            name = product_name or f"{vendor} GPU ({bus_id})"
+            subsystem_name = _SUBSYSTEM_NAMES.get(
+                (
+                    vendor_id,
+                    normalized_device_id,
+                    normalized_subsystem_vendor_id,
+                    normalized_subsystem_device_id,
+                )
+            )
+            name = product_name or subsystem_name or f"{vendor} GPU ({bus_id})"
             driver_path = (device_path / "driver").resolve(strict=False)
             driver = driver_path.name if driver_path.name != "driver" else None
             total = self._read_int(device_path / "mem_info_vram_total")
@@ -145,7 +170,9 @@ class HardwareProfiler:
                     vendor=vendor,
                     name=name,
                     pci_vendor_id=vendor_id,
-                    pci_device_id=device_id.lower() if device_id else None,
+                    pci_device_id=normalized_device_id,
+                    pci_subsystem_vendor_id=normalized_subsystem_vendor_id,
+                    pci_subsystem_device_id=normalized_subsystem_device_id,
                     driver=driver,
                     vram_total_bytes=total,
                     vram_used_bytes=used,
