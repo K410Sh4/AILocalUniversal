@@ -1,3 +1,6 @@
+import json
+from pathlib import Path
+
 import pytest
 
 from core.neuralinjector.resources import (
@@ -12,6 +15,8 @@ from core.neuralinjector.resources import (
     build_compatibility_report,
     detect_hardware,
     select_profile,
+    serialize_hardware_profile,
+    CANONICAL_PROFILES,
 )
 
 
@@ -93,8 +98,10 @@ def test_permissive_mode_requires_an_explicit_override():
         protection_mode=ProtectionMode.PERMISSIVE,
     )
     assert not report.compatible
-    assert report.activation_allowed
+    assert not report.activation_allowed
     assert report.protection_mode == "permissive"
+    assert "1,5 GiB" in report.user_message
+    assert report.recommendations
 
 
 def test_protected_mode_rejects_unavailable_requested_profile():
@@ -330,3 +337,50 @@ def test_resource_monitor_poll_once_publishes_snapshot_and_decision():
 def test_resource_monitor_rejects_high_frequency_polling():
     with pytest.raises(ValueError, match="at least 1 second"):
         ResourceMonitor(interval_seconds=0.5)
+
+
+
+@pytest.mark.parametrize("profile", CANONICAL_PROFILES, ids=lambda item: item.profile_id)
+def test_json_profile_matches_python_canonical_definition(profile):
+    root = Path(__file__).resolve().parents[2]
+    path = (
+        root
+        / "examples"
+        / "neuralinjector"
+        / "hardware"
+        / "profiles"
+        / f"{profile.profile_id}.json"
+    )
+    actual = json.loads(path.read_text(encoding="utf-8"))
+
+    assert actual == serialize_hardware_profile(profile)
+
+
+def test_profile_budget_separates_cpu_threads_from_request_parallelism():
+    profile = next(item for item in CANONICAL_PROFILES if item.profile_id == "ultra_light")
+    assert profile.parallelism == 1
+    assert profile.max_cpu_threads == 2
+
+
+def test_protected_report_explains_profile_refusal_and_alternative():
+    report = build_compatibility_report(
+        hw(8192, 5000),
+        preferred_profile="performance",
+        protection_mode=ProtectionMode.PROTECTED,
+    )
+
+    assert not report.activation_allowed
+    assert "bloqueada" in report.user_message
+    assert report.recommendations
+    assert any("balanced" in item or "perfil" in item for item in report.recommendations)
+
+
+def test_host_below_absolute_floor_cannot_be_permitted():
+    report = build_compatibility_report(
+        hw(1024, 700),
+        protection_mode=ProtectionMode.PERMISSIVE,
+    )
+
+    assert not report.activation_allowed
+    assert "piso absoluto" in " ".join(report.reasons)
+    assert len(report.recommendations) >= 3
