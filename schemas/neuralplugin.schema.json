@@ -1,0 +1,132 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "NeuralPlugin Manifest",
+  "description": "Manifest schema proposed for an individual NeuralPlugin in NIP 0.1.0.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "plugin_format_version",
+    "id",
+    "name",
+    "version",
+    "kind",
+    "priority",
+    "enabled_by_default",
+    "targets"
+  ],
+  "properties": {
+    "plugin_format_version": {
+      "const": "0.1.0"
+    },
+    "id": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 160
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 120
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(-[0-9A-Za-z.-]+)?(\\+[0-9A-Za-z.-]+)?$"
+    },
+    "kind": {
+      "enum": [
+        "rules",
+        "adapter",
+        "optimization",
+        "neural_structure",
+        "workflow",
+        "knowledge"
+      ]
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 2000
+    },
+    "priority": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 100
+    },
+    "enabled_by_default": {
+      "type": "boolean"
+    },
+    "targets": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "model_refs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "capabilities": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "engines": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        }
+      }
+    },
+    "rules": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "system_prompt": {
+          "type": "string"
+        },
+        "merge_strategy": {
+          "enum": [
+            "append",
+            "compose_by_sections",
+            "require_user_resolution"
+          ]
+        }
+      }
+    },
+    "dependencies": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "version_range"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "version_range": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "permissions": {
+      "type": "array",
+      "items": {
+        "enum": [
+          "read_user_files",
+          "write_user_files",
+          "network_access",
+          "invoke_builtin_tools"
+        ]
+      },
+      "uniqueItems": true
+    }
+  }
+}
