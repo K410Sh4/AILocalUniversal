@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from html import escape
 import re
+from html import escape
 
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QTextDocument
@@ -20,7 +20,6 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-
 
 _MATH_PATTERN = re.compile(
     r"(?P<display_dollar>\$\$(?P<display_dollar_body>.+?)\$\$)"
