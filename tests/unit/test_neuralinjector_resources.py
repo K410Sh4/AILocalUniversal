@@ -6,6 +6,7 @@ from core.neuralinjector.resources import (
     GPUDevice,
     HardwareSnapshot,
     ProtectionMode,
+    ResourceMonitor,
     ResourcePressure,
     ResourceRequirements,
     build_compatibility_report,
@@ -300,3 +301,32 @@ def test_integrated_gpu_does_not_receive_invented_dedicated_vram(monkeypatch):
     assert detected.gpu_devices[0].memory_kind == "shared"
     assert detected.vram_total_mb is None
     assert detected.vram_available_mb is None
+
+
+def test_resource_monitor_is_inert_until_explicitly_started():
+    monitor = ResourceMonitor(snapshot_provider=lambda: hw(10000, 1000))
+
+    assert not monitor.is_running
+    assert monitor.last_snapshot is None
+    assert monitor.last_decision is None
+
+
+def test_resource_monitor_poll_once_publishes_snapshot_and_decision():
+    observed = []
+    monitor = ResourceMonitor(
+        snapshot_provider=lambda: hw(10000, 1000),
+        on_decision=observed.append,
+        active_parallelism=2,
+    )
+
+    decision = monitor.poll_once()
+
+    assert decision.pressure is ResourcePressure.CRITICAL
+    assert monitor.last_snapshot.ram_available_mb == 1000
+    assert monitor.last_decision == decision
+    assert observed == [decision]
+
+
+def test_resource_monitor_rejects_high_frequency_polling():
+    with pytest.raises(ValueError, match="at least 1 second"):
+        ResourceMonitor(interval_seconds=0.5)
