@@ -210,7 +210,8 @@ def _validate_graph_manifest_references(
                 if profile_path not in declared_profiles:
                     raise PackageGraphError(
                         "HARDWARE_PROFILE_NOT_DECLARED",
-                        f"O perfil '{profile_id}' do nó '{node.label}' não está declarado no pacote.",
+                        f"O perfil '{profile_id}' do nó '{node.label}' não está "
+                        "declarado no pacote.",
                         ("Adicione o arquivo do perfil em components.hardware_profiles.",),
                     )
 
