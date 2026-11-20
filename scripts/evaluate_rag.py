@@ -152,9 +152,8 @@ def main() -> int:
             metrics = evaluate_rankings(rankings, relevant, k=args.k)
             result = {
                 "status": "completed",
-                "mode": "hybrid" if args.model else "lexical",
+                "mode": "hybrid" if "vector" in retrieval_sources else "lexical",
                 "embedding_model": args.model,
-                "documents": len(documents),
                 "vectors_for_model": (
                     library.vector_store.count(args.model) if args.model else 0
                 ),
