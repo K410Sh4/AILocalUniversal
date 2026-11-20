@@ -259,3 +259,9 @@ Leia [CONTRIBUTING.md](CONTRIBUTING.md), a [arquitetura](docs/ARCHITECTURE.md), 
 ---
 
 **AILocal Universal — inteligência local coordenada por software, ferramentas e recursos reais.**
+
+## Licença e propriedade intelectual
+
+O código e os materiais originais do AILocal Universal são proprietários e reservados ao titular identificado como `K410Sh4`. Consulte [LICENSE](LICENSE), [NOTICE.md](NOTICE.md), [política de licenciamento](docs/LICENSING.md) e [registro de ativos originais](docs/PROJECT_IP_REGISTER.md).
+
+Bibliotecas, frameworks, motores, modelos, pesos, datasets e conteúdo de terceiros não são relicenciados por este projeto. Consulte [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) antes de distribuir ou integrar componentes.
