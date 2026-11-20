@@ -4,19 +4,18 @@ from __future__ import annotations
 
 import asyncio
 import json
-from collections.abc import Awaitable, Callable, Mapping
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from typing import Any, Protocol
 from uuid import uuid4
 
+from core.execution_trace import ExecutionTrace
 from core.neuralinjector.resources import (
-    ProtectionMode,
     ResourceRequirements,
     build_compatibility_report,
     detect_hardware,
 )
-from core.execution_trace import ExecutionTrace
 from workflows.graph import (
     EdgeType,
     GraphEdge,
@@ -115,10 +114,6 @@ class GraphRuntime:
         nodes = {node.node_id: node for node in graph.nodes}
         enabled = {node_id: node for node_id, node in nodes.items() if node.enabled}
         order = topological_order(graph)
-        loop_nodes = [
-            node for node in enabled.values() if node.node_type == "control.loop"
-        ]
-        loop_node = loop_nodes[0] if loop_nodes else None
         loop_count = 0
         best_bundle: dict[str, dict[str, Any]] = {}
         best_score = float("-inf")
@@ -146,11 +141,6 @@ class GraphRuntime:
                     node = enabled[node_id]
                     if pass_filter is not None and node_id not in pass_filter:
                         continue
-                    if node.node_type in {"merge.outputs", "output.response", "output.trace"}:
-                        if loop_node and loop_count > 0 and review_decision.get("approved") is False:
-                            # Finalization runs only after approval or loop exhaustion.
-                            if node.node_type in {"merge.outputs", "output.response"}:
-                                pass
                     incoming = self._incoming(graph.edges, node_id)
                     node_inputs = self._collect_inputs(
                         incoming,
@@ -159,9 +149,20 @@ class GraphRuntime:
                         target_node=node_id,
                         include_loop_edges=False,
                     )
-                    if node.node_type in {"input.text", "input.attachment", "hardware.profile"}:
-                        pass
-                    elif incoming and not node_inputs:
+                    required_inputs = set(NODE_SPECS[node.node_type].required_inputs)
+                    if (
+                        node.node_type.startswith("specialist.")
+                        and node.config.get("use_resource_budget", True)
+                    ):
+                        required_inputs.add("budget")
+                    missing_inputs = required_inputs - set(node_inputs)
+                    if missing_inputs:
+                        self._emit(
+                            trace,
+                            node_id,
+                            "skipped_missing_inputs",
+                            {"ports": sorted(missing_inputs)},
+                        )
                         continue
                     if node_id in pending_feedback:
                         node_inputs["feedback"] = pending_feedback[node_id]
