@@ -1,7 +1,7 @@
 {
   "profile_id": "ultra_light",
   "profile_version": "1.0.0",
-  "description": "Contenção extrema para hosts com pouca RAM; CPU-first e sem cargas paralelas.",
+  "description": "Contenção extrema para hosts com pouca RAM; CPU-first.",
   "requirements": {
     "min_ram_mb": 1536,
     "min_vram_mb": 0,
@@ -18,7 +18,8 @@
   "budget": {
     "max_ram_fraction": 0.35,
     "target_context_tokens": 1024,
-    "max_parallelism": 1
+    "max_parallelism": 1,
+    "max_cpu_threads": 2
   },
   "execution": {
     "preferred_backends": [
@@ -54,9 +55,5 @@
     ],
     "low_memory_threshold_mb": 4096,
     "allow_lower_precision_fallback": true
-  },
-  "notes": [
-    "A seleção é apenas recomendação até o backend confirmar suporte.",
-    "Não promete que modelos de grande porte caibam em 1,5 GiB."
-  ]
+  }
 }
