@@ -1,7 +1,7 @@
 {
   "profile_id": "performance",
   "profile_version": "1.0.0",
-  "description": "Prioriza latência com recursos suficientes e backend acelerado disponível.",
+  "description": "Prioriza latência com recursos suficientes.",
   "requirements": {
     "min_ram_mb": 8192,
     "min_vram_mb": 0,
@@ -19,7 +19,8 @@
   "budget": {
     "max_ram_fraction": 0.75,
     "target_context_tokens": 8192,
-    "max_parallelism": 2
+    "max_parallelism": 2,
+    "max_cpu_threads": 16
   },
   "execution": {
     "preferred_backends": [
@@ -57,8 +58,5 @@
     ],
     "low_memory_threshold_mb": 8192,
     "allow_lower_precision_fallback": true
-  },
-  "notes": [
-    "Concorrência efetiva depende do backend e da memória livre em execução."
-  ]
+  }
 }
