@@ -339,7 +339,6 @@ def test_resource_monitor_rejects_high_frequency_polling():
         ResourceMonitor(interval_seconds=0.5)
 
 
-
 @pytest.mark.parametrize("profile", CANONICAL_PROFILES, ids=lambda item: item.profile_id)
 def test_json_profile_matches_python_canonical_definition(profile):
     root = Path(__file__).resolve().parents[2]
@@ -384,7 +383,6 @@ def test_host_below_absolute_floor_cannot_be_permitted():
     assert not report.activation_allowed
     assert "piso absoluto" in " ".join(report.reasons)
     assert len(report.recommendations) >= 3
-
 
 
 def test_permissive_mode_reports_risk_when_it_allows_a_non_floor_override():
