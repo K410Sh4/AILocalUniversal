@@ -66,7 +66,15 @@ As fases representam entregas e validações progressivas. Um componente só ser
 
 ## Trilha proposta — NeuralPlugin / NeuralInjector
 
-- [x] Definir perfis canônicos, orçamento de recursos, política de benchmark e degradação graciosa (contrato + planejador inicial).
+- [x] Definir cinco perfis canônicos, orçamento de recursos, benchmark opt-in e degradação graciosa.
+- [x] Adicionar detecção opcional de GPU (NVIDIA via nvidia-smi e Linux DRM/sysfs), separada do registro de backends executáveis.
+- [x] Adicionar políticas declarativas de quantização, seleção condicionada às capacidades reportadas pelo backend e modos permissive/adaptive/protected.
+- [x] Adicionar avaliador de pressão de memória com histerese e recomendações que não interrompem gerações em andamento.
+- [x] Adicionar ao adaptador Ollama leitura de modelos carregados (/api/ps) e helper explícito para aplicar limite num_ctx.
+- [ ] Integrar automaticamente o planejador e o orçamento ao fluxo principal de chat e às configurações da aplicação.
+- [ ] Criar monitor periódico de RAM/VRAM e executor seguro das ações recomendadas.
+- [ ] Implementar aplicação real de quantização/offloading quando o backend oferecer suporte e integrar llama.cpp.
+- [ ] Validar testes e benchmarks em hardware leve, intermediário e potente.
 
 Esta trilha foi adicionada como proposta documental e **não altera o compromisso nem o estado das Fases 0 a 6**. A implementação depende de revisão da especificação, decisões de compatibilidade e critérios de segurança.
 
