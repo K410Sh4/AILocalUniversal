@@ -34,7 +34,7 @@ def test_evaluation_deduplicates_multiple_chunks_from_same_document() -> None:
     ("rankings", "relevant", "k", "message"),
     [
         ([], [], 1, "pelo menos um"),
-        ([["doc-a"]], [], 1, "ao menos um documento"),
+        ([["doc-a"]], [set()], 1, "ao menos um documento"),
         ([["doc-a"]], [{"doc-a"}, {"doc-b"}], 1, "Cada ranking"),
         ([["doc-a"]], [{"doc-a"}], 0, "k deve ser positivo"),
     ],
