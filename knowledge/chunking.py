@@ -128,22 +128,30 @@ class DocumentChunker:
             ]
             current: list[_Block] = []
 
-            def emit(group: list[_Block]) -> None:
+            def emit(
+                group: list[_Block],
+                source_text: str = text,
+                source_page=page,
+            ) -> None:
                 nonlocal chunk_index
                 if not group:
                     return
                 start = group[0].start
                 end = group[-1].end
-                raw = text[start:end]
+                raw = source_text[start:end]
                 left_trim = len(raw) - len(raw.lstrip())
                 right_trimmed = raw.rstrip()
                 actual_start = start + left_trim
                 actual_end = start + len(right_trimmed)
-                content = text[actual_start:actual_end]
+                content = source_text[actual_start:actual_end]
                 if not content.strip():
                     return
 
-                page_label = page.page_number if page.page_number is not None else 0
+                page_label = (
+                    source_page.page_number
+                    if source_page.page_number is not None
+                    else 0
+                )
                 identity = (
                     f"{document.document_id}:{document.sha256}:{page_label}:"
                     f"{actual_start}:{actual_end}:{content}"
@@ -160,7 +168,7 @@ class DocumentChunker:
                         content=content,
                         start_offset=actual_start,
                         end_offset=actual_end,
-                        page_number=page.page_number,
+                        page_number=source_page.page_number,
                         section_path=group[0].section_path,
                         metadata={
                             "chunk_index": chunk_index,
