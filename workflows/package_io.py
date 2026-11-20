@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import re
 import stat
 import tempfile
 import zipfile
@@ -26,7 +27,13 @@ class PackageGraphError(GraphError):
 
 
 def _safe_archive_path(name: str) -> None:
-    if not name or "\\" in name or name.startswith("/"):
+    if (
+        not name
+        or "\\" in name
+        or name.startswith("/")
+        or re.match(r"^[A-Za-z]:", name)
+        or "\x00" in name
+    ):
         raise PackageGraphError("UNSAFE_PACKAGE_PATH", f"Caminho inválido no pacote: {name!r}.")
     raw_parts = name.split("/")
     if any(part in {"", ".", ".."} for part in raw_parts):
@@ -133,6 +140,11 @@ def _validate_graph_manifest_references(
     manifest: dict[str, Any],
 ) -> None:
     compatibility = manifest.get("compatibility", {})
+    if not isinstance(compatibility, dict):
+        raise PackageGraphError(
+            "PACKAGE_COMPATIBILITY_INVALID",
+            "compatibility precisa ser um objeto no manifesto.",
+        )
     declared_models = {
         item.get("model_id")
         for item in compatibility.get("models", [])
@@ -173,6 +185,19 @@ def _validate_graph_manifest_references(
                 f"O NeuralPlugin '{plugin_ref}' do nó '{node.label}' não está declarado em components.plugins.",
                 ("Instale/declare o plugin no manifesto ou remova a referência do nó.",),
             )
+        if node.node_type == "hardware.profile":
+            profile_id = node.config.get("profile", "auto")
+            if profile_id != "auto":
+                profile_path = f"hardware/profiles/{profile_id}.json"
+                declared_profiles = manifest.get("components", {}).get(
+                    "hardware_profiles", []
+                )
+                if profile_path not in declared_profiles:
+                    raise PackageGraphError(
+                        "HARDWARE_PROFILE_NOT_DECLARED",
+                        f"O perfil '{profile_id}' do nó '{node.label}' não está declarado no pacote.",
+                        ("Adicione o arquivo do perfil em components.hardware_profiles.",),
+                    )
 
 
 def _checksum_content(files: dict[str, bytes], checksum_path: str) -> bytes:
@@ -273,6 +298,11 @@ def save_graph_to_package(
     graph_data = graph.to_dict()
     validated_graph = WorkflowGraph.from_dict(graph_data)
     _safe_archive_path(graph_path)
+    if graph_path != GRAPH_PATH:
+        raise PackageGraphError(
+            "UNSUPPORTED_GRAPH_PATH",
+            f"Na NIP 0.1.0 o grafo deve ser salvo em {GRAPH_PATH}.",
+        )
     if graph_path in {MANIFEST_PATH, "security/checksums.sha256"} or graph_path.startswith("security/"):
         raise PackageGraphError(
             "RESERVED_PACKAGE_PATH",
