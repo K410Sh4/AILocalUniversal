@@ -23,7 +23,6 @@ def test_config_file_is_written_with_private_permissions(tmp_path) -> None:
     assert store.load().base_url == "http://localhost:11434"
 
 
-
 def test_hardware_profile_and_protection_mode_are_persisted(tmp_path) -> None:
     path = tmp_path / "config.json"
     store = ConfigurationStore(path)
