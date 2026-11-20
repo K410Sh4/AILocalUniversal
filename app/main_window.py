@@ -11,6 +11,7 @@ from PySide6.QtWidgets import QMainWindow, QMessageBox, QTabWidget
 from app.dialogs.settings_dialog import SettingsDialog
 from app.views.chat_view import ChatView
 from app.views.cognitive_inspector_view import CognitiveInspectorView
+from app.views.knowledge_view import KnowledgeView
 from app.views.models_view import ModelsView
 from core.cognitive_pipeline import analyze_request
 from core.cognitive_task import CognitiveTask, TaskStatus
@@ -65,10 +66,16 @@ class MainWindow(QMainWindow):
         self.chat_view = ChatView()
         self.models_view = ModelsView()
         self.cognitive_view = CognitiveInspectorView()
+        self.knowledge_view = KnowledgeView(
+            ollama_url=self.config.base_url,
+            embedding_model=self.config.embedding_model,
+            parent=self,
+        )
         tabs = QTabWidget()
         tabs.addTab(self.chat_view, "Chat")
         tabs.addTab(self.models_view, "Modelos")
         tabs.addTab(self.cognitive_view, "Cognitivo")
+        tabs.addTab(self.knowledge_view, "Conhecimento")
         self.setCentralWidget(tabs)
 
         self.chat_view.send_requested.connect(self.send_message)
@@ -81,6 +88,9 @@ class MainWindow(QMainWindow):
         self.chat_view.mode_changed.connect(self.change_mode)
         self.chat_view.model_changed.connect(self.change_manual_model)
         self.chat_view.preferred_requested.connect(self.set_preferred_model)
+        self.knowledge_view.embedding_model_changed.connect(
+            self.change_embedding_model
+        )
 
         self._refresh_history()
         self._render_current_conversation()
@@ -157,6 +167,15 @@ class MainWindow(QMainWindow):
             if model.capabilities.verified and model.capabilities.chat
         ]
         names = [model.name for model in chat_models]
+        embedding_models = [
+            model.name
+            for model in self.models
+            if model.capabilities.verified and model.capabilities.embeddings
+        ]
+        self.knowledge_view.set_embedding_models(
+            embedding_models,
+            self.config.embedding_model,
+        )
         selected = (
             self.config.manual_model
             if self.config.mode == "manual"
@@ -191,6 +210,7 @@ class MainWindow(QMainWindow):
         self.models = []
         self.chat_view.set_models([])
         self.models_view.set_models([], False)
+        self.knowledge_view.set_embedding_models([], self.config.embedding_model)
         self.chat_view.set_status("Erro ao consultar Ollama")
         self.statusBar().showMessage(message, 10000)
 
@@ -211,6 +231,12 @@ class MainWindow(QMainWindow):
             if self.config.mode == "manual":
                 self._save_config()
 
+    def change_embedding_model(self, model: str) -> None:
+        selected = model.strip() or None
+        if self.config.embedding_model != selected:
+            self.config.embedding_model = selected
+            self._save_config()
+
     def set_preferred_model(self) -> None:
         model = self.chat_view.model_combo.currentText().strip()
         if not model:
@@ -225,6 +251,15 @@ class MainWindow(QMainWindow):
         if dialog.exec() == SettingsDialog.DialogCode.Accepted and dialog.config:
             previous_url = self.config.base_url
             self.config = dialog.config
+            self.knowledge_view.set_base_url(self.config.base_url)
+            self.knowledge_view.set_embedding_models(
+                [
+                    model.name
+                    for model in self.models
+                    if model.capabilities.verified and model.capabilities.embeddings
+                ],
+                self.config.embedding_model,
+            )
             self._save_config()
             if self.config.base_url != previous_url:
                 if self._status_worker is not None and self._status_worker.isRunning():
@@ -705,6 +740,15 @@ class MainWindow(QMainWindow):
             self._chat_worker.cancel()
 
     def closeEvent(self, event) -> None:  # noqa: N802
+        if self.knowledge_view.is_busy:
+            QMessageBox.information(
+                self,
+                "Biblioteca em uso",
+                "A operação da biblioteca ainda está em andamento. Aguarde a conclusão "
+                "antes de fechar a aplicação.",
+            )
+            event.ignore()
+            return
         if self._chat_worker is not None and self._chat_worker.isRunning():
             self._chat_worker.cancel()
             self._chat_worker.wait(5000)

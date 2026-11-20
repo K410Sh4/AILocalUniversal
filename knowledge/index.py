@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 import re
 import sqlite3
 import threading
@@ -46,6 +47,8 @@ class SQLiteKnowledgeIndex:
             self._connection.row_factory = sqlite3.Row
             self._connection.execute("PRAGMA foreign_keys = ON")
             self._initialize()
+            if self.database_path != ":memory:":
+                os.chmod(self.database_path, 0o600)
         except sqlite3.Error as exc:
             raise KnowledgeIndexError(
                 "Não foi possível inicializar o índice SQLite local."
@@ -300,12 +303,34 @@ class SQLiteKnowledgeIndex:
         with self._lock:
             rows = self._connection.execute(
                 """
-                SELECT document_id, source_uri, title, source_sha256,
-                       media_type, size_bytes
-                FROM documents ORDER BY title COLLATE NOCASE
+                SELECT documents.document_id, documents.source_uri, documents.title,
+                       documents.source_sha256, documents.media_type, documents.size_bytes,
+                       COUNT(chunks.chunk_id) AS chunk_count
+                FROM documents
+                LEFT JOIN chunks ON chunks.document_id = documents.document_id
+                GROUP BY documents.document_id
+                ORDER BY documents.title COLLATE NOCASE
                 """
             ).fetchall()
         return [dict(row) for row in rows]
+
+    def list_chunks(self, document_id: str) -> list[DocumentChunk]:
+        """Retorna chunks em ordem de página e offset para reindexar embeddings."""
+        with self._lock:
+            try:
+                rows = self._connection.execute(
+                    """
+                    SELECT * FROM chunks
+                    WHERE document_id = ?
+                    ORDER BY COALESCE(page_number, 0), start_offset, chunk_id
+                    """,
+                    (document_id,),
+                ).fetchall()
+            except sqlite3.Error as exc:
+                raise KnowledgeIndexError(
+                    "Não foi possível listar os chunks do documento."
+                ) from exc
+        return [self._row_to_chunk(row) for row in rows]
 
     def close(self) -> None:
         with self._lock:

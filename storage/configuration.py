@@ -50,6 +50,7 @@ class AppConfig:
         "seja preciso e informe incertezas quando existirem."
     )
     keep_alive: str = "5m"
+    embedding_model: str | None = None
 
     def validate(self) -> None:
         if not isinstance(self.base_url, str):
@@ -72,6 +73,10 @@ class AppConfig:
             raise ConfigurationError("keep_alive não pode ficar vazio.")
         if not isinstance(self.system_prompt, str):
             raise ConfigurationError("System prompt precisa ser texto.")
+        if self.embedding_model is not None and not isinstance(self.embedding_model, str):
+            raise ConfigurationError("Modelo de embeddings precisa ser texto ou None.")
+        if isinstance(self.embedding_model, str):
+            self.embedding_model = self.embedding_model.strip() or None
         self.base_url = self.base_url.rstrip("/")
 
     def to_dict(self) -> dict[str, object]:
@@ -86,6 +91,7 @@ class AppConfig:
             "manual_model",
             "system_prompt",
             "keep_alive",
+            "embedding_model",
         }
         try:
             config = cls(**{key: value for key, value in payload.items() if key in allowed})
