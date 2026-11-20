@@ -56,6 +56,7 @@ A branch `feature/rag-v1` inclui uma biblioteca de conhecimento local e integra�
 - Índice lexical SQLite FTS5 e armazenamento vetorial SQLite.
 - Embeddings via Ollama `/api/embed`, usando um modelo explicitamente selecionado e separado do modelo de chat.
 - Busca lexical e vetorial combinadas por RRF, Context Composer, citações e Evidence Validator.
+- Script de microbenchmark sintético para precision@k, recall@k, MRR e cobertura, comparando busca lexical e híbrida por modelo.
 - KnowledgeRuntime como ponte para associar Evidence ao CognitiveTask, ativável no Chat pelo controle `Usar conhecimento local` (desativado por padrão).
 - Aba **Conhecimento** para adicionar documentos, listar/remover entradas do índice e testar a recuperação local; o Chat pode consumir evidências quando o usuário ativa explicitamente o RAG.
 - Seleção persistente do modelo de embeddings e ação explícita para reindexar vetores após troca de modelo.
