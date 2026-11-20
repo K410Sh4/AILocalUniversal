@@ -1,0 +1,49 @@
+{
+  "profile_id": "performance",
+  "profile_version": "1.0.0",
+  "description": "Prioriza latência quando há recursos suficientes.",
+  "requirements": {
+    "min_ram_mb": 8192,
+    "min_vram_mb": 0,
+    "min_disk_mb": 0
+  },
+  "objectives": {
+    "priority": [
+      "quality",
+      "latency",
+      "memory"
+    ],
+    "interactive": true
+  },
+  "budget": {
+    "max_ram_fraction": 0.75,
+    "target_context_tokens": 8192,
+    "max_parallelism": 2
+  },
+  "execution": {
+    "preferred_backends": [
+      "gpu",
+      "cpu"
+    ],
+    "allow_cpu_fallback": true,
+    "require_gpu": false
+  },
+  "degradation": {
+    "disable_optional_components": true,
+    "reduce_context": true,
+    "reduce_parallelism": true,
+    "allow_artifact_fallback": true
+  },
+  "benchmark": {
+    "default": "none",
+    "allowed": [
+      "none",
+      "quick",
+      "full"
+    ]
+  },
+  "notes": [
+    "Preset declarativo; validar limites e suporte do backend.",
+    "Não quantiza nem altera pesos por si só."
+  ]
+}
