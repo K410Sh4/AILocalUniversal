@@ -6,6 +6,7 @@ on:
       - main
       - bootstrap/project-structure
       - proposal/neuralinjector-nip-0.1.0
+      - feature/neuralmap-v1
   pull_request:
     branches:
       - main
