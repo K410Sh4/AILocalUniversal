@@ -78,8 +78,6 @@ def test_latex_supports_physics_symbols_vectors_and_overbars() -> None:
 
     assert "Φ" in rendered
     assert "∮" in rendered
-    assert "font-size:1.5em" in rendered
-    assert "font-weight:600" in rendered
     assert "⃗" in rendered
     assert 'class="math-overbar"' in rendered
     assert "ρ(x)" in rendered
@@ -98,6 +96,8 @@ def test_display_equation_is_centered_and_highlighted_as_own_block() -> None:
     assert 'padding:18px 14px' in rendered
     assert 'border:1px solid #477da8' in rendered
     assert "Φ" in rendered
+    assert "font-size:1.5em" in rendered
+    assert "font-weight:600" in rendered
     assert "∮" in rendered
     assert "Texto depois." in rendered
 
