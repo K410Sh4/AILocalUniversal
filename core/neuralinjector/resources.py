@@ -659,8 +659,8 @@ def build_compatibility_report(
         recommendations = tuple(fallbacks)
     elif mode is ProtectionMode.PROTECTED and preferred_profile:
         user_message = (
-            f"O perfil '{preferred_profile}' foi recusado porque não atende aos "
-            f"recursos medidos. A alternativa elegível mais próxima é "
+            f"A solicitação foi bloqueada: o perfil '{preferred_profile}' não atende "
+            f"aos recursos medidos. A alternativa elegível mais próxima é "
             f"'{profile.profile_id}', mas ela não foi aplicada porque o modo protegido "
             "respeita a escolha explícita do usuário."
         )
