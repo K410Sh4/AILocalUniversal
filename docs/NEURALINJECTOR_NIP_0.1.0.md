@@ -289,3 +289,25 @@ O manifesto de exemplo é ilustrativo. Ele não é, isoladamente, um arquivo `.n
 - Documentação de limitações por backend.
 
 Até que esses critérios sejam atendidos, a NIP 0.1.0 permanece uma proposta de especificação, não uma tecnologia já implementada.
+
+
+## 6A. Perfis canônicos, orçamento e degradação graciosa
+
+| Perfil | Objetivo | Contexto-alvo inicial | Concorrência |
+|---|---|---:|---:|
+| minimal | Contenção de memória; CPU-first | 2.048 tokens | 1 |
+| balanced | Equilíbrio geral | 4.096 tokens | 1 |
+| performance | Menor latência com recursos suficientes | 8.192 tokens | 2 |
+| max_quality | Qualidade e contexto em workstations | 16.384 tokens | 4 |
+
+Os valores são presets declarativos, não garantias nem requisitos universais. Modelo e backend prevalecem. Requisitos mínimos não podem ser violados silenciosamente.
+
+O manifesto pode declarar hardware_requirements.minimum, recommended e runtime. A detecção deve distinguir RAM total e disponível. VRAM desconhecida nunca equivale a VRAM disponível; componentes que exigem GPU permanecem incompatíveis até haver medição confiável do backend.
+
+O Adaptive Resource Manager produz snapshot, perfis elegíveis e motivos de rejeição, perfil escolhido, orçamento de RAM/VRAM/contexto/concorrência, recursos ausentes, fallbacks e métricas de benchmark. Ele não carrega modelos nem modifica pesos. GPU/VRAM dependem de integração explícita com backend.
+
+O benchmark padrão é none. quick executa medições curtas; full executa avaliação mais ampla. Ambos exigem solicitação explícita e executor de backend. Sem executor, nenhuma métrica é inventada.
+
+Ordem de degradação permitida: (1) desativar componentes opcionais, (2) reduzir concorrência, (3) reduzir contexto sem ficar abaixo do mínimo, (4) selecionar artefato alternativo já fornecido e validado, (5) usar offloading somente se suportado. Recomendações não quantizam, podam, restauram neurônios nem alteram pesos. Se não houver configuração viável, o pacote permanece incompatível e o relatório explica por quê.
+
+O NeuralPlugin Manager deve validar metadados sob demanda e sem carregar modelos. Benchmarks e avaliações são opt-in; nenhuma operação pesada em background sem consentimento.
