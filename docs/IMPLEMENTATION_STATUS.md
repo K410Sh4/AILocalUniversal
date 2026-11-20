@@ -19,6 +19,7 @@ Este arquivo diferencia código existente de funcionalidades futuras.
 | Testes | Testes unitários para protocolo simulado, seleção e persistência adicionados |
 | RAG | Planejado para Fase 3 |
 | Resource Manager | Planejador NeuralInjector integrado ao preflight de chat Ollama: RAM/CPU, cinco perfis sincronizados por serializador, piso absoluto, modos protected/adaptive/permissive, orçamento separado de threads/concorrência; detecção GPU e monitor opt-in disponíveis, executor dinâmico ainda pendente |
+| Workflow Graph / NeuralMap | Primeira implementação em branch feature: schema, modelo de grafo, runtime assíncrono, loop de revisão, editor PySide6, handlers Ollama e persistência NIP; backend de imagem real e validação ainda pendentes |
 | Swarm P2P | Planejado para Fase 5 |
 | BitNet e RPC | Laboratório futuro |
 
@@ -33,3 +34,14 @@ Este arquivo diferencia código existente de funcionalidades futuras.
 - `engines/llama_cpp_options.py` constrói instância llama-cpp-python com contexto/threads do orçamento e GPU layers explicitamente validados; ainda não existe EngineAdapter llama.cpp completo nem integração na interface.
 - A interface foi construída, mas precisa ser validada em sessão gráfica Linux/Qt.
 - Os testes foram escritos; a execução da suíte depende de ambiente com as dependências instaladas.
+
+
+## NeuralMap — estado da primeira implementação
+
+- A aba NeuralMap está integrada ao MainWindow na branch `feature/neuralmap-v1`.
+- O dry-run simula especialistas sem fazer chamadas externas.
+- A execução real utiliza handlers Ollama para código, explicação e revisão.
+- O especialista de imagem possui contrato de adapter registrado, mas o projeto ainda não registra um backend Flux real; o nó do template é opcional.
+- O resultado é exibido como JSON e trace na aba NeuralMap; renderização integrada no ChatView ainda pendente.
+- O salvamento em pacote verifica checksums e referências declaradas no manifesto; pacotes assinados não podem ser modificados sem implementar o fluxo de assinatura.
+- Testes unitários foram adicionados, mas ainda precisam ser executados em CI e em Linux/Arch antes de considerar a trilha validada.
