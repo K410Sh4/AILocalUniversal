@@ -54,7 +54,6 @@ def test_llama_cpp_rejects_zero_cpu_threads():
         llama_cpp_constructor_options(budget)
 
 
-
 def test_llama_cpp_runtime_factory_passes_the_budget_to_constructor(tmp_path):
     model_path = tmp_path / "model-q4.gguf"
     model_path.write_bytes(b"GGUF")
