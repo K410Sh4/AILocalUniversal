@@ -310,3 +310,38 @@ def test_resource_budget_rejects_invalid_cpu_thread_limit() -> None:
             request,
             ResourceBudget(1024, 0, 1024, 1, "cpu", 0),
         )
+
+
+
+@pytest.mark.asyncio
+async def test_stream_chat_forwards_structured_json_format_to_ollama() -> None:
+    async def handler(request: httpx.Request) -> httpx.Response:
+        payload = json.loads(request.content)
+        assert payload["format"] == "json"
+        return httpx.Response(
+            200,
+            text=json.dumps({
+                "message": {
+                    "role": "assistant",
+                    "content": '{"approved":true}',
+                }
+            })
+            + "\\n"
+            + json.dumps({"done": True})
+            + "\\n",
+        )
+
+    engine = OllamaEngine(transport=httpx.MockTransport(handler))
+    events = [
+        event
+        async for event in engine.stream_chat(
+            EngineRequest(
+                model="qwen2.5:7b",
+                messages=[{"role": "user", "content": "Review"}],
+                options={"format": "json"},
+            )
+        )
+    ]
+
+    assert events[0].content == '{"approved":true}'
+    assert events[-1].done is True
