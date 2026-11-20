@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+import dataclasses
 
 
 CAPABILITY_DIMENSIONS: tuple[str, ...] = (
@@ -21,11 +21,11 @@ CAPABILITY_DIMENSIONS: tuple[str, ...] = (
 )
 
 
-@dataclass(slots=True)
+@dataclasses.dataclass(slots=True)
 class CapabilityVector:
     """Pontuações entre 0 e 1 para dimensões conhecidas."""
 
-    scores: dict[str, float] = field(default_factory=dict)
+    scores: dict[str, float] = dataclasses.field(default_factory=dict)
 
     def __post_init__(self) -> None:
         unknown = set(self.scores) - set(CAPABILITY_DIMENSIONS)

@@ -67,3 +67,4 @@ class EngineAdapter(ABC):
 
     async def close(self) -> None:
         """Libera recursos persistentes do adaptador, se existirem."""
+        return None
