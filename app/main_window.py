@@ -481,7 +481,7 @@ class MainWindow(QMainWindow):
         worker.completed.connect(self._on_knowledge_retrieved)
         worker.failed.connect(self._on_knowledge_retrieval_failed)
         worker.finished.connect(lambda w=worker: self._knowledge_worker_finished(w))
-        self.chat_view.set_busy(True)
+        self.chat_view.set_retrieving(True)
         self.chat_view.set_status("Recuperando conhecimento local…")
         self.statusBar().showMessage("Consultando a biblioteca de conhecimento local…")
         worker.start()
@@ -531,7 +531,7 @@ class MainWindow(QMainWindow):
             )
         elif warning:
             self.chat_view.set_status(
-                "Busca vetorial indisponível; tentando contexto lexical."
+                "Busca vetorial indisponível; recuperação concluída com fallback lexical."
             )
         else:
             self.chat_view.set_status(
@@ -855,7 +855,7 @@ class MainWindow(QMainWindow):
                 for citation in bundle.citations:
                     source_lines.append(
                         f"- [{citation.citation_id}] **{citation.title}** — "
-                        f"{citation.locator} — {citation.source_uri}"
+                        f"{citation.locator}"
                     )
                 assistant_message["content"] = (
                     generated_answer.rstrip() + "\n" + "\n".join(source_lines)
