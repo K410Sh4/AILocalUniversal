@@ -390,6 +390,14 @@
       "target": "merge",
       "target_port": "explanation",
       "edge_type": "always"
+    },
+    {
+      "id": "e24",
+      "source": "image",
+      "source_port": "image",
+      "target": "merge",
+      "target_port": "image",
+      "edge_type": "always"
     }
   ]
 }
