@@ -9,7 +9,14 @@ from typing import Any
 
 import httpx
 
-from core.neuralinjector.resources import ResourceBudget
+from core.neuralinjector.resources import (
+    CompatibilityReport,
+    HardwareSnapshot,
+    ProtectionMode,
+    ResourceBudget,
+    ResourceRequirements,
+    build_compatibility_report,
+)
 from engines.base import EngineAdapter, EngineCapabilities, EngineEvent, EngineRequest, ModelInfo
 
 
@@ -23,6 +30,16 @@ class OllamaConnectionError(OllamaError):
 
 class OllamaProtocolError(OllamaError):
     """A resposta do servidor não respeita o protocolo esperado."""
+
+
+class OllamaResourceProtectionError(OllamaError):
+    """A política de hardware recusou uma solicitação antes do envio."""
+
+    def __init__(self, report: CompatibilityReport) -> None:
+        self.report = report
+        super().__init__(
+            report.user_message or "Solicitação bloqueada pela política de hardware."
+        )
 
 
 @dataclass(frozen=True)
@@ -91,13 +108,17 @@ class OllamaEngine(EngineAdapter):
         request: EngineRequest,
         budget: ResourceBudget,
     ) -> EngineRequest:
-        """Apply only the context limit that the Ollama chat API accepts per request.
+        """Translate a resource budget into Ollama's per-request runtime options.
 
-        Existing smaller user limits are preserved. This does not change model
-        quantization, unload models, reserve VRAM, or configure server parallelism.
+        `num_ctx` limits the context window and `num_thread` caps CPU threads.
+        Smaller explicit user limits are preserved. This does not select a
+        quantized artifact, convert weights, reserve VRAM, unload models, force
+        GPU placement, or configure Ollama's server-wide request parallelism.
         """
         if budget.context_tokens < 1:
             raise ValueError("budget.context_tokens must be positive")
+        if budget.cpu_threads < 1:
+            raise ValueError("budget.cpu_threads must be positive")
 
         options = dict(request.options)
         raw_model_options = options.get("options", {})
@@ -118,13 +139,50 @@ class OllamaEngine(EngineAdapter):
         else:
             context_limit = budget.context_tokens
 
+        existing_threads = model_options.get("num_thread")
+        if existing_threads is not None:
+            if isinstance(existing_threads, bool) or not isinstance(existing_threads, int):
+                raise ValueError("num_thread must be an integer")
+            if existing_threads < 1:
+                raise ValueError("num_thread must be positive")
+            thread_limit = min(existing_threads, budget.cpu_threads)
+        else:
+            thread_limit = budget.cpu_threads
+
         model_options["num_ctx"] = context_limit
+        model_options["num_thread"] = thread_limit
         options["options"] = model_options
         return EngineRequest(
             model=request.model,
             messages=request.messages,
             options=options,
         )
+
+    @staticmethod
+    def prepare_resource_aware_request(
+        request: EngineRequest,
+        hardware: HardwareSnapshot,
+        *,
+        preferred_profile: str | None = None,
+        protection_mode: ProtectionMode | str = ProtectionMode.PROTECTED,
+        requirements: ResourceRequirements = ResourceRequirements(),
+    ) -> tuple[EngineRequest, CompatibilityReport]:
+        """Plan a request and apply the Ollama-supported subset of its budget.
+
+        The request is rejected before network I/O when activation is not allowed.
+        Quantization remains an artifact-level choice; server placement and global
+        parallelism remain controlled by Ollama itself.
+        """
+        report = build_compatibility_report(
+            hardware,
+            requirements,
+            preferred_profile,
+            protection_mode=protection_mode,
+        )
+        if not report.activation_allowed or report.budget is None:
+            raise OllamaResourceProtectionError(report)
+        planned_request = OllamaEngine.apply_resource_budget(request, report.budget)
+        return planned_request, report
 
     async def health(self) -> bool:
         try:
