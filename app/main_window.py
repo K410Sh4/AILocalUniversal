@@ -5,11 +5,12 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from typing import Any
 
-from PySide6.QtWidgets import QMainWindow, QMessageBox, QTabWidget
+from PySide6.QtWidgets import QInputDialog, QMainWindow, QMessageBox, QTabWidget
 
 from app.dialogs.settings_dialog import SettingsDialog
 from app.views.chat_view import ChatView
 from app.views.models_view import ModelsView
+from app.views.neuralmap_view import NeuralMapView
 from core.neuralinjector.resources import (
     CompatibilityReport,
     ResourceRequirements,
@@ -18,6 +19,9 @@ from core.neuralinjector.resources import (
 from engines.base import EngineAdapter, EngineRequest, ModelInfo
 from engines.model_selector import ModelSelectionError, choose_model
 from engines.ollama_engine import OllamaEngine, OllamaResourceProtectionError
+from workflows.handlers import build_specialist_registry
+from workflows.runtime import GraphRunResult, GraphRuntime
+from workers.neuralmap_worker import NeuralMapWorker
 from engines.registry import EngineRegistry
 from storage.configuration import AppConfig, ConfigurationError, ConfigurationStore
 from storage.conversations import Conversation, ConversationStore
@@ -46,6 +50,7 @@ class MainWindow(QMainWindow):
         self.models: list[ModelInfo] = []
         self._status_worker: OllamaStatusWorker | None = None
         self._chat_worker: OllamaChatWorker | None = None
+        self._workflow_worker: NeuralMapWorker | None = None
         self._current_assistant_index: int | None = None
 
         self.conversations = self._load_conversations()
@@ -58,9 +63,11 @@ class MainWindow(QMainWindow):
 
         self.chat_view = ChatView()
         self.models_view = ModelsView()
+        self.neuralmap_view = NeuralMapView()
         tabs = QTabWidget()
         tabs.addTab(self.chat_view, "Chat")
         tabs.addTab(self.models_view, "Modelos")
+        tabs.addTab(self.neuralmap_view, "NeuralMap")
         self.setCentralWidget(tabs)
 
         self.chat_view.send_requested.connect(self.send_message)
@@ -73,6 +80,19 @@ class MainWindow(QMainWindow):
         self.chat_view.mode_changed.connect(self.change_mode)
         self.chat_view.model_changed.connect(self.change_manual_model)
         self.chat_view.preferred_requested.connect(self.set_preferred_model)
+        self.neuralmap_view.dry_run_requested.connect(
+            lambda: self._start_neuralmap_run(dry_run=True)
+        )
+        self.neuralmap_view.execute_requested.connect(
+            lambda: self._start_neuralmap_run(dry_run=False)
+        )
+        self.neuralmap_view.cancel_execution_requested.connect(
+            self._cancel_neuralmap_run
+        )
+        self.neuralmap_view.set_hardware_status(
+            self.config.hardware_profile,
+            self.config.protection_mode,
+        )
 
         self._refresh_history()
         self._render_current_conversation()
@@ -199,6 +219,10 @@ class MainWindow(QMainWindow):
             previous_url = self.config.base_url
             self.config = dialog.config
             self._save_config()
+            self.neuralmap_view.set_hardware_status(
+                self.config.hardware_profile,
+                self.config.protection_mode,
+            )
             if self.config.base_url != previous_url:
                 if self._status_worker is not None and self._status_worker.isRunning():
                     self._status_worker.cancel()
@@ -354,6 +378,78 @@ class MainWindow(QMainWindow):
         )
         worker.start()
 
+    def _start_neuralmap_run(self, *, dry_run: bool) -> None:
+        if self._workflow_worker is not None and self._workflow_worker.isRunning():
+            return
+        if not self.neuralmap_view.validate_current_graph():
+            return
+        prompt, accepted = QInputDialog.getMultiLineText(
+            self,
+            "Executar NeuralMap",
+            "Solicitação de entrada:",
+        )
+        if not accepted or not prompt.strip():
+            return
+
+        handlers = build_specialist_registry(self.engine)
+        runtime = GraphRuntime(handlers)
+        worker = NeuralMapWorker(
+            runtime,
+            self.neuralmap_view.graph,
+            prompt.strip(),
+            dry_run=dry_run,
+            parent=self,
+        )
+        self._workflow_worker = worker
+        worker.completed.connect(self._on_neuralmap_completed)
+        worker.failed.connect(self._on_neuralmap_error)
+        worker.node_event.connect(self.neuralmap_view.set_execution_event)
+        worker.finished.connect(lambda w=worker: self._neuralmap_finished(w))
+        self.neuralmap_view.set_execution_running(True)
+        self.neuralmap_view.validation_details.setText(
+            "NeuralMap em execução · dry-run" if dry_run else "NeuralMap em execução"
+        )
+        worker.start()
+
+    def _on_neuralmap_completed(self, result: object) -> None:
+        if not isinstance(result, GraphRunResult):
+            self._on_neuralmap_error("O runtime retornou um resultado inválido.")
+            return
+        self.neuralmap_view.set_execution_result(result)
+        if result.success:
+            message = "NeuralMap concluído."
+            review = (result.output or {}).get("review", {})
+            if review.get("convergence") == "limit_reached":
+                message = "NeuralMap concluído, mas a revisão não convergiu."
+            self.statusBar().showMessage(message, 10000)
+        else:
+            error = result.error or {}
+            reason = error.get("reason_code", "WORKFLOW_FAILED")
+            detail = error.get("message", "Falha não identificada.")
+            alternatives = error.get("alternatives", "")
+            self.statusBar().showMessage(f"NeuralMap: {reason} · {detail}", 15000)
+            text = f"{reason}: {detail}"
+            if alternatives:
+                text += f"\n\nAlternativas: {alternatives}"
+            QMessageBox.warning(self, "Falha no NeuralMap", text)
+
+    def _on_neuralmap_error(self, message: str) -> None:
+        QMessageBox.warning(self, "Falha no NeuralMap", message)
+        self.neuralmap_view.validation_details.setText("Falha na execução do NeuralMap.")
+
+    def _neuralmap_finished(self, worker: NeuralMapWorker) -> None:
+        if self._workflow_worker is worker:
+            self._workflow_worker = None
+        self.neuralmap_view.set_execution_running(False)
+        worker.deleteLater()
+
+    def _cancel_neuralmap_run(self) -> None:
+        if self._workflow_worker is not None:
+            self.neuralmap_view.validation_details.setText(
+                "Solicitando cancelamento do NeuralMap…"
+            )
+            self._workflow_worker.cancel()
+
     def _assistant_message(self) -> dict[str, str] | None:
         index = self._current_assistant_index
         if index is None or index >= len(self.current_conversation.messages):
@@ -421,4 +517,7 @@ class MainWindow(QMainWindow):
         if self._status_worker is not None and self._status_worker.isRunning():
             self._status_worker.cancel()
             self._status_worker.wait(2000)
+        if self._workflow_worker is not None and self._workflow_worker.isRunning():
+            self._workflow_worker.cancel()
+            self._workflow_worker.wait(5000)
         event.accept()
