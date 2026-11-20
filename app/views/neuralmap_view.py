@@ -6,11 +6,10 @@ import json
 from pathlib import Path
 from uuid import uuid4
 
-from PySide6.QtCore import QMimeData, QPointF, QRectF, Qt, Signal
+from PySide6.QtCore import QMimeData, QPoint, QPointF, QRectF, Qt, Signal
 from PySide6.QtGui import (
     QBrush,
     QColor,
-    QDrag,
     QPainter,
     QPainterPath,
     QPen,
@@ -30,6 +29,7 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QLineEdit,
+    QInputDialog,
     QListWidget,
     QListWidgetItem,
     QMessageBox,
@@ -309,6 +309,7 @@ class GraphCanvas(QGraphicsView):
         super().__init__(parent)
         self.graph_scene = QGraphicsScene(self)
         self.setScene(self.graph_scene)
+        self.graph_scene.selectionChanged.connect(self._selection_changed)
         self.setSceneRect(-6000, -6000, 12000, 12000)
         self.setRenderHints(
             QPainter.RenderHint.Antialiasing
@@ -324,6 +325,8 @@ class GraphCanvas(QGraphicsView):
         self.pending_port: PortItem | None = None
         self.pending_path: QGraphicsPathItem | None = None
         self.node_items: dict[str, NodeGraphicsItem] = {}
+        self._panning = False
+        self._pan_position = QPoint()
         self.connection_items: list[ConnectionGraphicsItem] = []
         self.title_font = self.font()
         self.title_font.setBold(True)
@@ -392,7 +395,6 @@ class GraphCanvas(QGraphicsView):
             self.graph_scene.addItem(item)
             self.node_items[node.node_id] = item
             item.setVisible(True)
-            item.setEnabled(node.enabled)
 
         for edge in graph.edges:
             source_node = self.node_items.get(edge.source)
@@ -459,36 +461,47 @@ class GraphCanvas(QGraphicsView):
 
     def mousePressEvent(self, event) -> None:
         if event.button() == Qt.MouseButton.MiddleButton:
-            self.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
-            synthetic = type(event)(
-                event.type(),
-                event.position(),
-                Qt.MouseButton.LeftButton,
-                Qt.MouseButtons(Qt.MouseButton.LeftButton),
-                event.modifiers(),
-            )
-            super().mousePressEvent(synthetic)
+            self._panning = True
+            self._pan_position = event.position().toPoint()
+            self.setCursor(Qt.CursorShape.ClosedHandCursor)
+            event.accept()
             return
         super().mousePressEvent(event)
 
     def mouseReleaseEvent(self, event) -> None:
-        if self.dragMode() == QGraphicsView.DragMode.ScrollHandDrag:
-            synthetic = type(event)(
-                event.type(),
-                event.position(),
-                Qt.MouseButton.LeftButton,
-                Qt.MouseButtons(Qt.MouseButton.LeftButton),
-                event.modifiers(),
-            )
-            super().mouseReleaseEvent(synthetic)
-            self.setDragMode(QGraphicsView.DragMode.RubberBandDrag)
+        if event.button() == Qt.MouseButton.MiddleButton and self._panning:
+            self._panning = False
+            self.unsetCursor()
+            event.accept()
             return
         super().mouseReleaseEvent(event)
 
     def mouseMoveEvent(self, event) -> None:
+        if self._panning:
+            current = event.position().toPoint()
+            delta = current - self._pan_position
+            self._pan_position = current
+            self.horizontalScrollBar().setValue(
+                self.horizontalScrollBar().value() - delta.x()
+            )
+            self.verticalScrollBar().setValue(
+                self.verticalScrollBar().value() - delta.y()
+            )
+            event.accept()
+            return
         if self.pending_port is not None:
             self.update_pending_connection(self.mapToScene(event.position().toPoint()))
         super().mouseMoveEvent(event)
+
+    def _selection_changed(self) -> None:
+        selected = next(
+            (
+                item for item in self.graph_scene.selectedItems()
+                if isinstance(item, NodeGraphicsItem)
+            ),
+            None,
+        )
+        self.node_selected.emit(selected.node.node_id if selected else "")
 
 
 class NeuralMapView(QWidget):
@@ -642,7 +655,7 @@ class NeuralMapView(QWidget):
 
     def _restore_snapshot(self, serialized: str) -> None:
         data = json.loads(serialized)
-        self.graph = WorkflowGraph.from_dict(data)
+        self.graph = WorkflowGraph.from_dict(data, validate=False)
         self.canvas.load_graph(self.graph)
         self._select_node("")
         self.graph_changed.emit()
@@ -709,13 +722,29 @@ class NeuralMapView(QWidget):
         target_port: str,
     ) -> None:
         before = self._snapshot()
+        choices = ["Sempre", "Ao sucesso", "Ao falhar"]
+        selected, accepted = QInputDialog.getItem(
+            self,
+            "Tipo de conexão",
+            "Quando esta conexão deve ser percorrida?",
+            choices,
+            0,
+            False,
+        )
+        if not accepted:
+            return
+        edge_type = {
+            "Sempre": EdgeType.ALWAYS,
+            "Ao sucesso": EdgeType.ON_SUCCESS,
+            "Ao falhar": EdgeType.ON_FAILURE,
+        }[selected]
         edge = GraphEdge(
             edge_id=f"edge_{uuid4().hex[:12]}",
             source=source,
             source_port=source_port,
             target=target,
             target_port=target_port,
-            edge_type=EdgeType.ALWAYS,
+            edge_type=edge_type,
         )
         self.graph.edges.append(edge)
         self.undo_stack.push(
@@ -775,7 +804,7 @@ class NeuralMapView(QWidget):
         node.config = config
         after = self._snapshot()
         try:
-            WorkflowGraph.from_dict(json.loads(after))
+            WorkflowGraph.from_dict(json.loads(after), validate=False)
         except GraphError as exc:
             self.graph = WorkflowGraph.from_dict(json.loads(before))
             self.canvas.load_graph(self.graph)
