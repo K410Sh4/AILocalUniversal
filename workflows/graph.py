@@ -583,12 +583,14 @@ def validate_graph(graph: WorkflowGraph) -> None:
         if edge.source_port not in source_spec.outputs:
             raise GraphError(
                 "INVALID_SOURCE_PORT",
-                f"Porta de saída '{edge.source_port}' não existe em {node_map[edge.source].node_type}.",
+                f"Porta de saída '{edge.source_port}' não existe em "
+                f"{node_map[edge.source].node_type}.",
             )
         if edge.target_port not in target_spec.inputs:
             raise GraphError(
                 "INVALID_TARGET_PORT",
-                f"Porta de entrada '{edge.target_port}' não existe em {node_map[edge.target].node_type}.",
+                f"Porta de entrada '{edge.target_port}' não existe em "
+                f"{node_map[edge.target].node_type}.",
             )
         if _is_loop_back_edge(edge, node_map):
             if node_map[edge.target].node_type not in {
