@@ -219,3 +219,44 @@ async def test_pre_cancelled_graph_returns_cancellation_reason():
 
     assert not result.success
     assert result.error["reason_code"] == "EXECUTION_CANCELLED"
+
+
+
+def test_missing_required_input_connection_is_rejected():
+    graph = load_template()
+    graph.edges = [edge for edge in graph.edges if edge.edge_id != "e02"]
+
+    with pytest.raises(GraphError) as exc_info:
+        validate_graph(graph)
+
+    assert exc_info.value.reason_code == "REQUIRED_INPUT_CONNECTION_MISSING"
+
+
+def test_node_enabled_flag_must_be_boolean():
+    data = load_template().to_dict()
+    data["nodes"][0]["enabled"] = "false"
+
+    with pytest.raises(GraphError) as exc_info:
+        WorkflowGraph.from_dict(data)
+
+    assert exc_info.value.reason_code == "INVALID_NODE_ENABLED"
+
+
+def test_non_finite_layout_coordinates_are_rejected():
+    data = load_template().to_dict()
+    data["nodes"][0]["ui"]["position"]["x"] = float("nan")
+
+    with pytest.raises(GraphError) as exc_info:
+        WorkflowGraph.from_dict(data)
+
+    assert exc_info.value.reason_code == "INVALID_NODE_POSITION"
+
+
+def test_graph_metadata_must_be_an_object():
+    data = load_template().to_dict()
+    data["metadata"] = ["not", "an", "object"]
+
+    with pytest.raises(GraphError) as exc_info:
+        WorkflowGraph.from_dict(data)
+
+    assert exc_info.value.reason_code == "INVALID_GRAPH_METADATA"
