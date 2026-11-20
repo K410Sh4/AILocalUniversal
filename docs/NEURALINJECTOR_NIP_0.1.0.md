@@ -355,3 +355,11 @@ A fábrica passa contexto e threads ao construtor e é coberta por testes com co
 Testes unitários cobrem sincronização Python/JSON, proteção, piso absoluto, aplicação dos parâmetros Ollama ao payload HTTP simulado e tradução de opções llama.cpp. Esses testes não substituem integração com Ollama real ou benchmarks em hardware físico.
 
 O módulo de planejamento não implementa por si só quantização, conversão, poda, restauração de pesos, offloading ou controle de memória do kernel. O ResourceMonitor ainda não está ligado ao ciclo de vida da aplicação. Um adaptador llama.cpp completo, a resolução automática de artefatos quantizados e a validação em PCs leves/intermediários/potentes permanecem etapas futuras.
+
+## 13. Licença do pacote e direitos sobre os componentes
+
+O campo `package.license` identifica a licença aplicável ao conteúdo do pacote; ele não licencia a especificação NIP, o código do NeuralInjector Engine, o NeuralPlugin Manager ou o AILocal Universal. Esses elementos têm suas próprias licenças.
+
+Para conteúdo original coberto pela licença deste projeto, use `LicenseRef-AILocal-Universal-Proprietary` e forneça o texto da licença. Esse identificador só pode ser usado quando o conteúdo realmente pertencer ao titular do projeto. Pacotes que contenham plugins, modelos, adaptadores, pesos, fontes, imagens ou datasets de terceiros devem preservar as licenças e avisos de cada componente. A licença do pacote não substitui nem sobrepõe as licenças dos componentes internos.
+
+Workflows, regras, documentos e outros conteúdos criados por usuários permanecem de seus respectivos criadores, salvo contrato ou licença separados. Importar, validar, executar ou empacotar um ativo não transfere sua titularidade.

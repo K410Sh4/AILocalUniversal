@@ -156,3 +156,7 @@ Remover um modelo não deve apagar automaticamente os plugins do usuário. Reins
 ## 10. Estado de implementação
 
 Este documento descreve uma proposta. A existência desta especificação e da aba planejada não significa que o NeuralPlugin Manager ou o NeuralInjector Engine já estejam implementados. Cada etapa deverá ser acompanhada por código, testes, documentação e critérios de aceitação.
+
+## Licenciamento e proveniência dos NeuralPlugins
+
+O código e a documentação originais do NeuralPlugin Manager e dos contratos mantidos neste projeto seguem a licença proprietária do AILocal Universal. Isso não torna automaticamente proprietários os plugins criados por terceiros. Cada plugin deve declarar sua própria licença, autores, proveniência e as licenças dos componentes que transporta. O Manager não pode alterar, remover ou substituir essas declarações.
