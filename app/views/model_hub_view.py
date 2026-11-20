@@ -4,8 +4,15 @@ from __future__ import annotations
 
 from PySide6.QtCore import Signal
 from PySide6.QtWidgets import (
-    QGroupBox, QHeaderView, QLabel, QPlainTextEdit, QPushButton,
-    QTableWidget, QTableWidgetItem, QVBoxLayout, QWidget,
+    QGroupBox,
+    QHeaderView,
+    QLabel,
+    QPlainTextEdit,
+    QPushButton,
+    QTableWidget,
+    QTableWidgetItem,
+    QVBoxLayout,
+    QWidget,
 )
 
 from app.views.models_view import format_size
@@ -28,7 +35,14 @@ class ModelHubView(QWidget):
         self.refresh_button.clicked.connect(self.refresh_requested.emit)
         self.table = QTableWidget(0, 6)
         self.table.setHorizontalHeaderLabels(
-            ["Modelo", "Categoria", "Runtime / artefato", "Capacidades", "Arquivo", "Compatibilidade"]
+            [
+                "Modelo",
+                "Categoria",
+                "Runtime / artefato",
+                "Capacidades",
+                "Arquivo",
+                "Compatibilidade",
+            ]
         )
         self.table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self.table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
@@ -152,7 +166,8 @@ class ModelHubView(QWidget):
             self.table.selectRow(0)
         else:
             self.details.setPlainText(
-                "Nenhum modelo foi descoberto. Inicie um runtime compatível e atualize o inventário."
+                "Nenhum modelo foi descoberto. Inicie um runtime compatível "
+                "e atualize o inventário."
             )
 
     def _show_selected_details(self) -> None:
