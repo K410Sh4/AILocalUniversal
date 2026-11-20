@@ -9,9 +9,9 @@ import os
 import platform
 import shutil
 import subprocess
+from collections.abc import Callable, Iterable, Mapping
 from dataclasses import dataclass, field
 from enum import Enum
-from collections.abc import Callable, Iterable, Mapping
 from pathlib import Path
 
 
@@ -204,9 +204,15 @@ class HardwareProfile:
             },
             "quantization_policy": {
                 "preferred": list(self.quantization_policy.preferred),
-                "low_memory_preferred": list(self.quantization_policy.low_memory_preferred),
-                "low_memory_threshold_mb": self.quantization_policy.low_memory_threshold_mb,
-                "allow_lower_precision_fallback": self.quantization_policy.allow_lower_precision_fallback,
+                "low_memory_preferred": list(
+                    self.quantization_policy.low_memory_preferred
+                ),
+                "low_memory_threshold_mb": (
+                    self.quantization_policy.low_memory_threshold_mb
+                ),
+                "allow_lower_precision_fallback": (
+                    self.quantization_policy.allow_lower_precision_fallback
+                ),
             },
         }
 
