@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import re
+from html import escape
+
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QTextDocument
 from PySide6.QtWidgets import (
@@ -19,23 +22,227 @@ from PySide6.QtWidgets import (
 )
 
 
+_MATH_PATTERN = re.compile(
+    r"(?P<display_dollar>\$\$(?P<display_dollar_body>.+?)\$\$)"
+    r"|(?P<display_bracket>\\\[(?P<display_bracket_body>.*?)\\\])"
+    r"|(?P<inline_dollar>(?<!\\)\$(?!\$)(?P<inline_dollar_body>[^\n$]+?)(?<!\\)\$(?!\$))"
+    r"|(?P<inline_paren>\\\((?P<inline_paren_body>.*?)\\\))",
+    re.DOTALL,
+)
+_CODE_PATTERN = re.compile(
+    r"(?ms)^(\x60{3}|~~~)[^\n]*\n.*?^\1\s*$|(?<!\x60)\x60[^\x60\n]+\x60(?!\x60)"
+)
+_TEX_SYMBOLS = {
+    "alpha": "α", "beta": "β", "gamma": "γ", "delta": "δ",
+    "epsilon": "ε", "theta": "θ", "lambda": "λ", "mu": "μ",
+    "sigma": "σ", "omega": "ω", "Delta": "Δ", "Gamma": "Γ",
+    "Lambda": "Λ", "Omega": "Ω", "pi": "π", "infty": "∞",
+    "int": "∫", "iint": "∬", "oint": "∮", "sum": "∑", "prod": "∏",
+    "cdot": "·", "times": "×", "div": "÷", "pm": "±", "mp": "∓",
+    "le": "≤", "leq": "≤", "ge": "≥", "geq": "≥", "neq": "≠",
+    "approx": "≈", "equiv": "≡", "to": "→", "rightarrow": "→",
+    "leftarrow": "←", "in": "∈", "notin": "∉", "subset": "⊂",
+    "supset": "⊃", "cup": "∪", "cap": "∩", "partial": "∂",
+    "nabla": "∇", "therefore": "∴", "degree": "°", "ell": "ℓ",
+}
+_TEX_FORMAT_COMMANDS = {"text", "mathrm", "mathbf", "mathit", "operatorname"}
+
+
+def _read_tex_group(source: str, start: int) -> tuple[str, int]:
+    """Lê um grupo entre chaves, respeitando grupos aninhados."""
+    if start >= len(source):
+        return "", start
+    if source[start] != "{":
+        return source[start], start + 1
+
+    depth = 1
+    index = start + 1
+    while index < len(source) and depth:
+        if source[index] == "{":
+            depth += 1
+        elif source[index] == "}":
+            depth -= 1
+        index += 1
+    return source[start + 1 : index - 1], index
+
+
+def _render_tex(source: str) -> str:
+    """Converte um subconjunto comum de LaTeX em HTML seguro e suportado pelo Qt."""
+    output: list[str] = []
+    index = 0
+    while index < len(source):
+        char = source[index]
+
+        if char == "\\":
+            if index + 1 >= len(source):
+                output.append("\\")
+                break
+            if source[index + 1] in "{}_%#$":
+                output.append(escape(source[index + 1]))
+                index += 2
+                continue
+
+            end = index + 1
+            while end < len(source) and source[end].isalpha():
+                end += 1
+            command = source[index + 1 : end]
+            if not command:
+                output.append(" ")
+                index += 2
+                continue
+
+            cursor = end
+            while cursor < len(source) and source[cursor].isspace():
+                cursor += 1
+
+            if command in {"frac", "dfrac", "tfrac"}:
+                numerator, after_num = _read_tex_group(source, cursor)
+                while after_num < len(source) and source[after_num].isspace():
+                    after_num += 1
+                denominator, after_den = _read_tex_group(source, after_num)
+                if after_num == cursor or after_den == after_num:
+                    output.append(escape("\\" + command))
+                    index = end
+                    continue
+                output.append(
+                    '<span class="math-frac"><sup>'
+                    + _render_tex(numerator)
+                    + '</sup><span class="math-frac-slash">⁄</span><sub>'
+                    + _render_tex(denominator)
+                    + "</sub></span>"
+                )
+                index = after_den
+                continue
+
+            if command == "sqrt":
+                radicand, after = _read_tex_group(source, cursor)
+                if after == cursor:
+                    output.append("√")
+                    index = end
+                else:
+                    output.append('√<span class="math-radicand">(')
+                    output.append(_render_tex(radicand))
+                    output.append(")</span>")
+                    index = after
+                continue
+
+            if command in _TEX_FORMAT_COMMANDS:
+                argument, after = _read_tex_group(source, cursor)
+                if after == cursor:
+                    output.append(escape("\\" + command))
+                    index = end
+                else:
+                    output.append('<span class="math-text">')
+                    output.append(_render_tex(argument))
+                    output.append("</span>")
+                    index = after
+                continue
+
+            if command in {"left", "right", "displaystyle", "textstyle"}:
+                index = end
+                continue
+            if command in {"quad", "qquad", "enspace"}:
+                output.append("&nbsp;&nbsp;" if command != "qquad" else "&nbsp;&nbsp;&nbsp;&nbsp;")
+                index = end
+                continue
+            output.append(escape(_TEX_SYMBOLS.get(command, "\\" + command)))
+            index = end
+            continue
+
+        if char in {"^", "_"}:
+            value, after = _read_tex_group(source, index + 1)
+            tag = "sup" if char == "^" else "sub"
+            output.append(f"<{tag}>{_render_tex(value)}</{tag}>")
+            index = after
+            continue
+
+        if char == "{":
+            group, after = _read_tex_group(source, index)
+            output.append(_render_tex(group))
+            index = after
+            continue
+        if char == "}":
+            index += 1
+            continue
+        output.append(escape(char))
+        index += 1
+
+    return "".join(output)
+
+
+def _replace_math(markdown_text: str) -> tuple[str, dict[str, str]]:
+    """Substitui fórmulas fora de trechos de código por marcadores opacos."""
+    code_ranges = [(match.start(), match.end()) for match in _CODE_PATTERN.finditer(markdown_text)]
+    replacements: dict[str, str] = {}
+    parts: list[str] = []
+    cursor = 0
+
+    for match in _MATH_PATTERN.finditer(markdown_text):
+        if any(start <= match.start() < end for start, end in code_ranges):
+            continue
+
+        display_group = next(
+            (
+                name
+                for name in ("display_dollar_body", "display_bracket_body")
+                if match.group(name) is not None
+            ),
+            None,
+        )
+        inline_group = next(
+            (
+                name
+                for name in ("inline_dollar_body", "inline_paren_body")
+                if match.group(name) is not None
+            ),
+            None,
+        )
+        group = display_group or inline_group
+        if group is None:
+            continue
+
+        parts.append(markdown_text[cursor : match.start()])
+        token = f"AILUMATHPLACEHOLDER{len(replacements):05d}X"
+        expression = _render_tex(match.group(group).strip())
+        css_class = "math-display" if display_group else "math-inline"
+        replacements[token] = f'<span class="{css_class}">{expression}</span>'
+        parts.append(token)
+        cursor = match.end()
+
+    parts.append(markdown_text[cursor:])
+    return "".join(parts), replacements
+
+
 def markdown_to_html(markdown_text: str) -> str:
-    """Renderiza Markdown GitHub, descartando HTML fornecido no próprio texto."""
+    """Renderiza Markdown e um subconjunto seguro de notação matemática LaTeX."""
+    prepared_markdown, math_replacements = _replace_math(markdown_text)
     document = QTextDocument()
+    document.setIndentWidth(46.0)
+    document.setDefaultStyleSheet(
+        "p { margin-top: 3px; margin-bottom: 8px; }"
+        "ul, ol { margin-top: 6px; margin-bottom: 11px; }"
+        "li { margin-top: 3px; margin-bottom: 5px; }"
+    )
     features = (
         QTextDocument.MarkdownFeature.MarkdownDialectGitHub
         | QTextDocument.MarkdownFeature.MarkdownNoHTML
     )
-    document.setMarkdown(markdown_text, features)
+    document.setMarkdown(prepared_markdown, features)
     html = document.toHtml()
     body_start = html.find("<body")
     if body_start < 0:
-        return html
-    content_start = html.find(">", body_start)
-    content_end = html.rfind("</body>")
-    if content_start < 0 or content_end < content_start:
-        return html
-    return html[content_start + 1 : content_end]
+        result = html
+    else:
+        content_start = html.find(">", body_start)
+        content_end = html.rfind("</body>")
+        if content_start < 0 or content_end < content_start:
+            result = html
+        else:
+            result = html[content_start + 1 : content_end]
+
+    for token, rendered_math in math_replacements.items():
+        result = result.replace(token, rendered_math)
+    return result
 
 
 def build_transcript_html(messages: list[dict[str, str]]) -> str:
@@ -60,6 +267,16 @@ def build_transcript_html(messages: list[dict[str, str]]) -> str:
         "table{border-collapse:collapse;}"
         "th,td{border:1px solid #46515e;padding:5px 8px;}"
         "blockquote{color:#cbd5e1;}"
+        ".math-inline{font-family:'Noto Serif',serif;font-size:1.08em;color:#f1f5f9;"
+        "white-space:nowrap;}"
+        ".math-display{display:block;text-align:center;padding:5px 12px;"
+        "margin:4px 2px;background-color:#1b222b;border-radius:5px;"
+        "font-family:'Noto Serif',serif;font-size:1.12em;color:#f1f5f9;}"
+        ".math-frac{white-space:nowrap;}"
+        ".math-frac sup,.math-frac sub{font-size:.78em;}"
+        ".math-frac-slash{padding:0 1px;}"
+        ".math-radicand{padding-left:2px;}"
+        ".math-text{font-family:'Noto Sans',sans-serif;font-size:.94em;}"
         "*{text-decoration:none;}"
         "</style></head><body>"
     ]

@@ -35,3 +35,35 @@ def test_transcript_uses_spaced_chat_bubbles_and_no_underlined_text() -> None:
     assert "*{text-decoration:none;}" in rendered
     assert "Resposta" in rendered
     assert "**Resposta**" not in rendered
+
+
+
+def test_inline_latex_renders_integrals_fractions_and_powers() -> None:
+    rendered = markdown_to_html(
+        r"Integral: $\int_0^1 x dx = \frac{1}{2}$ and $x^2$."
+    )
+
+    assert "∫" in rendered
+    assert "<sub>0</sub>" in rendered
+    assert "<sup>1</sup>" in rendered
+    assert 'class="math-frac"' in rendered
+    assert "<sup>2</sup>" in rendered
+    assert "$" not in rendered
+
+
+def test_display_latex_and_parenthesis_delimiters_are_supported() -> None:
+    rendered = markdown_to_html(
+        r"$$E = mc^2$$ and \(x_1 + \pi\)."
+    )
+
+    assert 'class="math-display"' in rendered
+    assert "<sup>2</sup>" in rendered
+    assert "<sub>1</sub>" in rendered
+    assert "π" in rendered
+
+
+def test_math_delimiters_inside_code_are_preserved_as_code() -> None:
+    rendered = markdown_to_html("Use " + chr(96) + "$x^2$" + chr(96) + " in code.")
+
+    assert "$x^2$" in rendered
+    assert "math-inline" not in rendered
