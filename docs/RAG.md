@@ -104,7 +104,7 @@ Esta ponte é chamada pelo `MainWindow` no fluxo de mensagens quando o usuário 
 - O RAG no Chat é opt-in e permanece desativado por padrão. A recuperação roda em worker Qt e o fallback sem contexto local é registrado quando houver falha.
 - Não há reranker concreto, OCR ou tratamento de PDF escaneado.
 - O usuário deve instalar e selecionar um modelo de embeddings; a aplicação não baixa modelos automaticamente.
-- O CI anterior à integração Chat incluía 142 testes. A integração e seus testes adicionais foram aprovados em CI com Ruff e 149 testes Pytest (Python 3.11). O usuário já validou no Arch a aba Conhecimento e recuperação vetorial com EmbeddingGemma e Qwen3 Embedding; o fluxo novo de Chat-RAG ainda aguarda teste operacional após pull. Ainda faltam benchmarks de qualidade em corpus representativo e avaliação factual/entailment.
+- A integração RAG ao Chat e o microbenchmark sintético foram aprovados em CI com Ruff e 155 testes Pytest (Python 3.11). O usuário já validou no Arch a aba Conhecimento e recuperação vetorial com EmbeddingGemma e Qwen3 Embedding; o fluxo novo de Chat-RAG ainda aguarda teste operacional após pull. Ainda faltam benchmarks de qualidade em corpus representativo e avaliação factual/entailment.
 - Embeddings de texto não são equivalentes a um verificador factual: recuperação e integridade de citações não garantem que uma alegação seja suportada pela fonte.
 
 ## Próximas entregas da Fase 3
