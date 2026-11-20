@@ -11,23 +11,23 @@ import shutil
 import subprocess
 from collections.abc import Callable, Iterable, Mapping
 from dataclasses import dataclass, field
-from enum import Enum
+from enum import StrEnum
 from pathlib import Path
 
 
-class BenchmarkMode(str, Enum):
+class BenchmarkMode(StrEnum):
     NONE = "none"
     QUICK = "quick"
     FULL = "full"
 
 
-class ProtectionMode(str, Enum):
+class ProtectionMode(StrEnum):
     PERMISSIVE = "permissive"
     ADAPTIVE = "adaptive"
     PROTECTED = "protected"
 
 
-class ResourcePressure(str, Enum):
+class ResourcePressure(StrEnum):
     NORMAL = "normal"
     CONSTRAINED = "constrained"
     CRITICAL = "critical"
