@@ -70,3 +70,35 @@ def test_inspector_snapshot_includes_validation_report() -> None:
     snapshot = build_inspector_snapshot(task)
 
     assert snapshot["validation_report"]["status"] == "passed"
+
+
+
+def test_inspector_snapshot_exposes_rag_evidence_without_chunk_body() -> None:
+    from core.cognitive_task import CognitiveTask, Evidence
+
+    task = CognitiveTask(original_text="Explique o projeto.")
+    task.evidence.append(
+        Evidence(
+            source="file:///tmp/guide.md",
+            content="Texto do trecho que não deve ser duplicado na tabela.",
+            locator="seção Arquitetura",
+            metadata={
+                "citation_id": "E1",
+                "title": "guide.md",
+                "retrieval_sources": ["vector"],
+            },
+        )
+    )
+
+    snapshot = build_inspector_snapshot(task)
+
+    assert snapshot["evidence"] == [
+        {
+            "citation_id": "E1",
+            "title": "guide.md",
+            "source": "file:///tmp/guide.md",
+            "locator": "seção Arquitetura",
+            "retrieval_sources": ["vector"],
+        }
+    ]
+    assert "content" not in snapshot["evidence"][0]
