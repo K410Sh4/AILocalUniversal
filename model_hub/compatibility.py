@@ -3,13 +3,13 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from enum import Enum
+from enum import StrEnum
 
 from model_hub.contracts import ModelRecord
 from model_hub.hardware import HardwareProfile
 
 
-class CompatibilityStatus(str, Enum):
+class CompatibilityStatus(StrEnum):
     COMPATIBLE = "compatible"
     INCOMPATIBLE = "incompatible"
     UNKNOWN = "unknown"
@@ -98,7 +98,9 @@ class CompatibilityEngine:
             return CompatibilityResult(CompatibilityStatus.UNKNOWN, tuple(reasons))
         reasons.append("Os requisitos mínimos verificados cabem nos recursos medidos.")
         if not installed:
-            reasons.append("Compatibilidade de recursos não significa que o runtime esteja instalado.")
+            reasons.append(
+                "Compatibilidade de recursos não significa que o runtime esteja instalado."
+            )
         return CompatibilityResult(
             CompatibilityStatus.COMPATIBLE, tuple(reasons), requirements.evidence_url
         )
