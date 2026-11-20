@@ -85,7 +85,7 @@ flowchart TD
  L --> F
 ~~~
 
-A Validation Layer atual é estrutural e determinística: reproduz cálculos/conversões locais, confere dependências e completude e registra avisos para saídas de LLM. Ela não comprova fatos de explicações livres sem evidência externa. RAG, Context Composer e verificação factual baseada em fontes serão construídos na Fase 3.
+A Validation Layer atual é estrutural e determinística: reproduz cálculos/conversões locais, confere dependências e completude e registra avisos para saídas de LLM. A camada RAG fornece fontes locais e confere a integridade estrutural das citações, mas não prova fatos nem entailment de explicações livres.
 
 ## Estrutura
 
