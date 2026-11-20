@@ -49,3 +49,11 @@ Considerar peers desconhecidos, dispositivos comprometidos, prompt injection, ar
 - `truncate=False` é o padrão; entradas maiores que o limite configurado ou recusadas pelo runtime geram erro em vez de serem truncadas silenciosamente.
 - Vetores e metadados ficam no SQLite local. O arquivo de índice é criado com permissões privadas no Linux; diretórios e backups devem permanecer protegidos.
 - O hash associa o vetor à versão exata do chunk, mas não autentica o documento nem comprova a verdade semântica das alegações.
+
+
+## Contexto RAG e prompt injection
+
+- O KnowledgeRuntime prepara os trechos recuperados como mensagem separada de usuário e delimita o conteúdo documental como dado não confiável.
+- As instruções textuais pedem que o modelo não obedeça comandos encontrados em documentos; isso é mitigação, não garantia contra prompt injection.
+- Os logs da recuperação guardam contagens e estado, não o texto integral dos documentos.
+- Antes de ativar RAG no Chat, a integração deverá limitar contexto, respeitar seleção/escopo dos documentos e permitir desativação explícita.

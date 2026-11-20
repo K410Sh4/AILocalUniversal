@@ -117,3 +117,15 @@ EvidenceValidator verifica se a citação aponta para o chunk indexado e se cont
 O backend vetorial recupera o chunk correspondente no índice lexical e valida document_id e source_sha256 antes de devolver SearchHit. Uma entrada vetorial sem chunk correspondente ou com hash divergente é descartada.
 
 A geração e recuperação vetorial estão implementadas em branch de desenvolvimento, mas ainda não integradas ao Cognitive Pipeline/Chat. A compatibilidade de um modelo de embeddings e a qualidade da recuperação precisam ser medidas no ambiente-alvo.
+
+
+## KnowledgeRuntime — integração da Fase 3
+
+- retrieve(query, max_chars, limit, document_ids) devolve ContextBundle.
+- attach_to_task(task, bundle) anexa Evidence pela chave chunk_id, evitando duplicações na lista de evidências.
+- execution_plan recebe etapa knowledge_retrieval com estratégia e contagens.
+- execution_trace recebe estado e contagens, sem copiar o texto dos documentos.
+- as_untrusted_message(bundle) devolve uma mensagem de usuário que delimita os trechos como dados não confiáveis, orientando a não seguir instruções incorporadas nos documentos.
+- validate_answer(bundle, answer) delega ao EvidenceValidator; status factual continua not_independently_verified.
+
+O runtime ainda não é chamado pelo MainWindow nem pelo CognitiveTaskExecutor. A integração de UI/execução depende de ativação explícita, orçamento efetivo de contexto e testes operacionais.

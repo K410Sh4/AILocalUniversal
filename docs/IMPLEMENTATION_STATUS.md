@@ -19,7 +19,7 @@ Este documento diferencia código integrado, cobertura automatizada e validaçã
 | Cognitive Task Executor | Execução sequencial em worker, dependências, ferramenta local, subtarefas LLM e síntese | Sem paralelismo ou roteamento multi-modelo |
 | Validation Layer | Estrutura, dependências, replay determinístico, completude e relatório | Sem verificação factual geral de texto LLM |
 | Cognitive Inspector | Mostra resultados, estados, trace e relatório de validação | Mostra apenas a última tarefa da sessão |
-| RAG / Context Composer | Parcial na branch `feature/rag-v1`: loaders TXT/Markdown/PDF, proveniência SHA-256, chunking, SQLite FTS5, embeddings Ollama `/api/embed`, armazenamento vetorial SQLite/cosseno, RRF, Context Composer e validação estrutural de citações | Sem reranker concreto, OCR, integração ao Cognitive Pipeline/Chat/UI, avaliação de qualidade em corpus real ou validação operacional no Arch com Ollama real |
+| RAG / Context Composer | Parcial na branch `feature/rag-v1`: loaders TXT/Markdown/PDF, proveniência SHA-256, chunking, SQLite FTS5, embeddings Ollama `/api/embed`, armazenamento vetorial SQLite/cosseno, RRF, Context Composer, KnowledgeRuntime e validação estrutural de citações | Sem reranker concreto, OCR, chamada pelo MainWindow/CognitiveTaskExecutor, UI de documentos, avaliação de qualidade em corpus real ou validação operacional no Arch com Ollama real |
 | Adaptive Resource Manager | Planejado | Fase 4 |
 | Roteamento especialista | Planejado | Fase 5 |
 | Swarm P2P | Planejado | Fase 6 |
@@ -36,10 +36,11 @@ A branch `feature/rag-v1` contém uma primeira base executável de conhecimento 
 - armazenamento vetorial SQLite com vetores float32 normalizados, busca cosseno e filtro por documento/modelo;
 - indexador vetorial e backend de busca compatível com `HybridRetriever`, com checagem de hash no retorno;
 - fusão RRF de rankings lexical/vetorial; reranker permanece apenas como contrato;
+- KnowledgeRuntime para anexar Evidence ao CognitiveTask e preparar mensagem de contexto delimitada como dado documental não confiável;
 - composição de contexto com citações estáveis e orçamento em caracteres;
 - validação estrutural de vínculos, hashes e trechos citados.
 
-Há código e testes para embeddings Ollama e índice vetorial SQLite, mas ainda não houve validação com um servidor Ollama real no Arch. Não há reranker concreto, OCR ou integração com o Chat/Cognitive Pipeline/UI. A verificação de citações não garante que alegações do modelo sejam consequência lógica das fontes.
+Há código e testes para embeddings Ollama, índice vetorial SQLite e ponte KnowledgeRuntime, mas ainda não houve validação com um servidor Ollama real no Arch. O MainWindow/CognitiveTaskExecutor ainda não chama o runtime; não há reranker concreto, OCR ou UI de documentos. A verificação de citações não garante que alegações do modelo sejam consequência lógica das fontes.
 
 ## Validation Layer: escopo atual
 
@@ -67,7 +68,7 @@ verified_deterministic significa que a mesma ferramenta local reproduziu a opera
 - A Validation Layer atual não prova teoremas, não verifica fatos gerais e não substitui validação de domínio.
 - O conjunto de ferramentas determinísticas é pequeno e cobre somente expressões/unidades suportadas.
 - O Cognitive Inspector mostra apenas a última tarefa da sessão; o relatório de validação não é persistido como histórico de execuções.
-- Reranker concreto, integração do RAG ao Cognitive Pipeline/UI, avaliação RAG em corpus real, validação com Ollama real no Arch, OCR, gerenciamento adaptativo de recursos, roteamento multi-modelo e Swarm ainda não foram implementados.
+- Reranker concreto, chamada do KnowledgeRuntime pelo MainWindow/CognitiveTaskExecutor, UI de documentos, avaliação RAG em corpus real, validação com Ollama real no Arch, OCR, gerenciamento adaptativo de recursos, roteamento multi-modelo e Swarm ainda não foram implementados.
 - O renderizador matemático cobre um subconjunto de LaTeX, não um motor TeX completo.
 - O orçamento de tokens atual é indicativo e ainda não é aplicado como limite efetivo da engine.
 

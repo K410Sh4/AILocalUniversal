@@ -58,9 +58,10 @@ A branch `feature/rag-v1` inicia a camada de conhecimento sem acoplá-la ainda �
 - Armazenamento vetorial local SQLite, busca por similaridade cosseno, filtros e reindexação.
 - Busca lexical e vetorial combinadas por RRF; reranker concreto ainda pendente.
 - Context Composer com citações estáveis e orçamento explícito em caracteres.
+- KnowledgeRuntime que anexa Evidence ao CognitiveTask e prepara contexto documental como dado não confiável.
 - Evidence Validator que verifica integridade/proveniência das citações, sem afirmar que a alegação foi provada pela fonte.
 
-**Limites desta entrega:** embeddings e recuperação vetorial têm testes simulados, mas ainda precisam de validação com Ollama real no Arch. Não há reranker concreto, OCR, integração ao Cognitive Pipeline/Chat ou interface de gestão documental. O orçamento do Context Composer é em caracteres, não tokens. Consulte [docs/RAG.md](docs/RAG.md).
+**Limites desta entrega:** embeddings e recuperação vetorial têm testes simulados, mas ainda precisam de validação com Ollama real no Arch. O KnowledgeRuntime existe, mas ainda não é chamado pelo MainWindow/CognitiveTaskExecutor. Não há reranker concreto, OCR ou interface de gestão documental. O orçamento do Context Composer é em caracteres, não tokens. Consulte [docs/RAG.md](docs/RAG.md).
 
 ## Arquitetura
 

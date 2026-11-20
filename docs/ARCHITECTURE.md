@@ -54,7 +54,7 @@ A calculadora usa AST com lista de operações permitidas e o conversor suporta 
 
 A primeira base executável está isolada na branch `feature/rag-v1`: loaders locais explícitos para TXT, Markdown e PDF opcional; extração com URI e SHA-256; chunking por página/seção com offsets; índice lexical SQLite FTS5; provider Ollama `/api/embed`; armazenamento vetorial SQLite; backend vetorial com validação de hash; fusão RRF; Context Composer e validador estrutural de citações.
 
-Ainda não há reranker concreto nem integração ao Chat/Cognitive Pipeline. O orçamento atual do Context Composer é em caracteres, não tokens. O provider de embeddings requer um modelo próprio instalado e selecionado; não há download automático. A validação confirma proveniência e integridade da referência, mas não prova a verdade nem o suporte lógico de alegações geradas pelo modelo.
+KnowledgeRuntime liga retriever, Context Composer e CognitiveTask: anexa Evidence sem duplicar chunks, registra contagens no trace e prepara mensagem de usuário delimitada como dados não confiáveis. Ainda não é chamado pelo MainWindow/CognitiveTaskExecutor, portanto não altera o fluxo do Chat. Não há reranker concreto. O orçamento atual do Context Composer é em caracteres, não tokens. O provider de embeddings requer um modelo próprio instalado e selecionado; não há download automático. A validação confirma proveniência e integridade da referência, mas não prova a verdade nem o suporte lógico de alegações geradas pelo modelo.
 
 ## Recursos e engines
 

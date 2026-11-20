@@ -4,6 +4,7 @@ from knowledge.chunking import DocumentChunker
 from knowledge.context import ContextComposer
 from knowledge.index import SQLiteKnowledgeIndex
 from knowledge.ingestion import DocumentIngestor
+from knowledge.runtime import KnowledgeRuntime
 from knowledge.loaders import LoaderRegistry, MarkdownLoader, PdfLoader, TextLoader
 from knowledge.retrieval import HybridRetriever
 from knowledge.validation import EvidenceValidator
@@ -20,6 +21,7 @@ __all__ = [
     "DocumentIngestor",
     "EvidenceValidator",
     "HybridRetriever",
+    "KnowledgeRuntime",
     "LoaderRegistry",
     "LocalVectorIndexer",
     "MarkdownLoader",

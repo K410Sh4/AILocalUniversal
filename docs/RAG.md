@@ -54,6 +54,18 @@ O Context Composer gera marcadores \`[E1]\`, \`[E2]\` etc., adiciona origem e lo
 
 EvidenceValidator confere se as citações remetem a chunks existentes e se hash, conteúdo e offsets coincidem com o índice. Seu factual_status continua \`not_independently_verified\`: integridade do link não demonstra entailment, ausência de contradição nem verdade factual da resposta.
 
+## Ponte para o CognitiveTask
+
+`KnowledgeRuntime` é a camada de ligação explícita entre recuperação e tarefa cognitiva:
+
+- executa a recuperação com filtro de documento e orçamento de contexto;
+- anexa os objetos `Evidence` resultantes ao `CognitiveTask`, evitando duplicar chunk_id já associado;
+- registra no plano e no trace apenas contagens/localizadores técnicos, sem copiar o conteúdo sensível dos documentos para o log;
+- prepara uma mensagem de contexto em papel `user`, delimitada como material documental não confiável e orienta o modelo a não obedecer instruções contidas nas fontes;
+- expõe a validação estrutural das citações.
+
+Esta ponte é testável e reutilizável, mas ainda não é chamada pelo `MainWindow`, `CognitiveTaskExecutor` nem pelo fluxo normal do Chat. A interface não ingere documentos nem injeta RAG automaticamente nesta branch.
+
 ## Limites desta entrega
 
 - Nenhuma integração ao Cognitive Pipeline, CognitiveTask, prompt do Chat, ChatView ou Cognitive Inspector.
