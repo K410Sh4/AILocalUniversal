@@ -28,8 +28,11 @@ class PackageGraphError(GraphError):
 def _safe_archive_path(name: str) -> None:
     if not name or "\\" in name or name.startswith("/"):
         raise PackageGraphError("UNSAFE_PACKAGE_PATH", f"Caminho inválido no pacote: {name!r}.")
+    raw_parts = name.split("/")
+    if any(part in {"", ".", ".."} for part in raw_parts):
+        raise PackageGraphError("UNSAFE_PACKAGE_PATH", f"Caminho inseguro no pacote: {name!r}.")
     path = PurePosixPath(name)
-    if path.is_absolute() or any(part in {"", ".", ".."} for part in path.parts):
+    if path.is_absolute():
         raise PackageGraphError("UNSAFE_PACKAGE_PATH", f"Caminho inseguro no pacote: {name!r}.")
 
 
@@ -53,9 +56,10 @@ def _read_package(path: Path) -> dict[str, bytes]:
                     "O pacote excede o limite de arquivos permitido.",
                 )
             for info in infos:
+                normalized_name = info.filename.rstrip("/") if info.is_dir() else info.filename
+                _safe_archive_path(normalized_name)
                 if info.is_dir():
                     continue
-                _safe_archive_path(info.filename)
                 if info.filename in files:
                     raise PackageGraphError(
                         "PACKAGE_DUPLICATE_PATH",
@@ -134,6 +138,56 @@ def _checksum_content(files: dict[str, bytes], checksum_path: str) -> bytes:
     return ("\n".join(lines) + "\n").encode("utf-8")
 
 
+def _verify_checksums(files: dict[str, bytes], checksum_path: str) -> None:
+    raw = files.get(checksum_path)
+    if raw is None:
+        raise PackageGraphError(
+            "PACKAGE_CHECKSUMS_MISSING",
+            f"O arquivo de integridade '{checksum_path}' não existe.",
+        )
+    try:
+        lines = raw.decode("utf-8").splitlines()
+    except UnicodeDecodeError as exc:
+        raise PackageGraphError(
+            "PACKAGE_CHECKSUMS_INVALID",
+            "O arquivo de checksums não é UTF-8 válido.",
+        ) from exc
+
+    verified: set[str] = set()
+    for line in lines:
+        if not line.strip():
+            continue
+        digest, separator, name = line.partition("  ")
+        if not separator or len(digest) != 64:
+            raise PackageGraphError(
+                "PACKAGE_CHECKSUMS_INVALID",
+                "Linha inválida no arquivo de checksums SHA-256.",
+            )
+        _safe_archive_path(name)
+        if name == checksum_path or name not in files:
+            raise PackageGraphError(
+                "PACKAGE_CHECKSUMS_INVALID",
+                f"Entrada de checksum inesperada: {name}.",
+            )
+        actual = hashlib.sha256(files[name]).hexdigest()
+        if actual.lower() != digest.lower():
+            raise PackageGraphError(
+                "PACKAGE_CHECKSUM_MISMATCH",
+                f"A integridade do arquivo '{name}' não confere.",
+                ("Reimporte uma cópia íntegra do pacote.",),
+            )
+        verified.add(name)
+
+    expected = set(files) - {checksum_path}
+    missing = expected - verified
+    if missing:
+        raise PackageGraphError(
+            "PACKAGE_CHECKSUMS_INCOMPLETE",
+            "O arquivo de checksums não cobre todos os arquivos do pacote: "
+            + ", ".join(sorted(missing)[:8]),
+        )
+
+
 def _write_package(path: Path, files: dict[str, bytes]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     fd, temporary_name = tempfile.mkstemp(
@@ -169,13 +223,19 @@ def save_graph_to_package(
     graph_path: str = GRAPH_PATH,
 ) -> Path:
     """Atomically add/update a graph and manifest reference in an unsigned package."""
-    graph.save  # Keep the graph contract referenced without writing a sidecar file.
     graph_data = graph.to_dict()
     WorkflowGraph.from_dict(graph_data)
     _safe_archive_path(graph_path)
+    if graph_path in {MANIFEST_PATH, "security/checksums.sha256"} or graph_path.startswith("security/"):
+        raise PackageGraphError(
+            "RESERVED_PACKAGE_PATH",
+            "O caminho do grafo não pode sobrescrever manifesto, checksums ou arquivos de segurança.",
+        )
     path = Path(package_path).expanduser().resolve()
     files = _read_package(path)
     manifest = _manifest(files)
+    checksum_path = manifest["integrity"]["checksums_file"]
+    _verify_checksums(files, checksum_path)
 
     pipelines = manifest["components"]["pipelines"]
     if graph_path not in pipelines:
@@ -184,7 +244,6 @@ def save_graph_to_package(
         json.dumps(graph_data, ensure_ascii=False, indent=2) + "\n"
     ).encode("utf-8")
 
-    checksum_path = manifest["integrity"]["checksums_file"]
     files[MANIFEST_PATH] = (
         json.dumps(manifest, ensure_ascii=False, indent=2) + "\n"
     ).encode("utf-8")
@@ -202,6 +261,8 @@ def load_graph_from_package(
     _safe_archive_path(graph_path)
     files = _read_package(Path(package_path).expanduser().resolve())
     manifest = _manifest(files)
+    checksum_path = manifest["integrity"]["checksums_file"]
+    _verify_checksums(files, checksum_path)
     if graph_path not in manifest["components"]["pipelines"]:
         raise PackageGraphError(
             "GRAPH_NOT_DECLARED_IN_MANIFEST",
