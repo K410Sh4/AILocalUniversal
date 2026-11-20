@@ -38,4 +38,6 @@ Este arquivo diferencia código existente de funcionalidades futuras.
 - O renderizador matemático implementa um subconjunto local de LaTeX; comandos e ambientes não suportados permanecem visíveis e não são adivinhados. Fórmulas em `\\[...\\]` e `$...$` usam blocos centralizados destacados.
 - Equações display usam fonte absoluta de `20pt`: o rich text do Qt documenta `pt` e `px` para `font-size`; `em` não consta entre as unidades CSS suportadas.
 
-- Equações display usam paleta ardósia neutra, borda suave e espaçadores verticais; o destaque prioriza tipografia e respiro, não contraste azul intenso.
+- Equações display usam uma única célula, sem linhas espaçadoras com bordas herdadas; o respiro é fornecido pela margem do bloco e pelo padding interno. O destaque prioriza tipografia e paleta ardósia neutra.
+
+- Tipografia padrão do transcript elevada de 10pt para 11pt; títulos, código e listas ajustados proporcionalmente. Blocos matemáticos usam somente uma célula, sem linhas espaçadoras com bordas herdadas.

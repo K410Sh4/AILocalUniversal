@@ -21,7 +21,7 @@ O AILocal Universal coordena modelos de linguagem, ferramentas determinísticas,
 - Renderização de respostas em Markdown (negrito, listas, links, tabelas e blocos de código).
 - Renderização local de um subconjunto de LaTeX: integrais, frações, raízes, potências, índices, símbolos gregos, vetores e barras superiores.
 - Equações em bloco (`\\[...\\]` ou `$...$`) são exibidas centralizadas em painéis destacados; expressões inline permanecem no fluxo do texto. O parser preserva comandos desconhecidos visíveis e só corrige três erros frequentes e inequívocos (`\\limn`, `\\barx`, `\\vecE`). Não é um motor LaTeX completo.
-- A fonte das equações display usa unidade absoluta em pontos (`20pt`, duas vezes o texto-base de `10pt`) para compatibilidade com o mecanismo rich text do Qt.
+- A fonte das equações display usa unidade absoluta em pontos (`20pt`), enquanto o texto padrão da conversa passou para `11pt`; os blocos matemáticos usam uma única célula sem separadores vazios e margens suaves.
 - Histórico de conversas em JSON local.
 - Configurações persistentes de URL, keep-alive e system prompt.
 - Cancelamento de geração por worker em thread separada.

@@ -93,12 +93,13 @@ def test_display_equation_is_centered_and_highlighted_as_own_block() -> None:
 
     assert 'td align="center" bgcolor="#2b323b"' in rendered
     assert 'class="math-display"' in rendered
-    assert 'padding:20px 16px' in rendered
+    assert 'padding:28px 18px' in rendered
     assert 'border:1px solid #46515e' in rendered
     assert "Φ" in rendered
     assert "font-size:20pt" in rendered
     assert "font-weight:600" in rendered
-    assert 'height="14"' in rendered
+    assert 'height="14"' not in rendered
+    assert rendered.count("<tr>") == 1
     assert "color:#e8edf4" in rendered
     assert "line-height:1.35" in rendered
     assert "∮" in rendered
@@ -134,7 +135,24 @@ def test_transcript_styles_additional_paragraph_and_list_spacing() -> None:
         [{"role": "assistant", "content": "Parágrafo um.\\n\\nParágrafo dois.\\n\\n- item"}]
     )
 
-    assert "p{margin-top:5px;margin-bottom:11px;}" in rendered
-    assert "ul,ol{margin-top:6px;margin-bottom:11px;}" in rendered
-    assert "li{margin-bottom:6px;}" in rendered
+    assert "p{margin-top:6px;margin-bottom:12px;}" in rendered
+    assert "ul,ol{margin-top:8px;margin-bottom:13px;}" in rendered
+    assert "li{margin-bottom:7px;}" in rendered
 
+
+
+
+def test_display_equation_uses_single_cell_without_empty_spacer_borders() -> None:
+    rendered = markdown_to_html(r"\[E = mc^2\]")
+
+    assert rendered.count("<tr>") == 1
+    assert 'height="14"' not in rendered
+    assert 'padding:28px 18px' in rendered
+
+def test_transcript_default_font_is_slightly_larger_and_code_remains_readable() -> None:
+    rendered = build_transcript_html(
+        [{"role": "assistant", "content": "Texto normal e `código`."}]
+    )
+
+    assert "font-size:11pt" in rendered
+    assert "font-size:10pt" in rendered

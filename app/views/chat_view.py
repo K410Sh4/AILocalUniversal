@@ -307,15 +307,14 @@ def _replace_math(markdown_text: str) -> tuple[str, dict[str, tuple[str, bool]]]
 def _display_math_block(expression: str) -> str:
     """Constrói um bloco destacado usando elementos HTML suportados pelo Qt."""
     return (
-        '<table width="100%" border="0" cellspacing="0" cellpadding="0">'
-        '<tr><td height="14"></td></tr>'
+        '<table width="100%" border="0" cellspacing="0" cellpadding="0" '
+        'style="border-collapse:collapse; margin:12px 0;">'
         '<tr><td align="center" bgcolor="#2b323b" '
-        'style="padding:20px 16px; border:1px solid #46515e; border-radius:8px;">'
+        'style="padding:28px 18px; border:1px solid #46515e; border-radius:8px;">'
         '<span class="math-display" '
         'style="font-size:20pt; font-weight:600; line-height:1.35; color:#e8edf4;">'
         + expression
-        + "</span></td></tr>"
-        '<tr><td height="14"></td></tr></table>'
+        + "</span></td></tr></table>"
     )
 
 
@@ -325,9 +324,9 @@ def markdown_to_html(markdown_text: str) -> str:
     document = QTextDocument()
     document.setIndentWidth(46.0)
     document.setDefaultStyleSheet(
-        "p { margin-top: 5px; margin-bottom: 10px; }"
-        "ul, ol { margin-top: 7px; margin-bottom: 12px; }"
-        "li { margin-top: 4px; margin-bottom: 6px; }"
+        "p { margin-top: 6px; margin-bottom: 12px; }"
+        "ul, ol { margin-top: 8px; margin-bottom: 13px; }"
+        "li { margin-top: 4px; margin-bottom: 7px; }"
     )
     features = (
         QTextDocument.MarkdownFeature.MarkdownDialectGitHub
@@ -374,18 +373,18 @@ def build_transcript_html(messages: list[dict[str, str]]) -> str:
     """Monta balões de conversa com contraste, espaçamento e tipografia consistentes."""
     pieces = [
         "<html><head><meta charset=\"utf-8\"><style>"
-        "body{font-family:'Noto Sans',sans-serif;font-size:10pt;color:#e8edf4;}"
-        "p{margin-top:5px;margin-bottom:11px;}"
+        "body{font-family:'Noto Sans',sans-serif;font-size:11pt;color:#e8edf4;}"
+        "p{margin-top:6px;margin-bottom:12px;}"
         "p:last-child{margin-bottom:0;}"
-        "ul,ol{margin-top:6px;margin-bottom:11px;}"
-        "li{margin-bottom:6px;}"
-        "h1{font-size:17pt;margin-top:8px;margin-bottom:10px;}"
-        "h2{font-size:14pt;margin-top:8px;margin-bottom:8px;}"
-        "h3{font-size:12pt;margin-top:7px;margin-bottom:7px;}"
+        "ul,ol{margin-top:8px;margin-bottom:13px;}"
+        "li{margin-bottom:7px;}"
+        "h1{font-size:18pt;margin-top:8px;margin-bottom:10px;}"
+        "h2{font-size:15pt;margin-top:8px;margin-bottom:8px;}"
+        "h3{font-size:13pt;margin-top:7px;margin-bottom:7px;}"
         "pre{white-space:pre-wrap;word-wrap:break-word;"
-        "font-family:monospace;font-size:9pt;background-color:#151a20;"
+        "font-family:monospace;font-size:10pt;background-color:#151a20;"
         "color:#e6edf3;padding:10px;}"
-        "code{font-family:monospace;font-size:9pt;color:#e6edf3;"
+        "code{font-family:monospace;font-size:10pt;color:#e6edf3;"
         "background-color:#171e26;}"
         "pre code{background-color:transparent;}"
         "a{color:#8ecbff;text-decoration:none;}"
