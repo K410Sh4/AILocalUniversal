@@ -8,7 +8,6 @@ import pytest
 from workflows.graph import GraphError, WorkflowGraph
 from workflows.package_io import load_graph_from_package, save_graph_to_package
 
-
 TEMPLATE = (
     Path(__file__).resolve().parents[2]
     / "examples"
