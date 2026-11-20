@@ -310,7 +310,8 @@ def _display_math_block(expression: str) -> str:
         '<table width="100%" border="0" cellspacing="0" cellpadding="0">'
         '<tr><td align="center" bgcolor="#203b53" '
         'style="padding:18px 14px; border:1px solid #477da8; border-radius:8px;">'
-        '<span class="math-display">'
+        '<span class="math-display" '
+        'style="font-size:1.5em; font-weight:600; color:#ffffff;">'
         + expression
         + "</span></td></tr></table>"
     )
