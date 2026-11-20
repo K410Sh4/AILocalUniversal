@@ -598,6 +598,11 @@ class ChatView(QWidget):
     def set_status(self, message: str) -> None:
         self.status_label.setText(message)
 
+    def set_retrieving(self, retrieving: bool) -> None:
+        self.set_busy(retrieving)
+        if retrieving:
+            self.cancel_button.setEnabled(False)
+
     def set_busy(self, busy: bool) -> None:
         self.send_button.setEnabled(not busy)
         self.cancel_button.setEnabled(busy)
