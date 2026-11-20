@@ -41,6 +41,7 @@ class NodeTypeSpec:
     inputs: frozenset[str]
     outputs: frozenset[str]
     category: str
+    required_inputs: frozenset[str] = frozenset()
 
 
 NODE_SPECS: dict[str, NodeTypeSpec] = {
@@ -52,31 +53,37 @@ NODE_SPECS: dict[str, NodeTypeSpec] = {
         frozenset({"text", "context", "feedback", "budget"}),
         frozenset({"code", "text", "artifacts"}),
         "specialist",
+        frozenset({"text"}),
     ),
     "specialist.chat": NodeTypeSpec(
         frozenset({"text", "code", "context", "feedback", "budget"}),
         frozenset({"explanation", "text"}),
         "specialist",
+        frozenset({"text"}),
     ),
     "specialist.image": NodeTypeSpec(
         frozenset({"prompt", "code", "explanation", "context", "feedback", "budget"}),
         frozenset({"image", "artifact"}),
         "specialist",
+        frozenset({"prompt"}),
     ),
     "specialist.review": NodeTypeSpec(
         frozenset({"code", "explanation", "image", "context", "budget"}),
         frozenset({"decision", "approved", "feedback", "retry_targets", "score", "notes"}),
         "specialist",
+        frozenset({"code", "explanation"}),
     ),
     "control.loop": NodeTypeSpec(
         frozenset({"decision"}),
         frozenset({"repeat", "decision"}),
         "control",
+        frozenset({"decision"}),
     ),
     "filter.context": NodeTypeSpec(
         frozenset({"text", "content", "context"}),
         frozenset({"text", "context"}),
         "filter",
+        frozenset({"text"}),
     ),
     "hardware.profile": NodeTypeSpec(
         frozenset(), frozenset({"budget", "report"}), "hardware"
@@ -85,12 +92,15 @@ NODE_SPECS: dict[str, NodeTypeSpec] = {
         frozenset({"code", "explanation", "image", "review"}),
         frozenset({"result"}),
         "output",
+        frozenset({"code", "explanation", "review"}),
     ),
     "output.response": NodeTypeSpec(
-        frozenset({"result"}), frozenset({"response"}), "output"
+        frozenset({"result"}), frozenset({"response"}), "output",
+        frozenset({"result"}),
     ),
     "output.trace": NodeTypeSpec(
-        frozenset({"trace"}), frozenset({"trace"}), "output"
+        frozenset({"trace"}), frozenset({"trace"}), "output",
+        frozenset({"trace"}),
     ),
 }
 
