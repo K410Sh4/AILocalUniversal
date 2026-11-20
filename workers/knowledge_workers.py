@@ -100,3 +100,57 @@ class KnowledgeLibraryWorker(QThread):
             self.completed.emit(payload)
         except Exception as exc:
             self.failed.emit(str(exc))
+
+
+ 
+class KnowledgeRetrievalWorker(QThread):
+    """Recupera contexto local fora da thread gráfica antes da geração."""
+
+    completed = Signal(object)
+    failed = Signal(str)
+
+    def __init__(
+        self,
+        query: str,
+        *,
+        ollama_url: str,
+        embedding_model: str | None,
+        max_chars: int = 6000,
+        limit: int = 8,
+        data_directory: str | Path | None = None,
+        parent=None,
+    ) -> None:
+        super().__init__(parent)
+        self.query = query
+        self.ollama_url = ollama_url
+        self.embedding_model = embedding_model
+        self.max_chars = max_chars
+        self.limit = limit
+        self.data_directory = (
+            Path(data_directory) if data_directory is not None
+            else default_knowledge_directory()
+        )
+
+    def run(self) -> None:
+        try:
+            with KnowledgeLibrary(
+                self.data_directory,
+                ollama_url=self.ollama_url,
+                embedding_model=self.embedding_model,
+            ) as library:
+                bundle = library.search(
+                    self.query,
+                    max_chars=self.max_chars,
+                    limit=self.limit,
+                )
+                from knowledge.runtime import KnowledgeRuntime
+
+                self.completed.emit(
+                    {
+                        "bundle": bundle,
+                        "message": KnowledgeRuntime.as_untrusted_message(bundle),
+                        "warning": library.last_search_warning,
+                    }
+                )
+        except Exception as exc:
+            self.failed.emit(str(exc))
