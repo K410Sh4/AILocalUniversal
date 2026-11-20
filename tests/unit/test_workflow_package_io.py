@@ -80,8 +80,16 @@ def test_tampered_package_file_is_rejected(tmp_path):
     graph = WorkflowGraph.load(TEMPLATE)
     save_graph_to_package(package, graph)
 
-    with zipfile.ZipFile(package, "a") as archive:
-        archive.writestr("plugins/readme.txt", b"tampered")
+    with zipfile.ZipFile(package, "r") as source:
+        files = {
+            info.filename: source.read(info.filename)
+            for info in source.infolist()
+            if not info.is_dir()
+        }
+    files["plugins/readme.txt"] = b"tampered"
+    with zipfile.ZipFile(package, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+        for name, payload in files.items():
+            archive.writestr(name, payload)
 
     with pytest.raises(GraphError) as exc_info:
         load_graph_from_package(package)
