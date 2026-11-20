@@ -28,16 +28,16 @@ from PySide6.QtWidgets import (
     QGraphicsScene,
     QGraphicsView,
     QHBoxLayout,
+    QInputDialog,
     QLabel,
     QLineEdit,
-    QInputDialog,
     QListWidget,
     QListWidgetItem,
     QMessageBox,
     QPlainTextEdit,
-    QTabWidget,
     QPushButton,
     QSplitter,
+    QTabWidget,
     QToolButton,
     QVBoxLayout,
     QWidget,
@@ -222,7 +222,11 @@ class NodeGraphicsItem(QGraphicsObject):
         painter.drawRoundedRect(QRectF(0, 0, self.WIDTH, self.height), 10, 10)
         painter.setPen(QPen(QColor("#ffffff")))
         painter.setFont(self.canvas.title_font)
-        painter.drawText(QRectF(14, 10, self.WIDTH - 28, 22), Qt.AlignmentFlag.AlignLeft, self.node.label)
+        painter.drawText(
+            QRectF(14, 10, self.WIDTH - 28, 22),
+            Qt.AlignmentFlag.AlignLeft,
+            self.node.label,
+        )
         painter.setPen(QPen(QColor("#e3eaf0")))
         painter.setFont(self.canvas.port_font)
         painter.drawText(
@@ -240,7 +244,7 @@ class NodeGraphicsItem(QGraphicsObject):
 
     def itemChange(self, change, value):
         result = super().itemChange(change, value)
-        if change == QGraphicsObject.GraphicsItemChange.ItemPositionHasChanged:
+        if change == QGraphicsItem.GraphicsItemChange.ItemPositionHasChanged:
             self.canvas.refresh_connection_paths()
         return result
 
@@ -337,6 +341,7 @@ class GraphCanvas(QGraphicsView):
         self.setTransformationAnchor(QGraphicsView.ViewportAnchor.AnchorUnderMouse)
         self.setResizeAnchor(QGraphicsView.ViewportAnchor.AnchorUnderMouse)
         self.setAcceptDrops(True)
+        self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.grid_visible = True
         self.pending_port: PortItem | None = None
         self.pending_path: QGraphicsPathItem | None = None
@@ -993,7 +998,11 @@ class NeuralMapView(QWidget):
                 graph = WorkflowGraph.load(path)
                 self.package_path = None
         except GraphError as exc:
-            QMessageBox.warning(self, "Falha ao abrir NeuralMap", f"{exc.reason_code}: {exc.message}")
+            QMessageBox.warning(
+                self,
+                "Falha ao abrir NeuralMap",
+                f"{exc.reason_code}: {exc.message}",
+            )
             return
         before = self._snapshot()
         self.graph = graph
