@@ -1,4 +1,4 @@
-"""Workers Qt que executam operações Ollama em event loop próprio."""
+"""Workers Qt que executam operações de engine fora da thread da UI."""
 
 from __future__ import annotations
 
@@ -7,18 +7,17 @@ from typing import Any
 
 from PySide6.QtCore import QThread, Signal
 
-from engines.base import EngineRequest
-from engines.ollama_engine import OllamaEngine
+from engines.base import EngineAdapter, EngineRequest
 
 
 class _AsyncWorker(QThread):
-    """Executa coroutine em uma thread Qt e permite cancelamento seguro."""
+    """Executa coroutine em uma thread Qt e permite cancelamento cooperativo."""
 
     failed = Signal(str)
     cancelled = Signal()
     completed = Signal(object)
 
-    def __init__(self, engine: OllamaEngine, parent=None) -> None:
+    def __init__(self, engine: EngineAdapter, parent=None) -> None:
         super().__init__(parent)
         self.engine = engine
         self._loop: asyncio.AbstractEventLoop | None = None
@@ -69,9 +68,8 @@ class OllamaChatWorker(_AsyncWorker):
     """Executa uma conversa e emite cada trecho recebido."""
 
     token = Signal(str)
-    generation_completed = Signal(object)
 
-    def __init__(self, engine: OllamaEngine, request: EngineRequest, parent=None) -> None:
+    def __init__(self, engine: EngineAdapter, request: EngineRequest, parent=None) -> None:
         super().__init__(engine, parent)
         self.request = request
 
@@ -82,5 +80,4 @@ class OllamaChatWorker(_AsyncWorker):
                 self.token.emit(event.content)
             if event.done:
                 metadata = event.metadata
-        self.generation_completed.emit(metadata)
         self.completed.emit(metadata)

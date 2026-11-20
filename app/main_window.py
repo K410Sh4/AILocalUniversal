@@ -10,9 +10,10 @@ from PySide6.QtWidgets import QMainWindow, QMessageBox, QTabWidget
 from app.dialogs.settings_dialog import SettingsDialog
 from app.views.chat_view import ChatView
 from app.views.models_view import ModelsView
-from engines.base import EngineRequest, ModelInfo
+from engines.base import EngineAdapter, EngineRequest, ModelInfo
 from engines.model_selector import ModelSelectionError, choose_model
 from engines.ollama_engine import OllamaEngine
+from engines.registry import EngineRegistry
 from storage.configuration import AppConfig, ConfigurationError, ConfigurationStore
 from storage.conversations import Conversation, ConversationStore
 from workers.ollama_workers import OllamaChatWorker, OllamaStatusWorker
@@ -34,7 +35,9 @@ class MainWindow(QMainWindow):
         self.config_store = config_store or ConfigurationStore()
         self.conversation_store = conversation_store or ConversationStore()
         self.config = self._load_config()
-        self.engine = OllamaEngine(self.config.base_url)
+        self.engine_registry = EngineRegistry()
+        self.engine: EngineAdapter
+        self._replace_engine()
         self.models: list[ModelInfo] = []
         self._status_worker: OllamaStatusWorker | None = None
         self._chat_worker: OllamaChatWorker | None = None
@@ -107,7 +110,11 @@ class MainWindow(QMainWindow):
         self.chat_view.render_messages(self.current_conversation.messages)
 
     def _replace_engine(self) -> None:
-        self.engine = OllamaEngine(self.config.base_url)
+        if "ollama" in self.engine_registry.names():
+            self.engine_registry.unregister("ollama")
+        engine = OllamaEngine(self.config.base_url)
+        self.engine_registry.register(engine)
+        self.engine = self.engine_registry.get("ollama")
 
     def refresh_backend(self) -> None:
         if self._status_worker is not None and self._status_worker.isRunning():
@@ -188,7 +195,13 @@ class MainWindow(QMainWindow):
             self.config = dialog.config
             self._save_config()
             if self.config.base_url != previous_url:
+                if self._status_worker is not None and self._status_worker.isRunning():
+                    self._status_worker.cancel()
+                    self._status_worker.wait(1500)
                 self._replace_engine()
+                self.models = []
+                self.chat_view.set_models([])
+                self.models_view.set_models([], False)
             self.refresh_backend()
 
     def new_conversation(self) -> None:

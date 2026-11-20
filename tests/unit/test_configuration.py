@@ -8,6 +8,11 @@ def test_invalid_backend_url_is_rejected() -> None:
         AppConfig(base_url="localhost:11434").validate()
 
 
+def test_malformed_ipv6_url_is_reported_as_configuration_error() -> None:
+    with pytest.raises(ConfigurationError, match="URL"):
+        AppConfig(base_url="http://[invalid").validate()
+
+
 def test_config_file_is_written_with_private_permissions(tmp_path) -> None:
     path = tmp_path / "config.json"
     store = ConfigurationStore(path)

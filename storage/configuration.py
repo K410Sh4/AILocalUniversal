@@ -54,13 +54,20 @@ class AppConfig:
     def validate(self) -> None:
         if not isinstance(self.base_url, str):
             raise ConfigurationError("Endereço do Ollama precisa ser texto.")
-        parsed = urlsplit(self.base_url)
+        try:
+            parsed = urlsplit(self.base_url)
+        except ValueError as exc:
+            raise ConfigurationError(f"URL do Ollama inválida: {exc}") from exc
         if parsed.scheme not in {"http", "https"} or not parsed.netloc:
             raise ConfigurationError(
                 "Endereço do Ollama inválido. Use uma URL http:// ou https://."
             )
-        if self.mode not in {"auto", "manual"}:
+        if not isinstance(self.mode, str) or self.mode not in {"auto", "manual"}:
             raise ConfigurationError("Modo de seleção inválido.")
+        if self.preferred_model is not None and not isinstance(self.preferred_model, str):
+            raise ConfigurationError("Modelo preferido precisa ser texto.")
+        if self.manual_model is not None and not isinstance(self.manual_model, str):
+            raise ConfigurationError("Modelo manual precisa ser texto.")
         if not isinstance(self.keep_alive, str) or not self.keep_alive.strip():
             raise ConfigurationError("keep_alive não pode ficar vazio.")
         if not isinstance(self.system_prompt, str):
