@@ -22,7 +22,26 @@ def make_package(path: Path, *, signed=False) -> Path:
         "format": "ailocal.neuralinjector",
         "format_version": "0.1.0",
         "package": {"id": "org.ailocal.test", "name": "Test", "version": "1.0.0", "kind": "workflow"},
-        "compatibility": {"models": [{"architecture": "test", "match_policy": "architecture_compatible"}], "engines": []},
+        "compatibility": {
+            "models": [
+                {
+                    "architecture": "qwen2",
+                    "model_id": "qwen2.5:7b",
+                    "match_policy": "architecture_compatible",
+                },
+                {
+                    "architecture": "deepseek",
+                    "model_id": "deepseek-r1:7b",
+                    "match_policy": "architecture_compatible",
+                },
+                {
+                    "architecture": "flux",
+                    "model_id": "flux.1",
+                    "match_policy": "architecture_compatible",
+                },
+            ],
+            "engines": [{"id": "ollama"}, {"id": "image"}],
+        },
         "components": {
             "plugins": [],
             "adapters": [],
