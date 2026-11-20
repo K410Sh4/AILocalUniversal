@@ -58,7 +58,6 @@ from workflows.package_io import (
     save_graph_to_package,
 )
 
-
 NODE_LABELS = {
     "input.text": "Entrada de texto",
     "input.attachment": "Anexo",
