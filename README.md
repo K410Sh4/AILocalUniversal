@@ -11,7 +11,7 @@ O AILocal Universal coordena modelos de linguagem, ferramentas determinísticas,
 
 ## Funcionalidades da Fase 1
 
-- Interface desktop PySide6 com abas Chat e Modelos.
+- Interface desktop PySide6 com abas Chat, Modelos e NeuralMap (editor de workflows em desenvolvimento).
 - Consulta de disponibilidade do servidor Ollama.
 - Inventário de modelos instalados.
 - Chat via API /api/chat com streaming NDJSON.
@@ -21,6 +21,8 @@ O AILocal Universal coordena modelos de linguagem, ferramentas determinísticas,
 - Configurações persistentes de URL, keep-alive e system prompt.
 - Perfil de hardware (automático, ultra leve, mínimo, equilibrado, desempenho e qualidade máxima) e modo de proteção de recursos.
 - Cancelamento de geração por worker em thread separada.
+- NeuralMap: canvas de nós, conexões condicionais, template multi-especialista, validação, undo/redo e execução assíncrona com dry-run.
+- Persistência de workflows em `graph/pipeline.graph.json` dentro de pacotes `.neuralinjector`, com atualização de manifesto e checksums.
 - Tratamento de indisponibilidade, timeouts e erros do protocolo.
 
 O modo automático inicial escolhe o modelo preferido quando disponível ou, na ausência dele, o primeiro nome em ordem estável. Roteamento semântico por capacidades será implementado na Fase 2.
@@ -51,7 +53,7 @@ A arquitetura cognitiva-alvo inclui Input Processing, Semantic Analysis, process
 
 O projeto também está avaliando um sistema modular para transportar regras, adaptadores, perfis de hardware, pipelines e transformações compatíveis entre instalações. O gerenciador será o **NeuralPlugin Manager**, e o pacote portátil usará a extensão oficial **.neuralinjector**, conforme a proposta **NeuralInjector Package Specification (NIP) 0.1.0**.
 
-Esta trilha ainda é documental e experimental: não representa uma funcionalidade já implementada na aplicação. Consulte [a proposta do NeuralPlugin Manager](docs/NEURALPLUGIN.md) e [a especificação NIP 0.1.0](docs/NEURALINJECTOR_NIP_0.1.0.md).
+A NIP segue em consolidação, enquanto a branch `feature/neuralmap-v1` contém a primeira implementação do editor e runtime NeuralMap, ainda sujeita a validação. Consulte [a proposta do NeuralPlugin Manager](docs/NEURALPLUGIN.md) e [a especificação NIP 0.1.0](docs/NEURALINJECTOR_NIP_0.1.0.md).
 
 ## Estrutura
 
@@ -59,6 +61,7 @@ Esta trilha ainda é documental e experimental: não representa uma funcionalida
 - core/: CognitiveTask, Orchestrator, Capability Vectorizer e traces.
 - engines/: contratos e adaptadores de inferência.
 - workers/: operações de rede fora da thread da UI.
+- workflows/: modelo de grafo declarativo, validador, runtime e handlers de workflow.
 - storage/: configurações e histórico local.
 - pipeline/: futuras etapas cognitivas.
 - knowledge/: futura ingestão e recuperação RAG.
@@ -155,6 +158,7 @@ Consulte docs/SECURITY.md.
 - Contratos de dados: docs/DATA_CONTRACTS.md
 - NeuralPlugin Manager (proposta): docs/NEURALPLUGIN.md
 - NeuralInjector NIP 0.1.0 (proposta): docs/NEURALINJECTOR_NIP_0.1.0.md
+- NeuralMap: docs/NEURALMAP.md
 - JSON Schemas: schemas/
 - Exemplo de pacote: examples/neuralinjector/
 - Contribuição: CONTRIBUTING.md
