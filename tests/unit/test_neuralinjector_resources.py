@@ -38,3 +38,8 @@ def test_detection_reports_cpu_and_memory():
 def test_unknown_profile_is_rejected():
     with pytest.raises(ValueError):
         select_profile(hw(), "turbo")
+
+def test_host_below_minimal_profile_floor_is_incompatible():
+    report = build_compatibility_report(hw(1024, 700))
+    assert not report.compatible
+    assert any("minimal" in reason for reason in report.reasons)
