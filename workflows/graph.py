@@ -48,22 +48,22 @@ NODE_SPECS: dict[str, NodeTypeSpec] = {
         frozenset(), frozenset({"attachment"}), "input"
     ),
     "specialist.code": NodeTypeSpec(
-        frozenset({"text", "context", "feedback"}),
+        frozenset({"text", "context", "feedback", "budget"}),
         frozenset({"code", "text", "artifacts"}),
         "specialist",
     ),
     "specialist.chat": NodeTypeSpec(
-        frozenset({"text", "code", "context", "feedback"}),
+        frozenset({"text", "code", "context", "feedback", "budget"}),
         frozenset({"explanation", "text"}),
         "specialist",
     ),
     "specialist.image": NodeTypeSpec(
-        frozenset({"prompt", "code", "explanation", "context", "feedback"}),
+        frozenset({"prompt", "code", "explanation", "context", "feedback", "budget"}),
         frozenset({"image", "artifact"}),
         "specialist",
     ),
     "specialist.review": NodeTypeSpec(
-        frozenset({"code", "explanation", "image", "context"}),
+        frozenset({"code", "explanation", "image", "context", "budget"}),
         frozenset({"decision", "feedback", "retry_targets", "score", "notes"}),
         "specialist",
     ),
