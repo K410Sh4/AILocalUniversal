@@ -1,0 +1,49 @@
+{
+  "profile_id": "max_quality",
+  "profile_version": "1.0.0",
+  "description": "Prioriza qualidade e contexto em workstations.",
+  "requirements": {
+    "min_ram_mb": 16384,
+    "min_vram_mb": 0,
+    "min_disk_mb": 0
+  },
+  "objectives": {
+    "priority": [
+      "quality",
+      "latency",
+      "memory"
+    ],
+    "interactive": true
+  },
+  "budget": {
+    "max_ram_fraction": 0.8,
+    "target_context_tokens": 16384,
+    "max_parallelism": 4
+  },
+  "execution": {
+    "preferred_backends": [
+      "gpu",
+      "cpu"
+    ],
+    "allow_cpu_fallback": true,
+    "require_gpu": false
+  },
+  "degradation": {
+    "disable_optional_components": true,
+    "reduce_context": true,
+    "reduce_parallelism": true,
+    "allow_artifact_fallback": true
+  },
+  "benchmark": {
+    "default": "none",
+    "allowed": [
+      "none",
+      "quick",
+      "full"
+    ]
+  },
+  "notes": [
+    "Preset declarativo; validar limites e suporte do backend.",
+    "Não quantiza nem altera pesos por si só."
+  ]
+}
