@@ -161,7 +161,7 @@ Quantização não é uma opção que se altere na chamada `/api/chat`. Ela pert
 
 ## 7. Ponte de opções para llama.cpp
 
-O repositório inclui `engines/llama_cpp_options.py`, que traduz um `ResourceBudget` para argumentos do construtor `llama_cpp.Llama`:
+O repositório inclui `engines/llama_cpp_options.py`, que traduz um `ResourceBudget` para argumentos do construtor `llama_cpp.Llama` e fornece `create_llama_cpp_runtime()`, que valida a existência/extensão do GGUF, importa `llama_cpp.Llama` de forma lazy e passa os parâmetros ao construtor:
 
 | Orçamento AILocal | Argumento llama-cpp-python |
 |---|---|
