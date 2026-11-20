@@ -93,11 +93,12 @@ def test_display_equation_is_centered_and_highlighted_as_own_block() -> None:
 
     assert 'td align="center" bgcolor="#203b53"' in rendered
     assert 'class="math-display"' in rendered
-    assert 'padding:18px 14px' in rendered
+    assert 'padding:24px 18px' in rendered
     assert 'border:1px solid #477da8' in rendered
     assert "Φ" in rendered
-    assert "font-size:1.5em" in rendered
+    assert "font-size:3em" in rendered
     assert "font-weight:600" in rendered
+    assert "line-height:1.35" in rendered
     assert "∮" in rendered
     assert "Texto depois." in rendered
 
