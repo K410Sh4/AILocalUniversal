@@ -326,9 +326,9 @@ async def test_stream_chat_forwards_structured_json_format_to_ollama() -> None:
                     "content": '{"approved":true}',
                 }
             })
-            + "\\n"
+            + "\n"
             + json.dumps({"done": True})
-            + "\\n",
+            + "\n",
         )
 
     engine = OllamaEngine(transport=httpx.MockTransport(handler))
