@@ -1,5 +1,7 @@
 """Normalização segura e preservação da entrada original."""
 
+# ruff: noqa: I001
+
 from __future__ import annotations
 
 import unicodedata

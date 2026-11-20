@@ -4,6 +4,8 @@ Os scores representam afinidade lexical entre 0 e 1. Não são probabilidades,
 embeddings, nem uma avaliação calibrada da capacidade real necessária.
 """
 
+# ruff: noqa: I001
+
 from __future__ import annotations
 
 import dataclasses
