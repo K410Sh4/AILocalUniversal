@@ -285,7 +285,12 @@ class WorkflowGraph:
         }
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> WorkflowGraph:
+    def from_dict(
+        cls,
+        data: dict[str, Any],
+        *,
+        validate: bool = True,
+    ) -> WorkflowGraph:
         if not isinstance(data, dict) or data.get("format") != GRAPH_FORMAT:
             raise GraphError(
                 "UNSUPPORTED_GRAPH_FORMAT",
@@ -312,7 +317,8 @@ class WorkflowGraph:
             if isinstance(exc, GraphError):
                 raise
             raise GraphError("INVALID_GRAPH", "A estrutura do grafo está incompleta.") from exc
-        validate_graph(graph)
+        if validate:
+            validate_graph(graph)
         return graph
 
     @classmethod
@@ -525,6 +531,7 @@ def validate_graph(graph: WorkflowGraph) -> None:
     order = topological_order(graph)
     enabled = {node.node_id: node for node in graph.nodes if node.enabled}
     positions = {node_id: index for index, node_id in enumerate(order)}
+    adjacency: dict[str, list[str]] = {node_id: [] for node_id in enabled}
     for edge in graph.edges:
         if edge.source not in enabled or edge.target not in enabled:
             continue
@@ -535,3 +542,25 @@ def validate_graph(graph: WorkflowGraph) -> None:
                 "INVALID_GRAPH_ORDER",
                 "As dependências do grafo não formam uma ordem de execução válida.",
             )
+        adjacency[edge.source].append(edge.target)
+
+    input_nodes = [
+        node.node_id for node in enabled.values() if node.node_type == "input.text"
+    ]
+    response_nodes = {
+        node.node_id for node in enabled.values() if node.node_type == "output.response"
+    }
+    reachable: set[str] = set(input_nodes)
+    queue = list(input_nodes)
+    while queue:
+        current = queue.pop(0)
+        for target in adjacency.get(current, []):
+            if target not in reachable:
+                reachable.add(target)
+                queue.append(target)
+    if not reachable.intersection(response_nodes):
+        raise GraphError(
+            "OUTPUT_DISCONNECTED",
+            "Não existe caminho ativo entre input.text e output.response.",
+            ("Conecte a entrada a pelo menos um nó de processamento e à saída final.",),
+        )
