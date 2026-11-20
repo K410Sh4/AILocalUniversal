@@ -1,0 +1,49 @@
+{
+  "profile_id": "minimal",
+  "profile_version": "1.0.0",
+  "description": "Prioriza contenção de memória em máquinas modestas.",
+  "requirements": {
+    "min_ram_mb": 2048,
+    "min_vram_mb": 0,
+    "min_disk_mb": 0
+  },
+  "objectives": {
+    "priority": [
+      "memory",
+      "reliability",
+      "latency"
+    ],
+    "interactive": true
+  },
+  "budget": {
+    "max_ram_fraction": 0.55,
+    "target_context_tokens": 2048,
+    "max_parallelism": 1
+  },
+  "execution": {
+    "preferred_backends": [
+      "cpu",
+      "gpu"
+    ],
+    "allow_cpu_fallback": true,
+    "require_gpu": false
+  },
+  "degradation": {
+    "disable_optional_components": true,
+    "reduce_context": true,
+    "reduce_parallelism": true,
+    "allow_artifact_fallback": true
+  },
+  "benchmark": {
+    "default": "none",
+    "allowed": [
+      "none",
+      "quick",
+      "full"
+    ]
+  },
+  "notes": [
+    "Preset declarativo; validar limites e suporte do backend.",
+    "Não quantiza nem altera pesos por si só."
+  ]
+}
