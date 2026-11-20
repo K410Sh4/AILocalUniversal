@@ -68,3 +68,6 @@ O primeiro caso de uso é distribuir subtarefas independentes. RPC e inferência
 ## Princípios
 
 Local-first, contratos versionados, testes antes de declarar funcionalidades prontas, segurança por padrão e benchmarks reproduzíveis que meçam qualidade e custo — não apenas tokens/s.
+
+
+A apresentação dos blocos matemáticos usa fundo ardósia próximo ao balão da resposta, borda neutra, espaçamento vertical dedicado e tipografia de 20pt. Os parágrafos e listas receberam margens ligeiramente maiores para melhorar a leitura de respostas técnicas longas.

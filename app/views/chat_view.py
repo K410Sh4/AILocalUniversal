@@ -308,12 +308,14 @@ def _display_math_block(expression: str) -> str:
     """Constrói um bloco destacado usando elementos HTML suportados pelo Qt."""
     return (
         '<table width="100%" border="0" cellspacing="0" cellpadding="0">'
-        '<tr><td align="center" bgcolor="#203b53" '
-        'style="padding:24px 18px; border:1px solid #477da8; border-radius:8px;">'
+        '<tr><td height="14"></td></tr>'
+        '<tr><td align="center" bgcolor="#2b323b" '
+        'style="padding:20px 16px; border:1px solid #46515e; border-radius:8px;">'
         '<span class="math-display" '
-        'style="font-size:20pt; font-weight:600; line-height:1.35; color:#ffffff;">'
+        'style="font-size:20pt; font-weight:600; line-height:1.35; color:#e8edf4;">'
         + expression
-        + "</span></td></tr></table>"
+        + "</span></td></tr>"
+        '<tr><td height="14"></td></tr></table>'
     )
 
 
@@ -323,9 +325,9 @@ def markdown_to_html(markdown_text: str) -> str:
     document = QTextDocument()
     document.setIndentWidth(46.0)
     document.setDefaultStyleSheet(
-        "p { margin-top: 3px; margin-bottom: 8px; }"
-        "ul, ol { margin-top: 6px; margin-bottom: 11px; }"
-        "li { margin-top: 3px; margin-bottom: 5px; }"
+        "p { margin-top: 5px; margin-bottom: 10px; }"
+        "ul, ol { margin-top: 7px; margin-bottom: 12px; }"
+        "li { margin-top: 4px; margin-bottom: 6px; }"
     )
     features = (
         QTextDocument.MarkdownFeature.MarkdownDialectGitHub
@@ -393,7 +395,7 @@ def build_transcript_html(messages: list[dict[str, str]]) -> str:
         ".math-inline{font-family:'Noto Serif',serif;font-size:1.08em;color:#f1f5f9;"
         "white-space:nowrap;}"
         ".math-display{font-family:'Noto Serif',serif;font-size:20pt;"
-        "font-weight:600;line-height:1.35;color:#ffffff;}"
+        "font-weight:600;line-height:1.35;color:#e8edf4;}"
         ".math-overbar{text-decoration:overline;}"
         ".math-underline{text-decoration:underline;}"
         ".math-vector{font-style:italic;}"

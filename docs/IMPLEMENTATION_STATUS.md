@@ -37,3 +37,5 @@ Este arquivo diferencia código existente de funcionalidades futuras.
 - O Cognitive Inspector mantém apenas a última tarefa em memória durante a sessão; não existe persistência nem consulta de tarefas antigas.
 - O renderizador matemático implementa um subconjunto local de LaTeX; comandos e ambientes não suportados permanecem visíveis e não são adivinhados. Fórmulas em `\\[...\\]` e `$...$` usam blocos centralizados destacados.
 - Equações display usam fonte absoluta de `20pt`: o rich text do Qt documenta `pt` e `px` para `font-size`; `em` não consta entre as unidades CSS suportadas.
+
+- Equações display usam paleta ardósia neutra, borda suave e espaçadores verticais; o destaque prioriza tipografia e respiro, não contraste azul intenso.

@@ -30,7 +30,7 @@ def test_transcript_uses_spaced_chat_bubbles_and_no_underlined_text() -> None:
 
     assert '<table width="86%" align="right"' in rendered
     assert '<table width="96%" align="left"' in rendered
-    assert 'bgcolor="#203b53"' in rendered
+    assert 'bgcolor="#2b323b"' in rendered
     assert 'bgcolor="#252b33"' in rendered
     assert "*{text-decoration:none;}" in rendered
     assert "Resposta" in rendered
@@ -93,11 +93,13 @@ def test_display_equation_is_centered_and_highlighted_as_own_block() -> None:
 
     assert 'td align="center" bgcolor="#203b53"' in rendered
     assert 'class="math-display"' in rendered
-    assert 'padding:24px 18px' in rendered
-    assert 'border:1px solid #477da8' in rendered
+    assert 'padding:20px 16px' in rendered
+    assert 'border:1px solid #46515e' in rendered
     assert "Φ" in rendered
     assert "font-size:20pt" in rendered
     assert "font-weight:600" in rendered
+    assert 'height="14"' in rendered
+    assert "color:#e8edf4" in rendered
     assert "line-height:1.35" in rendered
     assert "∮" in rendered
     assert "Texto depois." in rendered

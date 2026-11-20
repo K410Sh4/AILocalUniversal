@@ -173,3 +173,5 @@ Consulte docs/SECURITY.md.
 ---
 
 **AILocal Universal — inteligência local coordenada por software, ferramentas e recursos reais.**
+
+- Blocos matemáticos display usam fundo ardósia suave, borda neutra e espaçamento vertical para integrar as equações ao balão da resposta sem perder destaque tipográfico.
