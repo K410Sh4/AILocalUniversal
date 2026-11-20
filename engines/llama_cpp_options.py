@@ -25,10 +25,10 @@ def llama_cpp_constructor_options(
     if budget.cpu_threads < 1:
         raise ValueError("budget.cpu_threads must be positive")
     if validated_gpu_layers is not None:
-        if isinstance(validated_gpu_layers, bool) or validated_gpu_layers < 0:
-            raise ValueError("validated_gpu_layers must be a non-negative integer")
-        if not isinstance(validated_gpu_layers, int):
+        if isinstance(validated_gpu_layers, bool) or not isinstance(validated_gpu_layers, int):
             raise ValueError("validated_gpu_layers must be an integer")
+        if validated_gpu_layers < 0:
+            raise ValueError("validated_gpu_layers must be non-negative")
 
     options = {
         "n_ctx": budget.context_tokens,
