@@ -51,6 +51,7 @@ class AppConfig:
     )
     keep_alive: str = "5m"
     embedding_model: str | None = None
+    knowledge_enabled: bool = False
 
     def validate(self) -> None:
         if not isinstance(self.base_url, str):
@@ -73,6 +74,8 @@ class AppConfig:
             raise ConfigurationError("keep_alive não pode ficar vazio.")
         if not isinstance(self.system_prompt, str):
             raise ConfigurationError("System prompt precisa ser texto.")
+        if not isinstance(self.knowledge_enabled, bool):
+            raise ConfigurationError("knowledge_enabled precisa ser booleano.")
         if self.embedding_model is not None and not isinstance(self.embedding_model, str):
             raise ConfigurationError("Modelo de embeddings precisa ser texto ou None.")
         if isinstance(self.embedding_model, str):
@@ -92,6 +95,7 @@ class AppConfig:
             "system_prompt",
             "keep_alive",
             "embedding_model",
+            "knowledge_enabled",
         }
         try:
             config = cls(**{key: value for key, value in payload.items() if key in allowed})
