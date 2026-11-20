@@ -152,6 +152,7 @@ class GraphRuntime:
                         incoming,
                         outputs,
                         outcomes,
+                        target_node=node_id,
                         include_loop_edges=True,
                     )
                     if node.node_type in {"input.text", "input.attachment", "hardware.profile"}:
@@ -201,6 +202,7 @@ class GraphRuntime:
                                 "message": str(decision.get("feedback", "")),
                                 "iteration": loop_count,
                                 "notes": str(decision.get("notes", "")),
+                                "targets": target_ids,
                             }
                             outputs[node_id] = {
                                 "repeat": feedback,
@@ -270,6 +272,11 @@ class GraphRuntime:
                             node_output["notes"] = decision.get("notes", "")
                             node_success = decision["approved"]
                             review_runs += 1
+                            decision["iterations"] = review_runs
+                            decision["convergence"] = (
+                                "approved" if decision["approved"] else "pending"
+                            )
+                            node_output["decision"] = decision
                             review_decision = decision
                             score = decision.get("score")
                             if isinstance(score, (int, float)) and not isinstance(score, bool):
@@ -494,14 +501,21 @@ class GraphRuntime:
         outputs: dict[str, dict[str, Any]],
         outcomes: dict[str, bool],
         *,
+        target_node: str,
         include_loop_edges: bool,
     ) -> dict[str, Any]:
         collected: dict[str, Any] = {}
         for edge in edges:
             if edge.source not in outputs:
                 continue
-            if edge.source_port == "repeat" and not include_loop_edges:
-                continue
+            if edge.source_port == "repeat":
+                if not include_loop_edges:
+                    continue
+                repeat_payload = outputs[edge.source].get("repeat")
+                if isinstance(repeat_payload, dict):
+                    targets = repeat_payload.get("targets", [])
+                    if target_node not in targets:
+                        continue
             outcome = outcomes.get(edge.source, True)
             if edge.edge_type is EdgeType.ON_SUCCESS and not outcome:
                 continue
