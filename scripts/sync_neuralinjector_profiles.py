@@ -9,15 +9,10 @@ from __future__ import annotations
 
 import argparse
 import json
-import sys
 from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT))
-
-from core.neuralinjector.resources import CANONICAL_PROFILES, serialize_hardware_profile
-
 PROFILE_DIR = ROOT / "examples" / "neuralinjector" / "hardware" / "profiles"
 
 
@@ -29,6 +24,11 @@ def main() -> int:
         help="fail when JSON examples differ from the Python canonical presets",
     )
     args = parser.parse_args()
+
+    import sys
+
+    sys.path.insert(0, str(ROOT))
+    from core.neuralinjector.resources import CANONICAL_PROFILES, serialize_hardware_profile
 
     mismatches: list[str] = []
     PROFILE_DIR.mkdir(parents=True, exist_ok=True)
