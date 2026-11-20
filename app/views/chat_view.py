@@ -38,6 +38,54 @@ def markdown_to_html(markdown_text: str) -> str:
     return html[content_start + 1 : content_end]
 
 
+def build_transcript_html(messages: list[dict[str, str]]) -> str:
+    """Monta balões de conversa com contraste, espaçamento e tipografia consistentes."""
+    pieces = [
+        "<html><head><meta charset=\"utf-8\"><style>"
+        "body{font-family:'Noto Sans',sans-serif;font-size:10pt;color:#e8edf4;}"
+        "p{margin-top:3px;margin-bottom:9px;}"
+        "p:last-child{margin-bottom:0;}"
+        "ul,ol{margin-top:4px;margin-bottom:9px;}"
+        "li{margin-bottom:4px;}"
+        "h1{font-size:17pt;margin-top:8px;margin-bottom:10px;}"
+        "h2{font-size:14pt;margin-top:8px;margin-bottom:8px;}"
+        "h3{font-size:12pt;margin-top:7px;margin-bottom:7px;}"
+        "pre{white-space:pre-wrap;word-wrap:break-word;"
+        "font-family:monospace;font-size:9pt;background-color:#151a20;"
+        "color:#e6edf3;padding:10px;}"
+        "code{font-family:monospace;font-size:9pt;color:#e6edf3;"
+        "background-color:#171e26;}"
+        "pre code{background-color:transparent;}"
+        "a{color:#8ecbff;text-decoration:none;}"
+        "table{border-collapse:collapse;}"
+        "th,td{border:1px solid #46515e;padding:5px 8px;}"
+        "blockquote{color:#cbd5e1;}"
+        "*{text-decoration:none;}"
+        "</style></head><body>"
+    ]
+    for message in messages:
+        role = message.get("role", "assistant")
+        if role not in {"user", "assistant"}:
+            continue
+        is_user = role == "user"
+        label = "Você" if is_user else "AILocal"
+        width = "86%" if is_user else "96%"
+        alignment = "right" if is_user else "left"
+        background = "#203b53" if is_user else "#252b33"
+        label_color = "#c6e2fa" if is_user else "#b9cce0"
+        content = markdown_to_html(message.get("content", ""))
+        pieces.append(
+            f'<table width="{width}" align="{alignment}" border="0" '
+            f'cellspacing="0" cellpadding="12">'
+            f'<tr><td bgcolor="{background}">'
+            f'<font color="{label_color}"><b>{label}</b></font><br/>'
+            f'<div>{content}</div>'
+            "</td></tr></table><br/>"
+        )
+    pieces.append("</body></html>")
+    return "".join(pieces)
+
+
 class ChatView(QWidget):
     send_requested = Signal(str)
     cancel_requested = Signal()
@@ -94,8 +142,8 @@ class ChatView(QWidget):
         self.transcript.setOpenExternalLinks(False)
         self.transcript.setOpenLinks(False)
         self.transcript.setStyleSheet(
-            "QTextBrowser { padding: 12px; border: 1px solid palette(mid); "
-            "border-radius: 8px; }"
+            "QTextBrowser { padding: 8px; border: 1px solid palette(mid); "
+            "border-radius: 8px; background-color: #111418; }"
         )
         self.input_edit = QPlainTextEdit()
         self.input_edit.setPlaceholderText("Escreva sua mensagem…")
@@ -181,39 +229,7 @@ class ChatView(QWidget):
         self.history_list.blockSignals(False)
 
     def render_messages(self, messages: list[dict[str, str]]) -> None:
-        pieces = [
-            "<html><head><style>"
-            "body{font-family:sans-serif;font-size:10pt;}"
-            ".message{padding:10px 12px;margin:8px 0;border-radius:8px;}"
-            ".user{background:#24415b;color:#fff;margin-left:12%;}"
-            ".assistant{background:#33363c;color:#f1f1f1;margin-right:12%;}"
-            ".role{font-weight:600;margin-bottom:7px;color:#a9c7e8;}"
-            ".content{overflow-wrap:anywhere;}"
-            ".content p{margin:0 0 8px 0;}"
-            ".content p:last-child{margin-bottom:0;}"
-            ".content pre{white-space:pre-wrap;word-wrap:break-word;"
-            "font-family:monospace;background:#17191c;padding:8px;border-radius:5px;}"
-            ".content code{font-family:monospace;background:#202328;padding:1px 4px;"
-            "border-radius:3px;}"
-            ".content pre code{background:transparent;padding:0;}"
-            ".content ul,.content ol{margin-top:4px;margin-bottom:8px;}"
-            ".content a{color:#8ecbff;}"
-            ".content table{border-collapse:collapse;}"
-            ".content th,.content td{border:1px solid #666;padding:4px 7px;}"
-            "</style></head><body>"
-        ]
-        for message in messages:
-            role = message.get("role", "assistant")
-            if role not in {"user", "assistant"}:
-                continue
-            label = "Você" if role == "user" else "AILocal"
-            content = markdown_to_html(message.get("content", ""))
-            pieces.append(
-                f'<div class="message {role}"><div class="role">{label}</div>'
-                f'<div class="content">{content}</div></div>'
-            )
-        pieces.append("</body></html>")
-        self.transcript.setHtml("".join(pieces))
+        self.transcript.setHtml(build_transcript_html(messages))
         scrollbar = self.transcript.verticalScrollBar()
         scrollbar.setValue(scrollbar.maximum())
 
