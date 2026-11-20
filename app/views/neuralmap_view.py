@@ -34,6 +34,7 @@ from PySide6.QtWidgets import (
     QListWidgetItem,
     QMessageBox,
     QPlainTextEdit,
+    QTabWidget,
     QPushButton,
     QSplitter,
     QToolButton,
@@ -507,6 +508,7 @@ class GraphCanvas(QGraphicsView):
 class NeuralMapView(QWidget):
     dry_run_requested = Signal()
     execute_requested = Signal()
+    cancel_execution_requested = Signal()
     graph_changed = Signal()
 
     def __init__(self, parent=None) -> None:
@@ -549,6 +551,8 @@ class NeuralMapView(QWidget):
         self.validate_button = QPushButton("Validar")
         self.dry_run_button = QPushButton("Executar · dry-run")
         self.execute_button = QPushButton("Executar real")
+        self.cancel_button = QPushButton("Cancelar execução")
+        self.cancel_button.setEnabled(False)
         self.clear_button = QPushButton("Limpar")
         self.grid_button = QToolButton()
         self.grid_button.setText("Grade")
@@ -565,6 +569,7 @@ class NeuralMapView(QWidget):
             self.validate_button,
             self.dry_run_button,
             self.execute_button,
+            self.cancel_button,
             self.undo_button,
             self.redo_button,
             self.clear_button,
@@ -602,6 +607,17 @@ class NeuralMapView(QWidget):
         props_layout.addStretch(1)
         props_layout.addWidget(self.resource_status)
 
+        self.output_editor = QPlainTextEdit()
+        self.output_editor.setReadOnly(True)
+        self.output_editor.setPlaceholderText("O resultado estruturado aparecerá aqui.")
+        self.trace_editor = QPlainTextEdit()
+        self.trace_editor.setReadOnly(True)
+        self.trace_editor.setPlaceholderText("Eventos da execução aparecerão aqui.")
+        right_tabs = QTabWidget()
+        right_tabs.addTab(properties, "Propriedades")
+        right_tabs.addTab(self.output_editor, "Resultado")
+        right_tabs.addTab(self.trace_editor, "Trace")
+
         left = QWidget()
         left_layout = QVBoxLayout(left)
         left_layout.addWidget(QLabel("Biblioteca de nós · arraste para o canvas"))
@@ -610,7 +626,7 @@ class NeuralMapView(QWidget):
         splitter = QSplitter(Qt.Orientation.Horizontal)
         splitter.addWidget(left)
         splitter.addWidget(self.canvas)
-        splitter.addWidget(properties)
+        splitter.addWidget(right_tabs)
         splitter.setStretchFactor(0, 0)
         splitter.setStretchFactor(1, 1)
         splitter.setStretchFactor(2, 0)
@@ -629,6 +645,7 @@ class NeuralMapView(QWidget):
         self.validate_button.clicked.connect(self.validate_current_graph)
         self.dry_run_button.clicked.connect(self.dry_run_requested.emit)
         self.execute_button.clicked.connect(self.execute_requested.emit)
+        self.cancel_button.clicked.connect(self.cancel_execution_requested.emit)
         self.clear_button.clicked.connect(self.clear_graph)
         self.grid_button.toggled.connect(self.canvas_grid_changed)
         self.library.itemDoubleClicked.connect(self._library_double_click)
@@ -642,6 +659,26 @@ class NeuralMapView(QWidget):
         self.resource_status.setText(
             f"Perfil de hardware: {profile} · Proteção: {protection_mode}"
         )
+
+    def set_execution_running(self, running: bool) -> None:
+        self.dry_run_button.setEnabled(not running)
+        self.execute_button.setEnabled(not running)
+        self.cancel_button.setEnabled(running)
+
+    def set_execution_result(self, result) -> None:
+        payload = result.output if result.success else result.error
+        self.output_editor.setPlainText(
+            json.dumps(payload, ensure_ascii=False, indent=2, default=str)
+        )
+        self.trace_editor.setPlainText(
+            json.dumps(result.trace, ensure_ascii=False, indent=2, default=str)
+        )
+
+    def set_execution_event(self, stage: str, status: str, details: object) -> None:
+        self.validation_details.setText(
+            f"Executando · {stage} · {status}"
+        )
+
 
     def _snapshot(self) -> str:
         return json.dumps(self.graph.to_dict(), ensure_ascii=False)
