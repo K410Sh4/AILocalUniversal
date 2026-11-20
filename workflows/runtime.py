@@ -136,6 +136,10 @@ class GraphRuntime:
             while True:
                 if cancellation.is_set():
                     raise GraphError("EXECUTION_CANCELLED", "A execução do NeuralMap foi cancelada.")
+                if pass_filter is not None:
+                    for invalidated_id in pass_filter:
+                        outputs.pop(invalidated_id, None)
+                        outcomes.pop(invalidated_id, None)
                 repeat_requested = False
 
                 for node_id in order:
@@ -153,7 +157,7 @@ class GraphRuntime:
                         outputs,
                         outcomes,
                         target_node=node_id,
-                        include_loop_edges=True,
+                        include_loop_edges=False,
                     )
                     if node.node_type in {"input.text", "input.attachment", "hardware.profile"}:
                         pass
@@ -348,7 +352,7 @@ class GraphRuntime:
                         outputs,
                         outcomes,
                         target_node=node_id,
-                        include_loop_edges=True,
+                        include_loop_edges=False,
                     )
                     if incoming and not node_inputs:
                         continue
