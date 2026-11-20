@@ -331,7 +331,7 @@ O relatório fornece `activation_allowed`; qualquer instalador ou gerenciador de
 
 O Adaptive Resource Manager aceita novos snapshots e classifica a pressão de memória como normal, constrained, critical ou emergency. Os estados mais severos recomendam limitar concorrência futura, pausar novas cargas, suspender trabalho opcional ainda não iniciado ou recusar novas cargas. Uma histerese exige recuperação suficiente antes de voltar a um estado menos restritivo.
 
-O avaliador não executa essas ações, não termina gerações em andamento e não descarrega modelos. Monitor periódico, executor de ações e integração completa com o ciclo de vida do backend permanecem trabalho futuro.
+O componente `ResourceMonitor` oferece amostragem periódica opt-in, iniciada explicitamente por `start()`, com intervalo padrão de cinco segundos e provedor de snapshot substituível. Seu callback recebe a decisão na thread do monitor. A implementação não inicia esse monitor automaticamente na aplicação, não executa as ações retornadas, não termina gerações em andamento e não descarrega modelos. A integração ao ciclo de vida da aplicação e o executor seguro de ações permanecem trabalho futuro.
 
 ### 6A.5 Integração inicial com Ollama
 
