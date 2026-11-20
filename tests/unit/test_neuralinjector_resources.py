@@ -99,7 +99,7 @@ def test_permissive_mode_requires_an_explicit_override():
 
 def test_protected_mode_rejects_unavailable_requested_profile():
     report = build_compatibility_report(
-        hw(8192, 4000),
+        hw(8192, 5000),
         preferred_profile="performance",
         protection_mode=ProtectionMode.PROTECTED,
     )
@@ -111,7 +111,7 @@ def test_protected_mode_rejects_unavailable_requested_profile():
 
 def test_adaptive_mode_falls_back_to_eligible_profile():
     report = build_compatibility_report(
-        hw(8192, 4000),
+        hw(8192, 5000),
         preferred_profile="performance",
         protection_mode=ProtectionMode.ADAPTIVE,
     )
