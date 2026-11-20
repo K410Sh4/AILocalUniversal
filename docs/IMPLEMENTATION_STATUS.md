@@ -19,7 +19,7 @@ Este documento diferencia código integrado, cobertura automatizada e validaçã
 | Cognitive Task Executor | Execução sequencial em worker, dependências, ferramenta local, subtarefas LLM e síntese | Sem paralelismo ou roteamento multi-modelo |
 | Validation Layer | Estrutura, dependências, replay determinístico, completude e relatório | Sem verificação factual geral de texto LLM |
 | Cognitive Inspector | Mostra resultados, estados, trace e relatório de validação | Mostra apenas a última tarefa da sessão |
-| RAG / Context Composer | Base lexical/vetorial, aba Conhecimento e integração opt-in ao Chat implementadas na `feature/rag-v1`; EmbeddingGemma e Qwen3 Embedding validados no Arch; CI anterior: 142 testes | Reranker concreto, benchmark representativo de corpus, OCR, orçamento por tokenizer e verificação factual/entailment permanecem fora desta entrega |
+| RAG / Context Composer | Base lexical/vetorial, aba Conhecimento e integração opt-in ao Chat implementadas na `feature/rag-v1`; EmbeddingGemma e Qwen3 Embedding validados no Arch; CI atual: Ruff + 155 testes Pytest (Python 3.11) | Reranker concreto, benchmark representativo de corpus, OCR, orçamento por tokenizer e verificação factual/entailment permanecem fora desta entrega |
 | Adaptive Resource Manager | Planejado | Fase 4 |
 | Roteamento especialista | Planejado | Fase 5 |
 | Swarm P2P | Planejado | Fase 6 |
@@ -74,7 +74,7 @@ verified_deterministic significa que a mesma ferramenta local reproduziu a opera
 - A Validation Layer atual não prova teoremas, não verifica fatos gerais e não substitui validação de domínio.
 - O conjunto de ferramentas determinísticas é pequeno e cobre somente expressões/unidades suportadas.
 - O Cognitive Inspector mostra apenas a última tarefa da sessão; o relatório de validação não é persistido como histórico de execuções.
-- A integração opt-in do KnowledgeRuntime ao Chat e a exibição de fontes/citações foram implementadas na `feature/rag-v1`, mas aguardam CI final e validação operacional após pull no Arch. Reranker concreto, avaliação RAG em corpus representativo, OCR, verificação semântica independente, gerenciamento adaptativo de recursos, roteamento multi-modelo e Swarm ainda não foram implementados.
+- A integração opt-in do KnowledgeRuntime ao Chat e a exibição de fontes/citações foram implementadas na `feature/rag-v1` e passaram no CI com 155 testes; aguardam validação operacional após pull no Arch. Reranker concreto, avaliação RAG em corpus representativo, OCR, verificação semântica independente, gerenciamento adaptativo de recursos, roteamento multi-modelo e Swarm ainda não foram implementados.
 - O renderizador matemático cobre um subconjunto de LaTeX, não um motor TeX completo.
 - O orçamento de tokens atual é indicativo e ainda não é aplicado como limite efetivo da engine.
 
@@ -119,11 +119,11 @@ Implementado na branch `feature/rag-v1`:
 - Worker Qt para listagem, ingestão, remoção, busca e reindexação.
 - Diretórios privados (0700) e arquivos SQLite privados (0600) no Linux.
 
-Validação automatizada anterior: Ruff aprovado e 142 testes Pytest aprovados no CI antes da integração RAG ao Chat. A aba Conhecimento foi validada visualmente no Arch e o usuário executou ingestão, busca lexical e recuperação vetorial com dois modelos. A integração recente ao Chat ainda precisa passar no CI e em teste operacional dedicado no Arch.
+Validação automatizada atual: Ruff aprovado e 155 testes Pytest aprovados no CI. A aba Conhecimento foi validada visualmente no Arch e o usuário executou ingestão, busca lexical e recuperação vetorial com dois modelos. A integração recente ao Chat já passou no CI e aguarda teste operacional dedicado no Arch.
 
 
  
-## Integração RAG opt-in ao Chat — implementação pendente de CI final
+## Integração RAG opt-in ao Chat — CI aprovado; validação operacional pendente
 
 - Controle explícito "Usar conhecimento local" no Chat, persistido em configuração e desativado por padrão.
 - Recuperação executada em worker Qt independente; falhas de recuperação não bloqueiam o Chat e seguem com fallback sem contexto documental.
