@@ -17,6 +17,7 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["pytest>=8.0", "pytest-asyncio>=0.23", "ruff>=0.5"]
+documents = ["pypdf>=7.1.1,<8"]
 
 [project.scripts]
 ailocal = "app.main:main"
@@ -28,6 +29,7 @@ include = ["app*", "core*", "engines*", "pipeline*", "resources*", "knowledge*",
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
 pythonpath = ["."]
 
 [tool.ruff]

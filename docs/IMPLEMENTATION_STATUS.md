@@ -19,11 +19,34 @@ Este documento diferencia código integrado, cobertura automatizada e validaçã
 | Cognitive Task Executor | Execução sequencial em worker, dependências, ferramenta local, subtarefas LLM e síntese | Sem paralelismo ou roteamento multi-modelo |
 | Validation Layer | Estrutura, dependências, replay determinístico, completude e relatório | Sem verificação factual geral de texto LLM |
 | Cognitive Inspector | Mostra resultados, estados, trace e relatório de validação | Mostra apenas a última tarefa da sessão |
-| RAG / Context Composer | Planejado | Fase 3 |
+| RAG / Context Composer | Base lexical/vetorial, aba Conhecimento e integração opt-in ao Chat implementadas na `feature/rag-v1`; EmbeddingGemma e Qwen3 Embedding validados no Arch; CI atual: Ruff + 155 testes Pytest (Python 3.11) | Reranker concreto, benchmark representativo de corpus, OCR, orçamento por tokenizer e verificação factual/entailment permanecem fora desta entrega |
 | Adaptive Resource Manager | Planejado | Fase 4 |
 | Roteamento especialista | Planejado | Fase 5 |
 | Swarm P2P | Planejado | Fase 6 |
 | BitNet / RPC | Experimental futuro | Fase 7 |
+
+## Fase 3 — escopo inicial em desenvolvimento
+
+A branch `feature/rag-v1` contém uma primeira base executável de conhecimento local:
+- loaders explícitos para TXT, Markdown e PDF; pypdf é opcional;
+- proveniência por URI, SHA-256, página, seção e offsets;
+- chunking determinístico com limites e sobreposição;
+- índice lexical SQLite FTS5, com filtros e substituição de versões do mesmo arquivo;
+- provedor de embeddings local via Ollama `/api/embed`, com batching e validação de dimensões;
+- armazenamento vetorial SQLite com vetores float32 normalizados, busca cosseno e filtro por documento/modelo;
+- indexador vetorial e backend de busca compatível com `HybridRetriever`, com checagem de hash no retorno;
+- fusão RRF de rankings lexical/vetorial; reranker permanece apenas como contrato;
+- KnowledgeRuntime para anexar Evidence ao CognitiveTask e preparar mensagem de contexto delimitada como dado documental não confiável;
+- composição de contexto com citações estáveis e orçamento em caracteres;
+- validação estrutural de vínculos, hashes e trechos citados;
+- script de smoke test para `/api/embed` e recuperação vetorial no Ollama real com dados sintéticos e SQLite temporário;
+- `KnowledgeLibrary` para persistência, ingestão, consulta, exclusão do índice e reindexação por modelo;
+- aba PySide6 **Conhecimento**, com seleção de arquivos, listagem, remoção do índice e prévia de recuperação;
+- workers Qt para operações da biblioteca sem bloquear a thread da interface;
+- seleção persistente de modelo de embeddings separada do modelo de chat;
+- bancos SQLite em diretório local privado, sem mover ou excluir arquivos originais;
+
+Validação operacional no Arch Linux: o usuário confirmou ingestão e busca lexical na aba Conhecimento, detecção dos modelos de embedding e recuperação vetorial/híbrida real com EmbeddingGemma e Qwen3 Embedding usando um documento de teste. A dimensão observada foi 768 para EmbeddingGemma; a consulta vetorial encontrou um chunk enquanto a lexical retornou zero, comprovando a origem `vector`. Também foi executado o smoke test sintético anterior com dois chunks e SQLite temporário removido. A integração opt-in ao Chat foi implementada depois dessas verificações e aguarda validação operacional específica no Arch. Esses ensaios não são benchmark de qualidade em corpus representativo. O reranker concreto, OCR e verificação semântica independente continuam fora do escopo.
 
 ## Validation Layer: escopo atual
 
@@ -51,7 +74,7 @@ verified_deterministic significa que a mesma ferramenta local reproduziu a opera
 - A Validation Layer atual não prova teoremas, não verifica fatos gerais e não substitui validação de domínio.
 - O conjunto de ferramentas determinísticas é pequeno e cobre somente expressões/unidades suportadas.
 - O Cognitive Inspector mostra apenas a última tarefa da sessão; o relatório de validação não é persistido como histórico de execuções.
-- RAG, embeddings, Context Composer, gerenciamento de recursos, roteamento multi-modelo e Swarm ainda não foram implementados.
+- A integração opt-in do KnowledgeRuntime ao Chat e a exibição de fontes/citações foram implementadas na `feature/rag-v1` e passaram no CI com 155 testes; aguardam validação operacional após pull no Arch. Reranker concreto, avaliação RAG em corpus representativo, OCR, verificação semântica independente, gerenciamento adaptativo de recursos, roteamento multi-modelo e Swarm ainda não foram implementados.
 - O renderizador matemático cobre um subconjunto de LaTeX, não um motor TeX completo.
 - O orçamento de tokens atual é indicativo e ainda não é aplicado como limite efetivo da engine.
 
@@ -62,3 +85,52 @@ O usuário já demonstrou no Arch Linux/KDE o Chat com Ollama/Qwen, o inventári
 2. pedido composto cálculo + explicação;
 3. explicação científica com aviso de revisão factual;
 4. falha/cancelamento durante execução.
+
+
+## Registro de validação operacional — 2026-11-20
+
+Resultado informado e executado pelo usuário no Arch Linux:
+- Python: 3.14.
+- Pytest: 132 testes aprovados.
+- Modelo de embeddings: `embeddinggemma`.
+- Dimensão retornada: 768.
+- Chunks sintéticos indexados: 2.
+- Resultados vetoriais: 2.
+- Resultados híbridos: 2.
+- Similaridade cosseno do primeiro resultado para a consulta idêntica: 1.0.
+- Armazenamento: SQLite temporário removido ao final.
+- Origem dos documentos: dados sintéticos; nenhum documento pessoal foi ingerido.
+
+Esse resultado comprova conectividade e execução do caminho técnico básico no ambiente-alvo. Não é benchmark de precisão/recall, nem valida a qualidade de respostas RAG em documentos reais.
+
+O aviso de depreciação do pytest-asyncio foi tratado pela configuração explícita `asyncio_default_fixture_loop_scope = "function"` em `pyproject.toml`.
+
+
+## Fase 3.3 — Biblioteca documental e aba Conhecimento
+
+Implementado na branch `feature/rag-v1`:
+- Serviço `KnowledgeLibrary` em diretório XDG de dados, com bancos SQLite lexical e vetorial.
+- Seleção explícita de TXT, Markdown, PDF e formatos técnicos suportados.
+- Listagem de documentos e contagem de chunks.
+- Exclusão da entrada documental e vetores do índice, sem apagar o arquivo original.
+- Prévia de busca híbrida; se embeddings falharem durante a consulta, a biblioteca tenta busca lexical e informa o aviso.
+- Modelo de embeddings escolhido separadamente, salvo na configuração.
+- Reindexação explícita de documentos existentes ao trocar de modelo.
+- Worker Qt para listagem, ingestão, remoção, busca e reindexação.
+- Diretórios privados (0700) e arquivos SQLite privados (0600) no Linux.
+
+Validação automatizada atual: Ruff aprovado e 155 testes Pytest aprovados no CI. A aba Conhecimento foi validada visualmente no Arch e o usuário executou ingestão, busca lexical e recuperação vetorial com dois modelos. A integração recente ao Chat já passou no CI e aguarda teste operacional dedicado no Arch.
+
+
+ 
+## Integração RAG opt-in ao Chat — CI aprovado; validação operacional pendente
+
+- Controle explícito "Usar conhecimento local" no Chat, persistido em configuração e desativado por padrão.
+- Recuperação executada em worker Qt independente; falhas de recuperação não bloqueiam o Chat e seguem com fallback sem contexto documental.
+- Contexto documental delimitado como dado não confiável e inserido antes da mensagem original do usuário.
+- Evidências anexadas à CognitiveTask sem duplicar chunk_id; plano e trace registram a recuperação.
+- A resposta recebe a lista de fontes recuperadas. Citações do modelo são verificadas quanto a identificadores conhecidos e integridade de proveniência.
+- Cognitive Inspector exibe documento, localizador e origem lexical/vetorial das evidências.
+- A validação de citações é estrutural: não certifica que as afirmações da resposta sejam semanticamente implicadas pelas fontes.
+
+A integração aguarda CI e validação operacional no Arch. Não altera a main.

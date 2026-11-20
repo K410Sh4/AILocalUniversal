@@ -61,16 +61,56 @@ As fases são entregas progressivas. Uma funcionalidade só é considerada concl
 
 ## Fase 3 — Conhecimento local e RAG verificável
 
-1. Loaders para PDF, Markdown, texto e formatos técnicos.
-2. Extração com proveniência: arquivo, hash, página, seção e offsets.
-3. Chunking respeitando títulos, tabelas, código e limites semânticos.
-4. Embeddings locais e índice vetorial substituível.
-5. Busca lexical + vetorial (híbrida), filtros e reranking.
-6. Context Composer com citações e limites de contexto.
-7. Validation Layer de evidências: alegações ligadas a fontes, citações verificáveis, conflitos e ausência de suporte.
-8. Conjunto de avaliação RAG: precisão de recuperação, cobertura e fidelidade às fontes.
+### 3.1 — Ingestão e recuperação lexical (base inicial na branch `feature/rag-v1`)
 
-**Saída:** respostas com conhecimento local rastreável e evidências auditáveis.
+- [x] Loader UTF-8 para texto e formatos técnicos declarados.
+- [x] Loader Markdown com preservação de títulos e blocos.
+- [x] Loader PDF opcional por pypdf, com limite de bytes/páginas/caracteres; sem OCR.
+- [x] Proveniência com URI, SHA-256, página, seção e offsets Unicode.
+- [x] Chunking determinístico com limites, sobreposição e separação por página/seção.
+- [x] Índice lexical local SQLite FTS5, filtros por documento e reingestão sem resultados obsoletos.
+- [x] Contratos substituíveis para busca vetorial e reranking.
+- [x] Fusão de rankings por Reciprocal Rank Fusion quando o backend vetorial existe.
+- [x] Context Composer com citações e orçamento em caracteres.
+- [x] Validação estrutural de referências, hash e trecho original.
+- [x] Testes unitários de loaders, chunking, indexação, recuperação, contexto e proveniência.
+
+### 3.2 — Recuperação semântica e integração
+
+- [x] Provedor de embeddings via Ollama `/api/embed`, com batch, dimensões configuráveis e rejeição de entradas excessivas sem truncamento silencioso.
+- [x] Armazenamento vetorial SQLite com vetores float32 normalizados, busca cosseno, filtros e substituição transacional de documentos.
+- [x] LocalVectorIndexer e backend vetorial que confere chunk_id, document_id e source_sha256 antes de devolver evidências.
+- [x] Fusão lexical/vetorial por RRF quando o backend vetorial é fornecido.
+- [x] Testes simulados do provider, persistência, filtros, reindexação e integração lexical/vetorial.
+- [x] KnowledgeRuntime para anexar Evidence ao CognitiveTask e preparar mensagem documental não confiável.
+- [x] Smoke test real no Arch Linux com Ollama `embeddinggemma`: 768 dimensões, 2 chunks sintéticos indexados, busca vetorial/híbrida aprovada e SQLite temporário removido.
+- [ ] Escolher e comparar modelos de embeddings locais em hardware leve, intermediário e potente.
+- [ ] Implementar reranker concreto, opcional e mensurável.
+- [ ] Definir política de deduplicação e orçamento de tokens com benchmarks.
+- [x] Integrar o KnowledgeRuntime ao MainWindow/CognitiveTaskExecutor com ativação explícita e recuperação em worker Qt.
+- [x] Integrar Context Composer ao contexto do modelo, delimitar documentos como dados não confiáveis e transportar Evidence ao CognitiveTask.
+- [x] Exibir fontes recuperadas no Chat e proveniência das evidências no Cognitive Inspector; validar vínculo/hash das citações sem declarar veracidade factual.
+- [x] Criar microbenchmark sintético reproduzível com precision@k, recall@k, MRR e cobertura, executável em modo lexical ou híbrido por modelo.
+- [ ] Ampliar corpus de avaliação RAG com documentos representativos, julgamentos humanos de relevância, fidelidade e conflitos.
+- [x] Testar a delimitação de conteúdo documental não confiável e a rejeição de identificadores de citação inexistentes; resistência semântica do modelo continua sendo mitigação, não garantia.
+- [ ] Definir orçamento de tokens por tokenizer/backend; a primeira versão usa limite em caracteres.
+
+**Saída da Fase 3:** respostas com evidências recuperadas, proveniência verificável e validação explícita dos vínculos. A validação de links/hash não deve ser confundida com prova factual ou verificação de entailment.
+
+### 3.3 — Biblioteca documental e interface Conhecimento
+
+- [x] Serviço KnowledgeLibrary com persistência lexical/vetorial em diretório XDG local.
+- [x] Ingestão explícita de arquivos selecionados pelo usuário; sem cópia ou movimentação do original.
+- [x] Listagem de documentos, tipo, tamanho e contagem de chunks.
+- [x] Remoção do índice com preservação do arquivo original.
+- [x] Prévia de recuperação lexical/vetorial dentro da aba Conhecimento.
+- [x] Seleção persistente de modelo de embeddings, independente do modelo de chat.
+- [x] Reindexação explícita após troca de modelo de embeddings.
+- [x] Workers Qt para não bloquear a thread da interface.
+- [x] Fallback lexical e aviso explícito quando a consulta vetorial falhar.
+- [x] Testes automatizados do serviço, configuração, métricas do benchmark e componentes básicos da UI; CI anterior à integração Chat com 142 testes aprovados.
+- [x] Validar visualmente a aba Conhecimento no Arch Linux.
+- [x] Ingerir e buscar um documento de teste no ambiente do usuário; recuperação lexical/vetorial e reindexação real validadas com EmbeddingGemma e Qwen3 Embedding.
 
 ## Fase 4 — Gerenciamento adaptativo de recursos
 

@@ -144,6 +144,9 @@ class CognitiveInspectorView(QWidget):
         self.trace_table = self._create_table(
             ["Horário", "Estágio", "Evento", "Detalhes"]
         )
+        self.evidence_table = self._create_table(
+            ["Citação", "Documento", "Localizador", "Origem da recuperação"]
+        )
         self.result_text = QPlainTextEdit()
         self.result_text.setReadOnly(True)
         self.result_text.setMaximumHeight(90)
@@ -159,6 +162,7 @@ class CognitiveInspectorView(QWidget):
         layout.addWidget(metrics)
         layout.addWidget(capabilities)
         layout.addWidget(self._group_table("Subtarefas e dependências", self.subtasks_table))
+        layout.addWidget(self._group_table("Evidências recuperadas", self.evidence_table))
         layout.addWidget(self._group_table("Plano de execução", self.plan_table))
         layout.addWidget(self._group_table("Execution Trace", self.trace_table))
         validation_group = QGroupBox("Validation Layer")
@@ -326,6 +330,17 @@ class CognitiveInspectorView(QWidget):
             )
         self._populate_table(self.subtasks_table, subtask_rows)
 
+        evidence_rows = [
+            [
+                str(item.get("citation_id", "—")),
+                str(item.get("title", item.get("source", "—"))),
+                str(item.get("locator", "—")),
+                ", ".join(item.get("retrieval_sources", [])) or "—",
+            ]
+            for item in snapshot.get("evidence", [])
+        ]
+        self._populate_table(self.evidence_table, evidence_rows)
+
         plan_rows = []
         for step in snapshot["execution_plan"]:
             detail = {
@@ -386,6 +401,16 @@ class CognitiveInspectorView(QWidget):
                     f"[{check.get('status', '—')}] {check.get('name', 'verificação')}: "
                     f"{check.get('message', '')}"
                 )
+            citation_report = validation_report.get("evidence_citations")
+            if isinstance(citation_report, dict):
+                detail_lines.append(
+                    "Integridade das citações: "
+                    f"{citation_report.get('status', '—')} • "
+                    "veracidade factual: "
+                    f"{citation_report.get('factual_status', '—')}"
+                )
+                for warning in citation_report.get("warnings", []):
+                    detail_lines.append(f"[aviso] {warning}")
             for issue in validation_report.get("issues", []):
                 detail_lines.append(
                     f"[{issue.get('severity', 'info')}] {issue.get('code', 'issue')}: "
@@ -438,6 +463,7 @@ class CognitiveInspectorView(QWidget):
             self.subtasks_table,
             self.plan_table,
             self.trace_table,
+            self.evidence_table,
         ):
             table.setRowCount(0)
         self.result_text.clear()

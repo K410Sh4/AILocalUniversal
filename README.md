@@ -4,7 +4,7 @@
 
 O AILocal Universal coordena modelos de linguagem, ferramentas determinísticas, conhecimento local e recursos computacionais. Seu princípio central é usar o mecanismo mais adequado para cada parte da tarefa — não acionar um LLM para tudo.
 
-**Estado:** Fase 1 em validação operacional; núcleo cognitivo inicial da Fase 2 implementado em branch de desenvolvimento.  
+**Estado:** Chat com Ollama visualmente confirmado no Arch Linux; aceitação completa da Fase 2 ainda em validação. A base inicial de RAG está em `feature/rag-v1`, separada da `main`.  
 **Plataforma prioritária:** Linux / Arch Linux.  
 **Interface:** Python + PySide6.  
 **Backend inicial:** Ollama.
@@ -46,6 +46,26 @@ O envio de mensagens passa por um pipeline local antes de decidir a execução. 
 
 Os scores são afinidades heurísticas entre 0 e 1, não probabilidades calibradas. Não há embeddings semânticos, classificador treinado, decomposição semântica livre, execução paralela ou seleção automática de especialistas por domínio. A decomposição atual depende de estrutura explícita. Cada parte é executada separadamente e depois sintetizada pelo mesmo modelo, aumentando o número de chamadas Ollama em pedidos compostos. As conversões de dados usam fatores decimais (base 1000). O conjunto de ferramentas é intencionalmente pequeno e será ampliado com testes específicos.
 
+## Fase 3 — Conhecimento local e RAG verificável
+
+A branch `feature/rag-v1` inclui uma biblioteca de conhecimento local e integração RAG opcional ao fluxo de mensagens do Chat:
+
+- Loaders explícitos para TXT, Markdown e PDF com extração local; PDF usa dependência opcional.
+- Proveniência por SHA-256, URI, página, seção e offsets Unicode.
+- Chunking com limites e sobreposição, sem cruzar páginas ou seções Markdown.
+- Índice lexical SQLite FTS5 e armazenamento vetorial SQLite.
+- Embeddings via Ollama `/api/embed`, usando um modelo explicitamente selecionado e separado do modelo de chat.
+- Busca lexical e vetorial combinadas por RRF, Context Composer, citações e Evidence Validator.
+- Script de microbenchmark sintético para precision@k, recall@k, MRR e cobertura, comparando busca lexical e híbrida por modelo.
+- KnowledgeRuntime como ponte para associar Evidence ao CognitiveTask, ativável no Chat pelo controle `Usar conhecimento local` (desativado por padrão).
+- Aba **Conhecimento** para adicionar documentos, listar/remover entradas do índice e testar a recuperação local; o Chat pode consumir evidências quando o usuário ativa explicitamente o RAG.
+- Seleção persistente do modelo de embeddings e ação explícita para reindexar vetores após troca de modelo.
+- Indexação em worker Qt; os arquivos originais não são movidos nem apagados.
+
+**Validação:** o smoke test real foi aprovado no Arch com Ollama `embeddinggemma` (768 dimensões). CI da integração RAG ao Chat e do benchmark sintético: Ruff aprovado e 155 testes Pytest aprovados (Python 3.11). O usuário também validou no Arch a recuperação vetorial/híbrida com EmbeddingGemma e Qwen3 Embedding; a integração Chat-RAG aguarda teste operacional após pull.
+
+**Limites:** a integração inicial ao Chat é opt-in, usa documentos como dados não confiáveis e valida a integridade estrutural das citações, sem provar verdade/entailment. A validação operacional da integração após pull no Arch, reranker concreto, benchmark de qualidade em corpus representativo, OCR e orçamento de contexto por tokenizer permanecem pendentes. Consulte [docs/RAG.md](docs/RAG.md).
+ 
 ## Arquitetura
 
 ~~~mermaid
@@ -66,7 +86,7 @@ flowchart TD
  L --> F
 ~~~
 
-A Validation Layer atual é estrutural e determinística: reproduz cálculos/conversões locais, confere dependências e completude e registra avisos para saídas de LLM. Ela não comprova fatos de explicações livres sem evidência externa. RAG, Context Composer e verificação factual baseada em fontes serão construídos na Fase 3.
+A Validation Layer atual é estrutural e determinística: reproduz cálculos/conversões locais, confere dependências e completude e registra avisos para saídas de LLM. A camada RAG fornece fontes locais e confere a integridade estrutural das citações, mas não prova fatos nem entailment de explicações livres.
 
 ## Estrutura
 
@@ -77,7 +97,7 @@ A Validation Layer atual é estrutural e determinística: reproduz cálculos/con
 - workers/: operações de rede fora da thread da UI.
 - storage/: configurações e histórico local.
 - pipeline/: futuras etapas cognitivas.
-- knowledge/: futura ingestão e recuperação RAG.
+- knowledge/: loaders, chunking, índice lexical SQLite FTS5, recuperação híbrida extensível, composição de contexto e validação estrutural de evidências (branch `feature/rag-v1`).
 - resources/: futuro gerenciamento de recursos.
 - swarm/: futura comunicação cooperativa P2P.
 - docs/: arquitetura, contratos, roadmap, segurança e status.
@@ -87,6 +107,7 @@ A Validation Layer atual é estrutural e determinística: reproduz cálculos/con
 - Python 3.11 ou superior.
 - PySide6 6.7 ou superior.
 - httpx 0.27 ou superior.
+- Opcional para PDFs: pypdf 7.1.1 ou superior, instalado pelo extra `documents`.
 - Ollama instalado e executando localmente.
 - Pelo menos um modelo de chat baixado no Ollama.
 
@@ -117,6 +138,38 @@ ollama pull qwen2.5:7b
 ~~~
 
 O modelo acima é apenas um exemplo; escolha um modelo compatível com a memória do seu computador.
+
+## Preparar um modelo de embeddings
+
+O modelo de chat e o modelo de embeddings são funções distintas. Instale no Ollama um modelo compatível com embeddings e configure seu nome em `OllamaEmbeddingProvider`. A aplicação não baixa modelos automaticamente.
+
+Substitua `NOME_DO_MODELO` pelo identificador publicado do modelo escolhido:
+
+~~~bash
+ollama pull NOME_DO_MODELO
+~~~
+
+Use a mesma família/modelo e dimensões ao indexar documentos e ao consultar; vetores de modelos ou dimensões diferentes não são comparáveis.
+
+Para confirmar o endpoint real no Arch, com dados sintéticos e sem alterar seu histórico ou índice:
+
+~~~bash
+ollama pull embeddinggemma
+.venv/bin/python scripts/smoke_test_embeddings.py --model embeddinggemma
+~~~
+
+O smoke test foi executado com sucesso no Arch: `embeddinggemma`, 768 dimensões, 2 chunks, 2 resultados vetoriais, 2 híbridos e similaridade 1.0 para consulta idêntica. O script usa SQLite temporário, removido ao terminar. Um resultado aprovado confirma conectividade e busca vetorial básica; não mede qualidade RAG em documentos reais.
+ O endpoint de embeddings usa por padrão o Ollama local em `127.0.0.1:11434`.
+
+## Suporte opcional a PDF
+
+Para habilitar extração local de texto selecionável em PDFs:
+
+~~~bash
+.venv/bin/pip install -e ".[documents]"
+~~~
+
+PDFs digitalizados sem camada de texto não são processados por OCR nesta etapa.
 
 ## Utilização
 
@@ -170,6 +223,7 @@ Consulte docs/SECURITY.md.
 - Roadmap: docs/ROADMAP.md
 - Estado da implementação: docs/IMPLEMENTATION_STATUS.md
 - Contratos de dados: docs/DATA_CONTRACTS.md
+- RAG e proveniência: docs/RAG.md
 - Contribuição: CONTRIBUTING.md
 
 ---

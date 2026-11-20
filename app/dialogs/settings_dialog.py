@@ -55,6 +55,8 @@ class SettingsDialog(QDialog):
             manual_model=self._original.manual_model,
             system_prompt=self.prompt_edit.toPlainText().strip(),
             keep_alive=self.keep_alive_edit.text().strip(),
+            embedding_model=self._original.embedding_model,
+            knowledge_enabled=self._original.knowledge_enabled,
         )
         try:
             candidate.validate()
