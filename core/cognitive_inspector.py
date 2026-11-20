@@ -43,6 +43,16 @@ def build_inspector_snapshot(task: CognitiveTask) -> dict[str, Any]:
         "execution_plan": [dict(step) for step in task.execution_plan],
         "subtasks": [dict(item) for item in task.subtask_plan],
         "trace": [dict(event) for event in task.execution_trace],
+        "evidence": [
+            {
+                "citation_id": item.metadata.get("citation_id", "—"),
+                "title": item.metadata.get("title", item.source),
+                "source": item.source,
+                "locator": item.locator or "—",
+                "retrieval_sources": list(item.metadata.get("retrieval_sources", [])),
+            }
+            for item in task.evidence
+        ],
         "deterministic_results": [
             dict(result) for result in task.deterministic_results
         ],
