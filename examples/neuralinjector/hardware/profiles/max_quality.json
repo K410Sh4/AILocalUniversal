@@ -1,7 +1,7 @@
 {
   "profile_id": "max_quality",
   "profile_version": "1.0.0",
-  "description": "Prioriza qualidade e contexto em workstations com memória ampla.",
+  "description": "Prioriza qualidade e contexto em workstations.",
   "requirements": {
     "min_ram_mb": 16384,
     "min_vram_mb": 0,
@@ -19,7 +19,8 @@
   "budget": {
     "max_ram_fraction": 0.8,
     "target_context_tokens": 16384,
-    "max_parallelism": 4
+    "max_parallelism": 4,
+    "max_cpu_threads": 16
   },
   "execution": {
     "preferred_backends": [
@@ -45,19 +46,17 @@
   },
   "quantization_policy": {
     "preferred": [
+      "Q6_K",
       "Q8_0",
-      "Q6_K",
-      "Q5_K_M"
-    ],
-    "low_memory_preferred": [
-      "Q6_K",
       "Q5_K_M",
       "Q4_K_M"
     ],
-    "low_memory_threshold_mb": 16384,
+    "low_memory_preferred": [
+      "Q5_K_M",
+      "Q4_K_M",
+      "Q4_0"
+    ],
+    "low_memory_threshold_mb": 8192,
     "allow_lower_precision_fallback": true
-  },
-  "notes": [
-    "Contexto, concorrência e precisão dependem de suporte e medição do backend."
-  ]
+  }
 }
