@@ -1,0 +1,105 @@
+AILOCAL UNIVERSAL — PROPRIETARY LICENSE
+SPDX-License-Identifier: LicenseRef-AILocal-Universal-Proprietary
+
+Copyright © 2026 K410Sh4. All rights reserved.
+
+1. RIGHTS HOLDER AND SCOPE
+
+This proprietary license is issued for the original materials of the AILocal
+Universal project by the rights holder identified publicly as K410Sh4, the
+owner of the GitHub repository K410Sh4/AILocalUniversal.
+
+"Project Materials" means the original source code, object code, software
+components, technical documentation, specifications, schemas, workflows,
+diagrams, interface designs, original examples, and other original creative
+materials authored for or incorporated into this project by its rights holder,
+including the AILocal Universal, Cognitive Pipeline, Cognitive Task Executor,
+Validation Layer, NeuralMap, NeuralPlugin, NeuralPlugin Manager, NeuralInjector
+Engine, NeuralInjector Package Specification (NIP), and the .neuralinjector
+format implementations and documentation, to the extent those materials are
+present in the repository and owned by the rights holder.
+
+2. ALL RIGHTS RESERVED — NO GENERAL LICENSE
+
+All rights in the Project Materials are reserved. Except for rights that cannot
+be restricted by applicable law and the limited rights expressly granted by
+GitHub's Terms of Service for use of GitHub itself, no permission or license is
+granted to any person or entity to:
+
+- use, execute, install, or deploy the Project Materials;
+- reproduce, copy, extract, or create derivative works from them;
+- modify, adapt, translate, or incorporate them into another product or service;
+- publish, distribute, sublicense, sell, rent, or commercially exploit them;
+- use the Project Materials to provide a hosted, managed, or competing service.
+
+Any separate permission must be explicit, written, and granted by the rights
+holder or an authorized representative. Silence, public availability, access
+to the repository, or an open pull request does not constitute such permission.
+
+3. GITHUB PUBLIC-REPOSITORY EXCEPTION
+
+The repository is public. GitHub's Terms of Service allow GitHub users to view
+and fork public repositories through GitHub's service. This license does not
+remove or enlarge those platform-specific rights. A GitHub fork or copy made
+through GitHub is not, by itself, permission to use, distribute, publish,
+commercialize, or create products from the Project Materials outside the
+rights granted by GitHub's Terms of Service.
+
+4. THIRD-PARTY MATERIALS ARE EXCLUDED
+
+This license applies only to original Project Materials owned by the rights
+holder. It does not replace, override, or relicense Python, PySide6/Qt,
+Shiboken, HTTPX, Ollama, model weights, datasets, fonts, icons, libraries,
+tools, or any other third-party material. Such materials remain subject to
+their respective licenses and terms. See THIRD_PARTY_NOTICES.md and
+docs/LICENSING.md. In a conflict, the applicable third-party license controls
+the corresponding third-party material.
+
+5. USER DATA AND THIRD-PARTY PLUGINS
+
+User-created conversations, documents, prompts, workflows, plugins, model
+weights, adapters, datasets, and other user-supplied or third-party content do
+not become Project Materials merely because the application can read, process,
+or package them. Their rights remain with their respective owners, subject to
+the licenses expressly attached to them.
+
+A .neuralinjector package may contain materials owned by different parties.
+The package format or NIP specification does not transfer ownership of those
+materials. Each package and plugin must declare the license applicable to its
+own content.
+
+6. CONTRIBUTIONS
+
+No third-party contribution is accepted as part of the proprietary codebase
+unless the rights holder has first approved and obtained a separate written
+agreement that clearly grants the rights needed for the project. Submitting an
+issue, pull request, patch, or file does not automatically transfer ownership
+or grant a license to the rights holder. The contributor remains responsible
+for proving that they have the rights to submit the material.
+
+7. TRADEMARKS AND PATENTS
+
+No trademark, service-mark, trade-name, or patent license is granted by this
+document. Names such as AILocal Universal, NeuralMap, NeuralPlugin,
+NeuralInjector, and NIP are project identifiers; this notice does not claim
+that they have been registered as trademarks.
+
+8. NO WARRANTY
+
+The Project Materials are provided "as is", without warranties or guarantees
+of any kind, to the maximum extent permitted by applicable law. The rights
+holder is not liable for damages arising from unauthorized or authorized use
+of the Project Materials, except where liability cannot legally be excluded.
+
+9. GOVERNING LAW AND NON-WAIVABLE RIGHTS
+
+This document is intended to be interpreted consistently with applicable
+Brazilian intellectual-property law and any mandatory law applicable to the
+relevant use. Nothing here excludes rights or remedies that cannot legally be
+excluded or waived.
+
+PUBLIC IDENTIFIER
+K410Sh4 — GitHub repository owner and public rights-holder identifier.
+For formal assignments, commercial licenses, enforcement, or registration,
+the rights holder should use the appropriate full legal identification and
+obtain legal review.
