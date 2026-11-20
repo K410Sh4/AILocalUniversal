@@ -126,7 +126,7 @@ O `output.response` produz um dicionário estruturado com:
 
 - `code`: texto do código.
 - `explanation`: explicação.
-- `image`: referência estruturada ao artefato ou `null) quando não gerado.
+- `image`: referência estruturada ao artefato ou `null` quando não gerado.
 - `review`: `approved`, `score`, `notes`, `iterations`, `convergence`.
 - `trace_id` e `generated_at`.
 
