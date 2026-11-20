@@ -50,6 +50,8 @@ class AppConfig:
         "seja preciso e informe incertezas quando existirem."
     )
     keep_alive: str = "5m"
+    hardware_profile: str = "auto"
+    protection_mode: str = "protected"
 
     def validate(self) -> None:
         if not isinstance(self.base_url, str):
@@ -72,6 +74,12 @@ class AppConfig:
             raise ConfigurationError("keep_alive não pode ficar vazio.")
         if not isinstance(self.system_prompt, str):
             raise ConfigurationError("System prompt precisa ser texto.")
+        if self.hardware_profile not in {
+            "auto", "ultra_light", "minimal", "balanced", "performance", "max_quality"
+        }:
+            raise ConfigurationError("Perfil de hardware inválido.")
+        if self.protection_mode not in {"permissive", "adaptive", "protected"}:
+            raise ConfigurationError("Modo de proteção inválido.")
         self.base_url = self.base_url.rstrip("/")
 
     def to_dict(self) -> dict[str, object]:
@@ -86,6 +94,8 @@ class AppConfig:
             "manual_model",
             "system_prompt",
             "keep_alive",
+            "hardware_profile",
+            "protection_mode",
         }
         try:
             config = cls(**{key: value for key, value in payload.items() if key in allowed})
