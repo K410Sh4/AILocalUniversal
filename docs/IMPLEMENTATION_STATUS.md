@@ -18,7 +18,7 @@ Este arquivo diferencia código existente de funcionalidades futuras.
 | Workers | Operações HTTP fora da thread da interface e cancelamento cooperativo implementados |
 | Testes | Testes unitários para protocolo simulado, seleção e persistência adicionados |
 | RAG | Planejado para Fase 3 |
-| Resource Manager | Planejado para Fase 4; planejador inicial NeuralInjector implementado (RAM/CPU, perfis, orçamento e relatório; integração GPU/backend pendente) |
+| Resource Manager | Planejador NeuralInjector implementado: RAM/CPU, detecção GPU opcional, cinco perfis, requisitos, proteção, candidatos de quantização e avaliador dinâmico com histerese; integração automática ao runtime ainda pendente |
 | Swarm P2P | Planejado para Fase 5 |
 | BitNet e RPC | Laboratório futuro |
 
@@ -26,6 +26,9 @@ Este arquivo diferencia código existente de funcionalidades futuras.
 
 - O modo automático desta fase escolhe o modelo preferido se estiver disponível; caso contrário, escolhe o nome em ordem estável. Não faz classificação semântica.
 - O histórico local usa JSON; banco de dados e migrações serão avaliados conforme escala.
-- O adaptador Ollama foi implementado com transporte HTTP simulado nos testes, mas precisa de teste de integração com Ollama real.
+- O adaptador Ollama inclui inventário de modelos carregados (/api/ps) e helper explícito para limitar num_ctx; a chamada automática no fluxo principal ainda não foi ligada e requer teste com Ollama real.
+- O gerenciador dinâmico avalia snapshots fornecidos pelo chamador; ainda não existe monitor periódico nem executor automático para descarregar modelos, pausar filas ou alterar concorrência.
+- A detecção GPU atual é opcional e limitada a nvidia-smi e Linux DRM/sysfs; dispositivos identificados não significam que um backend acelerado esteja pronto.
+- Quantização é somente uma política de seleção de candidatos. O código ainda não converte pesos, baixa variantes, faz offloading manual ou aplica poda.
 - A interface foi construída, mas precisa ser validada em sessão gráfica Linux/Qt.
 - Os testes foram escritos; a execução da suíte depende de ambiente com as dependências instaladas.
