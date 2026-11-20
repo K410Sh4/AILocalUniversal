@@ -34,7 +34,11 @@ def test_reference_template_is_valid_and_has_explicit_bounded_loop():
     loop = next(node for node in graph.nodes if node.node_type == "control.loop")
     assert loop.config["max_iterations"] == 3
     assert loop.config["review_node_id"] == "review"
-    assert len([e for e in graph.edges if e.source == loop.node_id and e.source_port == "repeat"]) == 3
+    repeat_edges = [
+        edge for edge in graph.edges
+        if edge.source == loop.node_id and edge.source_port == "repeat"
+    ]
+    assert len(repeat_edges) == 3
     assert "revision_loop" in topological_order(graph)
 
 
