@@ -172,6 +172,7 @@ class GraphRuntime:
                     if node_id in pending_feedback:
                         node_inputs["feedback"] = pending_feedback[node_id]
 
+                    self._emit(trace, node_id, "started", {"type": node.node_type})
                     if node.node_type == "control.loop":
                         decision = node_inputs.get("decision")
                         if not isinstance(decision, dict):
@@ -319,6 +320,12 @@ class GraphRuntime:
                                 {"reason_code": exc.reason_code, "message": exc.message},
                             )
                             continue
+                        self._emit(
+                            trace,
+                            node_id,
+                            "failed",
+                            {"reason_code": exc.reason_code, "message": exc.message},
+                        )
                         raise
                     except Exception as exc:
                         if node.config.get("optional") is True:
@@ -331,6 +338,12 @@ class GraphRuntime:
                                 {"error_type": type(exc).__name__},
                             )
                             continue
+                        self._emit(
+                            trace,
+                            node_id,
+                            "failed",
+                            {"error_type": type(exc).__name__},
+                        )
                         raise GraphError(
                             "NODE_EXECUTION_FAILED",
                             f"Falha ao executar '{node.label}': {exc}",
