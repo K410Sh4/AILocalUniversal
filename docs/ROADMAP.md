@@ -70,9 +70,10 @@ As fases representam entregas e validações progressivas. Um componente só ser
 - [x] Adicionar detecção opcional de GPU (NVIDIA via nvidia-smi e Linux DRM/sysfs), separada do registro de backends executáveis.
 - [x] Adicionar políticas declarativas de quantização, seleção condicionada às capacidades reportadas pelo backend e modos permissive/adaptive/protected.
 - [x] Adicionar avaliador de pressão de memória com histerese e recomendações que não interrompem gerações em andamento.
+- [x] Adicionar monitor periódico opt-in, com callback, provedor substituível e início explícito.
 - [x] Adicionar ao adaptador Ollama leitura de modelos carregados (/api/ps) e helper explícito para aplicar limite num_ctx.
 - [ ] Integrar automaticamente o planejador e o orçamento ao fluxo principal de chat e às configurações da aplicação.
-- [ ] Criar monitor periódico de RAM/VRAM e executor seguro das ações recomendadas.
+- [ ] Integrar o monitor ao ciclo de vida da aplicação, incluindo amostragem de VRAM por provedor e executor seguro das ações recomendadas.
 - [ ] Implementar aplicação real de quantização/offloading quando o backend oferecer suporte e integrar llama.cpp.
 - [ ] Validar testes e benchmarks em hardware leve, intermediário e potente.
 
