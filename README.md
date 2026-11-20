@@ -48,7 +48,7 @@ Os scores são afinidades heurísticas entre 0 e 1, não probabilidades calibrad
 
 ## Fase 3 — Conhecimento local e RAG verificável
 
-A branch `feature/rag-v1` inclui uma biblioteca de conhecimento independente do fluxo de mensagens do Chat:
+A branch `feature/rag-v1` inclui uma biblioteca de conhecimento local e integração RAG opcional ao fluxo de mensagens do Chat:
 
 - Loaders explícitos para TXT, Markdown e PDF com extração local; PDF usa dependência opcional.
 - Proveniência por SHA-256, URI, página, seção e offsets Unicode.
@@ -56,14 +56,14 @@ A branch `feature/rag-v1` inclui uma biblioteca de conhecimento independente do 
 - Índice lexical SQLite FTS5 e armazenamento vetorial SQLite.
 - Embeddings via Ollama `/api/embed`, usando um modelo explicitamente selecionado e separado do modelo de chat.
 - Busca lexical e vetorial combinadas por RRF, Context Composer, citações e Evidence Validator.
-- KnowledgeRuntime como ponte testada para associar Evidence ao CognitiveTask.
-- Aba **Conhecimento** para adicionar documentos, listar/remover entradas do índice e testar a recuperação local.
+- KnowledgeRuntime como ponte para associar Evidence ao CognitiveTask, ativável no Chat pelo controle `Usar conhecimento local` (desativado por padrão).
+- Aba **Conhecimento** para adicionar documentos, listar/remover entradas do índice e testar a recuperação local; o Chat pode consumir evidências quando o usuário ativa explicitamente o RAG.
 - Seleção persistente do modelo de embeddings e ação explícita para reindexar vetores após troca de modelo.
 - Indexação em worker Qt; os arquivos originais não são movidos nem apagados.
 
 **Validação:** o smoke test real foi aprovado no Arch com Ollama `embeddinggemma` (768 dimensões). CI da biblioteca/UI: Ruff aprovado e 142 testes Pytest aprovados. O usuário também havia aprovado 132 testes e o smoke test no ambiente Python 3.14 antes da implementação da interface.
 
-**Limites:** a aba Conhecimento ainda não injeta documentos no Chat. A chamada do KnowledgeRuntime pelo MainWindow/CognitiveTaskExecutor, a apresentação de citações no Chat, o reranker concreto, OCR, benchmark de qualidade e orçamento de contexto por tokenizer permanecem pendentes. Consulte [docs/RAG.md](docs/RAG.md).
+**Limites:** a integração inicial ao Chat é opt-in, usa documentos como dados não confiáveis e valida a integridade estrutural das citações, sem provar verdade/entailment. A validação operacional da integração após pull no Arch, reranker concreto, benchmark de qualidade em corpus representativo, OCR e orçamento de contexto por tokenizer permanecem pendentes. Consulte [docs/RAG.md](docs/RAG.md).
  
 ## Arquitetura
 
