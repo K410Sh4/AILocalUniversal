@@ -5,7 +5,8 @@
   "requirements": {
     "min_ram_mb": 2048,
     "min_vram_mb": 0,
-    "min_disk_mb": 0
+    "min_disk_mb": 0,
+    "min_context_tokens": 1024
   },
   "objectives": {
     "priority": [
@@ -41,6 +42,21 @@
       "quick",
       "full"
     ]
+  },
+  "quantization_policy": {
+    "preferred": [
+      "Q4_K_M",
+      "Q4_0",
+      "Q5_K_M"
+    ],
+    "low_memory_preferred": [
+      "Q4_K_M",
+      "Q4_0",
+      "Q3_K_M",
+      "Q2_K"
+    ],
+    "low_memory_threshold_mb": 8192,
+    "allow_lower_precision_fallback": true
   },
   "notes": [
     "Preset declarativo; validar limites e suporte do backend.",
