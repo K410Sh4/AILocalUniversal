@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - bootstrap/project-structure
+      - proposal/neuralinjector-nip-0.1.0
   pull_request:
     branches:
       - main
