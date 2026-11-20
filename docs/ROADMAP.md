@@ -64,6 +64,22 @@ As fases representam entregas e validações progressivas. Um componente só ser
 - Speculative decoding.
 - Otimização multi-host.
 
+## Trilha proposta — NeuralPlugin / NeuralInjector
+
+Esta trilha foi adicionada como proposta documental e **não altera o compromisso nem o estado das Fases 0 a 6**. A implementação depende de revisão da especificação, decisões de compatibilidade e critérios de segurança.
+
+- [ ] Revisar e estabilizar a NIP 0.1.0.
+- [ ] Implementar parser de manifesto e validação por JSON Schema.
+- [ ] Implementar leitura ZIP64 com limites e proteção contra traversal.
+- [ ] Implementar verificação SHA-256 e suporte a assinatura confiável.
+- [ ] Criar NeuralPlugin Manager com importação em modo dry-run, ativação, desativação e rollback.
+- [ ] Compor regras por modelo com prioridades, dependências e detecção de conflitos.
+- [ ] Integrar adaptadores apenas nos backends que declararem suporte.
+- [ ] Implementar seleção adaptativa com benchmarks reproduzíveis.
+- [ ] Pesquisar transformações estruturais e restauração com validação de arquitetura/tensores.
+
+Documentação: [NeuralPlugin Manager](NEURALPLUGIN.md), [NIP 0.1.0](NEURALINJECTOR_NIP_0.1.0.md), [schemas](../schemas/) e [exemplo](../examples/neuralinjector/).
+
 ## Critérios transversais
 
 Cada entrega inclui testes, documentação, tratamento de erros e métricas. Benchmarks informam hardware, modelo, quantização, contexto e estado frio/quente.
