@@ -46,6 +46,12 @@ flowchart TD
 
 A arquitetura cognitiva-alvo inclui Input Processing, Semantic Analysis, processamento determinístico, RAG, Context Composer, Planner, Adaptive Execution, Validation e Synthesis. Esses componentes serão implementados nas fases subsequentes; sua descrição não significa que estejam todos ativos.
 
+### Extensibilidade por NeuralPlugin (proposta)
+
+O projeto também está avaliando um sistema modular para transportar regras, adaptadores, perfis de hardware, pipelines e transformações compatíveis entre instalações. O gerenciador será o **NeuralPlugin Manager**, e o pacote portátil usará a extensão oficial **.neuralinjector**, conforme a proposta **NeuralInjector Package Specification (NIP) 0.1.0**.
+
+Esta trilha ainda é documental e experimental: não representa uma funcionalidade já implementada na aplicação. Consulte [a proposta do NeuralPlugin Manager](docs/NEURALPLUGIN.md) e [a especificação NIP 0.1.0](docs/NEURALINJECTOR_NIP_0.1.0.md).
+
 ## Estrutura
 
 - app/: janela, views e diálogos PySide6.
@@ -146,6 +152,10 @@ Consulte docs/SECURITY.md.
 - Roadmap: docs/ROADMAP.md
 - Estado da implementação: docs/IMPLEMENTATION_STATUS.md
 - Contratos de dados: docs/DATA_CONTRACTS.md
+- NeuralPlugin Manager (proposta): docs/NEURALPLUGIN.md
+- NeuralInjector NIP 0.1.0 (proposta): docs/NEURALINJECTOR_NIP_0.1.0.md
+- JSON Schemas: schemas/
+- Exemplo de pacote: examples/neuralinjector/
 - Contribuição: CONTRIBUTING.md
 
 ---
