@@ -46,7 +46,7 @@ A branch `feature/rag-v1` contém uma primeira base executável de conhecimento 
 - seleção persistente de modelo de embeddings separada do modelo de chat;
 - bancos SQLite em diretório local privado, sem mover ou excluir arquivos originais;
 
-Validação operacional no Arch Linux concluída para o caminho básico de embeddings e recuperação: Python 3.14, `pytest` com 132 testes aprovados antes da nova UI, Ollama `embeddinggemma`, dimensão 768, dois chunks sintéticos, busca vetorial e híbrida aprovadas e banco temporário removido. A branch atual passou no CI com Ruff e 142 testes Pytest (Python 3.11). A nova aba e os fluxos de gestão ainda aguardam validação visual/operacional no Arch. O `top_cosine_similarity` foi 1.0 para a consulta idêntica. Essa validação não mede qualidade semântica em corpus real. A aba Conhecimento gerencia arquivos e prévia de busca, mas não chama o KnowledgeRuntime no MainWindow/CognitiveTaskExecutor nem injeta resultados no Chat. Não há reranker concreto, OCR ou fontes/citações renderizadas na conversa. A verificação de citações não garante que alegações do modelo sejam consequência lógica das fontes.
+Validação operacional no Arch Linux: o usuário confirmou ingestão e busca lexical na aba Conhecimento, detecção dos modelos de embedding e recuperação vetorial/híbrida real com EmbeddingGemma e Qwen3 Embedding usando um documento de teste. A dimensão observada foi 768 para EmbeddingGemma; a consulta vetorial encontrou um chunk enquanto a lexical retornou zero, comprovando a origem `vector`. Também foi executado o smoke test sintético anterior com dois chunks e SQLite temporário removido. A integração opt-in ao Chat foi implementada depois dessas verificações e aguarda validação operacional específica no Arch. Esses ensaios não são benchmark de qualidade em corpus representativo. O reranker concreto, OCR e verificação semântica independente continuam fora do escopo.
 
 ## Validation Layer: escopo atual
 
@@ -74,7 +74,7 @@ verified_deterministic significa que a mesma ferramenta local reproduziu a opera
 - A Validation Layer atual não prova teoremas, não verifica fatos gerais e não substitui validação de domínio.
 - O conjunto de ferramentas determinísticas é pequeno e cobre somente expressões/unidades suportadas.
 - O Cognitive Inspector mostra apenas a última tarefa da sessão; o relatório de validação não é persistido como histórico de execuções.
-- Chamada do KnowledgeRuntime pelo MainWindow/CognitiveTaskExecutor e integração RAG no Chat, exibição de fontes/citações na conversa, reranker concreto, avaliação RAG em corpus real, OCR, gerenciamento adaptativo de recursos, roteamento multi-modelo e Swarm ainda não foram implementados. A aba Conhecimento implementada ainda precisa de validação visual no Arch.
+- A integração opt-in do KnowledgeRuntime ao Chat e a exibição de fontes/citações foram implementadas na `feature/rag-v1`, mas aguardam CI final e validação operacional após pull no Arch. Reranker concreto, avaliação RAG em corpus representativo, OCR, verificação semântica independente, gerenciamento adaptativo de recursos, roteamento multi-modelo e Swarm ainda não foram implementados.
 - O renderizador matemático cobre um subconjunto de LaTeX, não um motor TeX completo.
 - O orçamento de tokens atual é indicativo e ainda não é aplicado como limite efetivo da engine.
 
@@ -119,7 +119,7 @@ Implementado na branch `feature/rag-v1`:
 - Worker Qt para listagem, ingestão, remoção, busca e reindexação.
 - Diretórios privados (0700) e arquivos SQLite privados (0600) no Linux.
 
-Validação automatizada atual: Ruff aprovado e 142 testes Pytest aprovados no CI. A validação visual e a execução de ingestão/remoção de um documento de teste no Arch ainda estão pendentes. O Chat não consome esses documentos automaticamente.
+Validação automatizada anterior: Ruff aprovado e 142 testes Pytest aprovados no CI antes da integração RAG ao Chat. A aba Conhecimento foi validada visualmente no Arch e o usuário executou ingestão, busca lexical e recuperação vetorial com dois modelos. A integração recente ao Chat ainda precisa passar no CI e em teste operacional dedicado no Arch.
 
 
  
