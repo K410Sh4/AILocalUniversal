@@ -12,8 +12,8 @@ from app.dialogs.settings_dialog import SettingsDialog
 from app.views.chat_view import ChatView
 from app.views.cognitive_inspector_view import CognitiveInspectorView
 from app.views.knowledge_view import KnowledgeView
-from app.views.models_view import ModelsView
 from app.views.model_hub_view import ModelHubView
+from app.views.models_view import ModelsView
 from core.cognitive_pipeline import analyze_request
 from core.cognitive_task import CognitiveTask, TaskStatus
 from core.input_processing import InputValidationError
