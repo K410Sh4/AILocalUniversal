@@ -25,7 +25,7 @@ O sistema recebe uma solicitação, identifica as capacidades necessárias, esco
 
 ## Pipeline conceitual
 
-\`\`\`mermaid
+```mermaid
 flowchart TD
  A[Entrada] --> B[Input Processing]
  B --> C[Semantic Analysis]
@@ -41,7 +41,7 @@ flowchart TD
  K --> L[Resposta + Trace]
  R[Resource Manager] -. recursos e filas .-> I
  S[Swarm Manager] -. peers autorizados .-> I
-\`\`\`
+```
 
 Tarefas simples podem seguir caminhos curtos. O pipeline não obriga cada solicitação a atravessar todas as etapas.
 
@@ -83,7 +83,7 @@ Descobrir um peer não concede autorização. RPC e inferência distribuída por
 
 ## Estrutura
 
-\`\`\`text
+```text
 app/          Interface PySide6
 core/         CognitiveTask, Orchestrator e contratos
 pipeline/     Etapas cognitivas
@@ -95,28 +95,28 @@ storage/      Configurações e persistência
 docs/         Arquitetura, roadmap, segurança e contratos
 tests/        Testes unitários, integração e rede
 scripts/      Diagnóstico e benchmarks
-\`\`\`
+```
 
 ## Instalação e execução
 
 Requer Python 3.11 ou superior.
 
-\`\`\`bash
+```bash
 ./install.sh
 .venv/bin/ailocal
-\`\`\`
+```
 
 Para executar os testes:
 
-\`\`\`bash
+```bash
 .venv/bin/python -m pytest
-\`\`\`
+```
 
 Para verificar estilo:
 
-\`\`\`bash
+```bash
 .venv/bin/ruff check .
-\`\`\`
+```
 
 ## Roadmap
 

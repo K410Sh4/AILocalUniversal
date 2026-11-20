@@ -2,7 +2,7 @@
 
 ## CognitiveTask
 
-Envelope versionado que atravessa o pipeline. Implementação inicial: \`core/cognitive_task.py\`.
+Envelope versionado que atravessa o pipeline. Implementação inicial: `core/cognitive_task.py`.
 
 Campos conceituais: schema_version, task_id, original_text, normalized_text, intent, capabilities, difficulty, uncertainty, risk, urgency, evidence, deterministic_results, execution_plan, subtasks, token_budget, ram_budget_mb, deadline_ms, execution_trace, result e status.
 

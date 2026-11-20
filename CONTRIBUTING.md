@@ -11,7 +11,7 @@ O projeto está em fundação. Prefira mudanças pequenas, testáveis e document
 5. Atualize contratos e documentação quando necessário.
 6. Abra Pull Request com motivação, escopo, testes e limitações.
 
-Não envie alterações diretamente para \`main\` sem revisão.
+Não envie alterações diretamente para `main` sem revisão.
 
 ## Padrões
 
@@ -24,9 +24,9 @@ Não envie alterações diretamente para \`main\` sem revisão.
 
 ## Verificações
 
-\`\`\`bash
+```bash
 python -m pytest
 ruff check .
-\`\`\`
+```
 
 Mudanças de rede exigem revisão de segurança. Descoberta de peers nunca concede autorização implícita.

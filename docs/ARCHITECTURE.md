@@ -39,7 +39,7 @@ Embeddings e âncoras semânticas serão a primeira abordagem. Scores são indic
 Todos os backends implementam um contrato comum. Ollama é o primeiro adaptador planejado; llama.cpp, BitNet e execução remota são extensões futuras. A escolha manual do usuário deve ser respeitada.
 
 Estimativa simplificada:
-\`Tprevisto = Tfila + Tcarregamento + Ttransferência + Texecução\`
+`Tprevisto = Tfila + Tcarregamento + Ttransferência + Texecução`
 
 O orçamento de memória considera pesos, cache KV, contexto, buffers e sobrecarga do runtime. Swap/SSD não é substituto prático de RAM/VRAM para inferência interativa.
 
