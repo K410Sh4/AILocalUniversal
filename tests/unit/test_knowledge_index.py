@@ -93,3 +93,29 @@ def test_delete_document_removes_lexical_entries_too() -> None:
     assert index.search("informacao") == []
     assert index.delete_document(document.document_id) is False
     index.close()
+
+def test_search_removes_portuguese_question_stopwords() -> None:
+    index = SQLiteKnowledgeIndex()
+    document, chunks = make_pair(
+        content="O guia do projeto define quatro fases iniciais de validação."
+    )
+    index.add_document(document, chunks)
+
+    hits = index.search("Quais são as fases iniciais de validação?")
+
+    assert len(hits) == 1
+    assert hits[0].chunk.chunk_id == chunks[0].chunk_id
+    index.close()
+
+
+def test_search_returns_empty_when_query_contains_only_stopwords() -> None:
+    index = SQLiteKnowledgeIndex()
+    document, chunks = make_pair()
+    index.add_document(document, chunks)
+
+    assert index.search("o que é de e para") == []
+    index.close()
+
+
+def test_query_normalization_preserves_negation_terms() -> None:
+    assert SQLiteKnowledgeIndex._fts_query("não usar") == '"não" AND "usar"'

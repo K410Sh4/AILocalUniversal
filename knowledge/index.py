@@ -13,6 +13,22 @@ from knowledge.errors import KnowledgeIndexError
 from knowledge.models import DocumentChunk, LoadedDocument, SearchHit
 
 
+_QUERY_STOPWORDS = {
+    "a", "as", "ao", "aos", "aquela", "aquele", "aquilo", "até", "com",
+    "como", "da", "das", "de", "dela", "dele", "do", "dos", "e", "é",
+    "ela", "ele", "em", "entre", "essa", "esse", "esta", "este", "eu",
+    "foi", "há", "isso", "isto", "já", "lhe", "mais", "mas", "me", "mesmo",
+    "meu", "minha", "muito", "na", "nas", "no", "nos", "nós", "o", "os",
+    "ou", "para", "pela", "pelas", "pelo", "pelos", "por", "qual", "quais",
+    "quando", "quanto", "quantos", "quantas", "que", "quem", "se", "ser",
+    "seu", "sua", "são", "sao", "sob", "sobre", "também", "tem", "têm",
+    "um", "uma", "umas", "uns", "você", "vocês",
+    "the", "a", "an", "and", "are", "as", "at", "be", "by", "for", "from",
+    "how", "in", "is", "it", "of", "on", "or", "that", "this", "to", "was",
+    "what", "when", "where", "which", "who", "why", "with",
+}
+
+
 class SQLiteKnowledgeIndex:
     """Índice persistente local; não envia documentos ou consultas à rede."""
 
@@ -196,7 +212,11 @@ class SQLiteKnowledgeIndex:
 
     @staticmethod
     def _fts_query(query: str) -> str:
-        terms = re.findall(r"[\w]+", query, flags=re.UNICODE)
+        terms = [
+            term
+            for term in re.findall(r"[\w]+", query, flags=re.UNICODE)
+            if term.casefold() not in _QUERY_STOPWORDS
+        ]
         return " AND ".join(f'"{term}"' for term in terms)
 
     @staticmethod

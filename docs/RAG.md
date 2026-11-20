@@ -40,7 +40,7 @@ O identificador do documento é estável por URI. Reingestão do mesmo caminho s
 
 ## Recuperação lexical e vetorial
 
-SQLite FTS5 fornece busca lexical local e filtros por document_id. O tokenizador Unicode remove diacríticos para facilitar pesquisas em português. A consulta atual exige correspondência de todos os termos identificados.
+SQLite FTS5 fornece busca lexical local e filtros por document_id. O tokenizador Unicode remove diacríticos para facilitar pesquisas em português. A consulta remove palavras funcionais comuns em português/inglês e exige correspondência de todos os termos restantes. Termos de negação como “não” e “sem” são preservados.
 
 \`OllamaEmbeddingProvider\` envia lotes de textos ao endpoint \`POST /api/embed\`. O modelo de embeddings é definido explicitamente e deve estar instalado no Ollama. O padrão de conexão é \`http://127.0.0.1:11434\`; a URL pode ser configurada. O provedor valida quantidade de vetores, dimensões, componentes numéricos e valores finitos. O padrão \`truncate=False\` evita truncamento silencioso de entradas longas.
 

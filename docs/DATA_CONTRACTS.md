@@ -129,3 +129,6 @@ A geração e recuperação vetorial estão implementadas em branch de desenvolv
 - validate_answer(bundle, answer) delega ao EvidenceValidator; status factual continua not_independently_verified.
 
 O runtime ainda não é chamado pelo MainWindow nem pelo CognitiveTaskExecutor. A integração de UI/execução depende de ativação explícita, orçamento efetivo de contexto e testes operacionais.
+
+
+A busca FTS5 remove palavras funcionais comuns da consulta antes de combinar os termos remanescentes por AND. Palavras de negação, incluindo “não” e “sem”, são preservadas para não alterar o sentido da consulta.
