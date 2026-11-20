@@ -4,10 +4,12 @@ from __future__ import annotations
 
 import json
 from collections.abc import AsyncIterator
+from dataclasses import dataclass
 from typing import Any
 
 import httpx
 
+from core.neuralinjector.resources import ResourceBudget
 from engines.base import EngineAdapter, EngineCapabilities, EngineEvent, EngineRequest, ModelInfo
 
 
@@ -21,6 +23,17 @@ class OllamaConnectionError(OllamaError):
 
 class OllamaProtocolError(OllamaError):
     """A resposta do servidor não respeita o protocolo esperado."""
+
+
+@dataclass(frozen=True)
+class OllamaRunningModel:
+    """Uso declarado pelo Ollama para um modelo atualmente carregado."""
+
+    name: str
+    size_bytes: int | None = None
+    vram_bytes: int | None = None
+    context_length: int | None = None
+    quantization_level: str | None = None
 
 
 class OllamaEngine(EngineAdapter):
@@ -65,6 +78,53 @@ class OllamaEngine(EngineAdapter):
         if not detail:
             detail = response.reason_phrase or "erro HTTP"
         return f"Ollama respondeu HTTP {response.status_code}: {detail}"
+
+    @staticmethod
+    def _optional_int(value: Any) -> int | None:
+        if isinstance(value, bool) or not isinstance(value, (int, float)):
+            return None
+        parsed = int(value)
+        return parsed if parsed >= 0 else None
+
+    @staticmethod
+    def apply_resource_budget(
+        request: EngineRequest,
+        budget: ResourceBudget,
+    ) -> EngineRequest:
+        """Apply only the context limit that the Ollama chat API accepts per request.
+
+        Existing smaller user limits are preserved. This does not change model
+        quantization, unload models, reserve VRAM, or configure server parallelism.
+        """
+        if budget.context_tokens < 1:
+            raise ValueError("budget.context_tokens must be positive")
+
+        options = dict(request.options)
+        raw_model_options = options.get("options", {})
+        if raw_model_options is None:
+            model_options: dict[str, Any] = {}
+        elif isinstance(raw_model_options, dict):
+            model_options = dict(raw_model_options)
+        else:
+            raise ValueError("request.options['options'] must be an object")
+
+        existing_context = model_options.get("num_ctx")
+        if existing_context is not None:
+            if isinstance(existing_context, bool) or not isinstance(existing_context, int):
+                raise ValueError("num_ctx must be an integer")
+            if existing_context < 1:
+                raise ValueError("num_ctx must be positive")
+            context_limit = min(existing_context, budget.context_tokens)
+        else:
+            context_limit = budget.context_tokens
+
+        model_options["num_ctx"] = context_limit
+        options["options"] = model_options
+        return EngineRequest(
+            model=request.model,
+            messages=request.messages,
+            options=options,
+        )
 
     async def health(self) -> bool:
         try:
@@ -113,6 +173,51 @@ class OllamaEngine(EngineAdapter):
                 )
             )
         return models
+
+    async def list_running_models(self) -> list[OllamaRunningModel]:
+        """Read current Ollama allocations through GET /api/ps."""
+        try:
+            async with self._client() as client:
+                response = await client.get("/api/ps")
+                if not response.is_success:
+                    raise OllamaError(self._error_message(response))
+                payload = response.json()
+        except httpx.ConnectError as exc:
+            raise OllamaConnectionError(
+                f"Não foi possível conectar ao Ollama em {self.base_url}. "
+                "Confirme se o serviço está ativo."
+            ) from exc
+        except httpx.TimeoutException as exc:
+            raise OllamaConnectionError("Tempo limite ao consultar modelos carregados.") from exc
+        except httpx.HTTPError as exc:
+            raise OllamaConnectionError(f"Falha HTTP ao consultar modelos carregados: {exc}") from exc
+        except ValueError as exc:
+            raise OllamaProtocolError("Ollama retornou JSON inválido em /api/ps.") from exc
+
+        if not isinstance(payload, dict) or not isinstance(payload.get("models"), list):
+            raise OllamaProtocolError("Resposta /api/ps deve conter a lista 'models'.")
+
+        running: list[OllamaRunningModel] = []
+        for item in payload["models"]:
+            if not isinstance(item, dict) or not item.get("name"):
+                continue
+            details = item.get("details")
+            if not isinstance(details, dict):
+                details = {}
+            running.append(
+                OllamaRunningModel(
+                    name=str(item["name"]),
+                    size_bytes=self._optional_int(item.get("size")),
+                    vram_bytes=self._optional_int(item.get("size_vram")),
+                    context_length=self._optional_int(item.get("context_length")),
+                    quantization_level=(
+                        str(details["quantization_level"])
+                        if details.get("quantization_level")
+                        else None
+                    ),
+                )
+            )
+        return running
 
     async def stream_chat(self, request: EngineRequest) -> AsyncIterator[EngineEvent]:
         if not request.model.strip():
