@@ -830,7 +830,9 @@ class MainWindow(QMainWindow):
                     ],
                 }
             task.validation_report = dict(task.validation_report or {})
-            task.validation_report.setdefault("status", citation_report.get("status", "needs_review"))
+            task.validation_report.setdefault(
+                "status", citation_report.get("status", "needs_review")
+            )
             task.validation_report.setdefault(
                 "structural_status",
                 citation_report.get("structural_status", "passed"),
