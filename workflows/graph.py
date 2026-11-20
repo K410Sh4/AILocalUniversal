@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import math
 import re
 from dataclasses import dataclass, field
 from enum import StrEnum
@@ -197,28 +198,61 @@ class GraphNode:
         if not isinstance(data, dict):
             raise GraphError("INVALID_NODE", "Cada nó deve ser um objeto JSON.")
         node_type = data.get("type")
-        if node_type not in NODE_SPECS:
+        if not isinstance(node_type, str) or node_type not in NODE_SPECS:
             raise GraphError(
                 "UNKNOWN_NODE_TYPE",
                 f"Tipo de nó desconhecido: {node_type}.",
                 ("Atualize o AILocal Universal ou remova o nó desconhecido.",),
             )
-        ui = data.get("ui") or {}
-        position = ui.get("position") or {"x": 0.0, "y": 0.0}
-        config = data.get("config") or {}
+        node_id = data.get("id")
+        label = data.get("label")
+        enabled = data.get("enabled", True)
+        config = data.get("config")
+        ui = data.get("ui", {})
+        if not isinstance(node_id, str) or not isinstance(label, str):
+            raise GraphError(
+                "INVALID_NODE_IDENTITY",
+                "id e label do nó precisam ser textos.",
+            )
+        if not isinstance(enabled, bool):
+            raise GraphError("INVALID_NODE_ENABLED", "enabled precisa ser booleano.")
         if not isinstance(config, dict):
             raise GraphError("INVALID_NODE_CONFIG", "A configuração do nó deve ser um objeto.")
+        if not isinstance(ui, dict):
+            raise GraphError("INVALID_NODE_UI", "Os metadados visuais do nó devem ser um objeto.")
+        position = ui.get("position", {"x": 0.0, "y": 0.0})
+        if not isinstance(position, dict):
+            raise GraphError("INVALID_NODE_POSITION", "A posição do nó precisa ser um objeto.")
+        coordinates: dict[str, float] = {}
+        for axis in ("x", "y"):
+            value = position.get(axis, 0.0)
+            if isinstance(value, bool) or not isinstance(value, (int, float)):
+                raise GraphError(
+                    "INVALID_NODE_POSITION",
+                    f"A coordenada {axis} precisa ser numérica.",
+                )
+            parsed = float(value)
+            if not math.isfinite(parsed):
+                raise GraphError(
+                    "INVALID_NODE_POSITION",
+                    f"A coordenada {axis} precisa ser finita.",
+                )
+            coordinates[axis] = parsed
+        color = ui.get("color")
+        if color is not None and (
+            not isinstance(color, str)
+            or not re.fullmatch(r"#[0-9A-Fa-f]{6}", color)
+        ):
+            raise GraphError("INVALID_NODE_COLOR", "A cor do nó deve estar em #RRGGBB.")
+
         node = cls(
-            node_id=str(data.get("id", "")),
-            node_type=str(node_type),
-            label=str(data.get("label") or node_type),
-            enabled=bool(data.get("enabled", True)),
+            node_id=node_id,
+            node_type=node_type,
+            label=label,
+            enabled=enabled,
             config=dict(config),
-            position={
-                "x": float(position.get("x", 0.0)),
-                "y": float(position.get("y", 0.0)),
-            },
-            color=ui.get("color"),
+            position=coordinates,
+            color=color,
         )
         _validate_node_config(node)
         return node
@@ -245,20 +279,28 @@ class GraphEdge:
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> GraphEdge:
-        try:
-            return cls(
-                edge_id=str(data["id"]),
-                source=str(data["source"]),
-                source_port=str(data["source_port"]),
-                target=str(data["target"]),
-                target_port=str(data["target_port"]),
-                edge_type=EdgeType(data.get("edge_type", "always")),
-            )
-        except (KeyError, ValueError, TypeError) as exc:
+        if not isinstance(data, dict):
+            raise GraphError("INVALID_EDGE", "Cada conexão deve ser um objeto JSON.")
+        fields = ("id", "source", "source_port", "target", "target_port")
+        if any(not isinstance(data.get(key), str) for key in fields):
             raise GraphError(
                 "INVALID_EDGE",
-                "A conexão possui campos ausentes ou tipo de aresta inválido.",
-                ("Revise os nós de origem/destino, portas e edge_type.",),
+                "IDs e nomes de portas da conexão precisam ser textos.",
+            )
+        try:
+            return cls(
+                edge_id=data["id"],
+                source=data["source"],
+                source_port=data["source_port"],
+                target=data["target"],
+                target_port=data["target_port"],
+                edge_type=EdgeType(data.get("edge_type", "always")),
+            )
+        except (ValueError, TypeError) as exc:
+            raise GraphError(
+                "INVALID_EDGE",
+                "Tipo de aresta inválido.",
+                ("Use always, on_success ou on_failure.",),
             ) from exc
 
 
@@ -303,15 +345,24 @@ class WorkflowGraph:
                 f"Versão de grafo não suportada: {version}.",
                 ("Atualize o AILocal Universal para abrir este mapa.",),
             )
+        if not isinstance(data.get("id"), str) or not isinstance(data.get("name"), str):
+            raise GraphError("INVALID_GRAPH_IDENTITY", "id e name do grafo precisam ser textos.")
+        if not isinstance(data.get("description", ""), str):
+            raise GraphError("INVALID_GRAPH_DESCRIPTION", "description precisa ser texto.")
+        if not isinstance(data.get("nodes"), list) or not isinstance(data.get("edges"), list):
+            raise GraphError("INVALID_GRAPH_COLLECTIONS", "nodes e edges precisam ser listas.")
+        metadata = data.get("metadata", {})
+        if not isinstance(metadata, dict):
+            raise GraphError("INVALID_GRAPH_METADATA", "metadata precisa ser um objeto.")
         try:
             graph = cls(
-                graph_id=str(data["id"]),
-                name=str(data["name"]),
-                description=str(data.get("description", "")),
+                graph_id=data["id"],
+                name=data["name"],
+                description=data.get("description", ""),
                 graph_version=version,
                 nodes=[GraphNode.from_dict(item) for item in data["nodes"]],
                 edges=[GraphEdge.from_dict(item) for item in data["edges"]],
-                metadata=dict(data.get("metadata", {})),
+                metadata=dict(metadata),
             )
         except (KeyError, TypeError, ValueError) as exc:
             if isinstance(exc, GraphError):
