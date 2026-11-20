@@ -3,6 +3,7 @@ from pathlib import Path
 
 import pytest
 
+from core.neuralinjector.monitor import ResourceMonitor
 from core.neuralinjector.resources import (
     CANONICAL_PROFILES,
     AdaptiveResourceManager,
@@ -10,7 +11,6 @@ from core.neuralinjector.resources import (
     GPUDevice,
     HardwareSnapshot,
     ProtectionMode,
-    ResourceMonitor,
     ResourcePressure,
     ResourceRequirements,
     build_compatibility_report,
