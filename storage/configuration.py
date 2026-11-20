@@ -74,11 +74,13 @@ class AppConfig:
             raise ConfigurationError("keep_alive não pode ficar vazio.")
         if not isinstance(self.system_prompt, str):
             raise ConfigurationError("System prompt precisa ser texto.")
-        if self.hardware_profile not in {
+        if not isinstance(self.hardware_profile, str) or self.hardware_profile not in {
             "auto", "ultra_light", "minimal", "balanced", "performance", "max_quality"
         }:
             raise ConfigurationError("Perfil de hardware inválido.")
-        if self.protection_mode not in {"permissive", "adaptive", "protected"}:
+        if not isinstance(self.protection_mode, str) or self.protection_mode not in {
+            "permissive", "adaptive", "protected"
+        }:
             raise ConfigurationError("Modo de proteção inválido.")
         self.base_url = self.base_url.rstrip("/")
 
