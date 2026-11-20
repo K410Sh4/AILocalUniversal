@@ -19,6 +19,7 @@ O AILocal Universal coordena modelos de linguagem, ferramentas determinísticas,
 - Modelo preferido para o modo automático.
 - Histórico de conversas em JSON local.
 - Configurações persistentes de URL, keep-alive e system prompt.
+- Perfil de hardware (automático, ultra leve, mínimo, equilibrado, desempenho e qualidade máxima) e modo de proteção de recursos.
 - Cancelamento de geração por worker em thread separada.
 - Tratamento de indisponibilidade, timeouts e erros do protocolo.
 
@@ -110,7 +111,7 @@ O modelo acima é apenas um exemplo; escolha um modelo compatível com a memóri
 5. No modo automático, selecione um modelo e clique em **Definir preferido** para gravar sua preferência.
 6. Envie uma mensagem. A resposta será transmitida em streaming.
 7. Use **Cancelar** para interromper a geração.
-8. Abra **Configurações** para alterar URL, keep-alive ou system prompt.
+8. Abra **Configurações** para alterar URL, keep-alive, system prompt, perfil de hardware e modo de proteção. O modo protegido bloqueia pré-requisitos incompatíveis antes de enviar a mensagem ao Ollama.
 
 ## Dados locais
 
