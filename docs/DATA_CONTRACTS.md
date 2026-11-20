@@ -10,6 +10,10 @@ Scores de capacidades são afinidades heurísticas entre 0 e 1 nesta implementa�
 
 execution_plan registra a rota selecionada (atualmente deterministic_only ou llm_assisted) e os componentes planejados. subtask_plan é uma lista opcional de subtarefas com id, ordem, texto, intenção, afinidades, depends_on, estratégia e status. subtasks mantém os IDs correspondentes. deterministic_results armazena a saída estruturada de ferramentas locais. O texto original permanece em original_text; normalized_text é usado para análise sem apagar a entrada original.
 
+## Cognitive Inspector
+
+O Inspector consome uma projeção somente de leitura de CognitiveTask. Não altera o contrato nem persiste tarefas. Eventos de runtime podem ser anexados a execution_trace com stage, status, timestamp UTC e detalhes resumidos; não registrar prompts completos, segredos ou documentos no trace.
+
 ## Evidence
 
 Cada evidência identifica origem e conteúdo, podendo conter localização (página, seção ou offset) e metadados. Não remover a relação entre resposta e fonte.

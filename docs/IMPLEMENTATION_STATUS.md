@@ -17,6 +17,7 @@ Este arquivo diferencia código existente de funcionalidades futuras.
 | Configurações | Persistência JSON local e validação básica implementadas |
 | Workers | Operações HTTP fora da thread da interface e cancelamento cooperativo implementados |
 | Núcleo cognitivo | Input Processing, Semantic Analysis, Task Decomposer, ferramentas determinísticas e Cognitive Planner integrados ao envio do Chat |
+| Cognitive Inspector | Painel somente de leitura da última tarefa da sessão, incluindo análise, plano, subtarefas, modelo, resultado e trace de geração |
 | Ferramentas locais | Calculadora AST restrita e conversões de comprimento, massa, tempo, dados e temperatura |
 | Testes | Testes unitários para protocolo simulado, seleção, persistência, análise, ferramentas e rotas cognitivas |
 | RAG | Planejado para Fase 3 |
@@ -33,3 +34,4 @@ Este arquivo diferencia código existente de funcionalidades futuras.
 - A interface foi construída, mas precisa ser validada em sessão gráfica Linux/Qt.
 - As ferramentas determinísticas cobrem apenas operações e unidades explicitamente suportadas; solicitações fora desse conjunto seguem para o Ollama.
 - O pipeline cognitivo inicial executa localmente e de forma síncrona no fluxo de envio da interface; estágios pesados ou externos devem ser movidos para workers antes de ampliar o pipeline.
+- O Cognitive Inspector mantém apenas a última tarefa em memória durante a sessão; não existe persistência nem consulta de tarefas antigas.

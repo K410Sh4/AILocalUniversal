@@ -21,6 +21,8 @@ O fluxo é adaptativo: tarefas simples podem terminar em ferramentas determinís
 
 A análise atual é heurística e lexical. O vetor de capacidades tem 12 dimensões com âncoras completas de palavras e expressões, para evitar correspondências acidentais dentro de palavras maiores; não usa embeddings nem classificador treinado.
 
+O Cognitive Inspector é uma projeção somente de leitura do CognitiveTask. Exibe a entrada original/normalizada, intenção, indicadores heurísticos, afinidades, subtarefas, plano, modelo selecionado, resultado quando disponível e eventos do Execution Trace. O trace também recebe eventos de seleção de modelo e estado da geração Ollama (início, conclusão, falha ou cancelamento). O painel mostra apenas a última tarefa da sessão e não persiste histórico cognitivo após reiniciar.
+
 O Task Decomposer reconhece listas numeradas ou marcadas e conectores sequenciais explícitos. Registra intenção, afinidades, ordem e dependências no subtask_plan. A interface orienta o único modelo selecionado a responder cada parte e sintetizar o conjunto. Não há execução paralela, agentes independentes ou seleção automática de modelos especialistas nesta etapa. Os valores entre 0 e 1 são afinidades indicativas, sem calibração probabilística. Os indicadores de dificuldade, incerteza, risco e urgência são independentes.
 
 As ferramentas determinísticas iniciais são uma calculadora baseada em AST com lista de operações permitidas e um conversor explícito de unidades. O sistema não executa código arbitrário. Marcadores de risco impedem o atalho determinístico e encaminham a solicitação ao modelo para análise; isso não equivale a revisão especializada ou validação clínica, jurídica ou financeira.

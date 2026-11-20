@@ -34,6 +34,7 @@ O envio de mensagens passa por um pipeline local antes de decidir a execução:
 - Input Processing: normalização Unicode e de espaços, preservando o texto original e limitando entradas excessivas.
 - Semantic Analysis: classificação heurística de intenção e indicadores separados de dificuldade, incerteza, risco e urgência.
 - Task Decomposer: reconhecimento de listas e sequências explícitas, com subtarefas, intenção, afinidades e dependências.
+- Cognitive Inspector: painel da última tarefa da sessão, com análise, indicadores heurísticos, capacidades, plano, subtarefas, rota, modelo, resultado e Execution Trace.
 - Capability Vectorizer: vetor lexical explicável de 12 dimensões, usando âncoras em português e inglês.
 - Deterministic Processing: calculadora com AST restrita e conversões explícitas de unidades comuns; não executa código arbitrário.
 - Cognitive Planner: encaminha operações suportadas e de baixo risco para ferramentas locais; as demais seguem para o modelo configurado.
@@ -65,7 +66,8 @@ A arquitetura completa continua incluindo RAG, Context Composer, validação de 
 
 ## Estrutura
 
-- app/: janela, views e diálogos PySide6.
+- app/: janela, views e diálogos PySide6, incluindo o Cognitive Inspector.
+- core/: projeção somente de leitura dos dados cognitivos para inspeção.
 - core/: CognitiveTask, Input Processing, Semantic Analysis, Task Decomposer, Capability Vectorizer, ferramentas determinísticas, Cognitive Planner, Orchestrator e traces.
 - engines/: contratos e adaptadores de inferência.
 - workers/: operações de rede fora da thread da UI.
@@ -122,6 +124,7 @@ O modelo acima é apenas um exemplo; escolha um modelo compatível com a memóri
 6. Envie uma mensagem. A resposta será transmitida em streaming.
 7. Use **Cancelar** para interromper a geração.
 8. Abra **Configurações** para alterar URL, keep-alive ou system prompt.
+9. Abra a aba **Cognitivo** para inspecionar a última tarefa analisada nesta sessão. O painel não persiste tarefas após reiniciar o aplicativo.
 
 ## Dados locais
 
@@ -137,7 +140,7 @@ Os arquivos são escritos atomicamente e com permissões privadas no Linux. Faç
 .venv/bin/ruff check .
 ~~~
 
-A suíte cobre contratos, seleção, persistência, protocolo Ollama simulado, análise cognitiva, ferramentas determinísticas e rotas do planejador. O fluxo visual e o uso integrado com Ollama real ainda precisam ser validados no Arch Linux.
+A suíte cobre contratos, seleção, persistência, protocolo Ollama simulado, análise cognitiva, ferramentas determinísticas, rotas do planejador e projeção de dados do Cognitive Inspector. A apresentação visual do novo painel e o fluxo integrado ainda precisam ser validados no Arch Linux.
 
 ## Roadmap
 

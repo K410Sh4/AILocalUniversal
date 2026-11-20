@@ -36,6 +36,7 @@ As fases representam entregas e validações progressivas. Um componente só ser
 - [x] Integração da rota determinística ao envio do Chat.
 - [x] Task Decomposer com listas e sequências explícitas, IDs, intenções, afinidades e dependências.
 - [x] Instrução de síntese estruturada para pedidos compostos, usando um único modelo.
+- [x] Cognitive Inspector com visualização da última tarefa, análise, afinidades, plano, subtarefas, execução e trace.
 
 Limites desta entrega: os scores ainda não são calibrados; embeddings, classificador treinado, decomposição de tarefas, validação independente de resultados e seleção de modelos especialistas continuam pendentes. Ferramentas não reconhecidas são encaminhadas ao modelo.
 

@@ -10,9 +10,10 @@ from PySide6.QtWidgets import QMainWindow, QMessageBox, QTabWidget
 
 from app.dialogs.settings_dialog import SettingsDialog
 from app.views.chat_view import ChatView
+from app.views.cognitive_inspector_view import CognitiveInspectorView
 from app.views.models_view import ModelsView
 from core.cognitive_pipeline import analyze_request
-from core.cognitive_task import TaskStatus
+from core.cognitive_task import CognitiveTask, TaskStatus
 from core.input_processing import InputValidationError
 from engines.base import EngineAdapter, EngineRequest, ModelInfo
 from engines.model_selector import ModelSelectionError, choose_model
@@ -46,7 +47,7 @@ class MainWindow(QMainWindow):
         self._status_worker: OllamaStatusWorker | None = None
         self._chat_worker: OllamaChatWorker | None = None
         self._current_assistant_index: int | None = None
-        self.last_cognitive_task = None
+        self.last_cognitive_task: CognitiveTask | None = None
 
         self.conversations = self._load_conversations()
         self.conversations.sort(key=lambda item: item.updated_at, reverse=True)
@@ -58,9 +59,11 @@ class MainWindow(QMainWindow):
 
         self.chat_view = ChatView()
         self.models_view = ModelsView()
+        self.cognitive_view = CognitiveInspectorView()
         tabs = QTabWidget()
         tabs.addTab(self.chat_view, "Chat")
         tabs.addTab(self.models_view, "Modelos")
+        tabs.addTab(self.cognitive_view, "Cognitivo")
         self.setCentralWidget(tabs)
 
         self.chat_view.send_requested.connect(self.send_message)
@@ -297,7 +300,10 @@ class MainWindow(QMainWindow):
             return
 
         self.last_cognitive_task = cognitive_task
+        self.cognitive_view.set_task(cognitive_task)
+        self.cognitive_view.set_runtime_status("Análise concluída; aguardando a rota.")
         if cognitive_task.status is TaskStatus.FAILED:
+            self.cognitive_view.set_runtime_status("Análise cognitiva falhou.")
             detail = (
                 cognitive_task.result.get("error", "Falha desconhecida.")
                 if isinstance(cognitive_task.result, dict)
@@ -332,6 +338,11 @@ class MainWindow(QMainWindow):
             self._render_current_conversation()
 
             tool_name = str(cognitive_task.result.get("tool", "ferramenta local"))
+            self._record_cognitive_event(
+                "deterministic_response",
+                "completed",
+                {"tool": tool_name, "content": cognitive_task.result.get("content", "")},
+            )
             self.chat_view.set_status(f"Resolvido localmente — {tool_name}")
             self.statusBar().showMessage(
                 f"Rota determinística: {tool_name} • tarefa {cognitive_task.task_id[:8]}",
@@ -342,9 +353,28 @@ class MainWindow(QMainWindow):
         try:
             model = self._resolve_model()
         except ModelSelectionError as exc:
+            self._record_cognitive_event(
+                "model_selection",
+                "failed",
+                {"error": str(exc)},
+            )
             QMessageBox.information(self, "Modelo indisponível", str(exc))
             self.refresh_backend()
             return
+
+        cognitive_task.execution_plan.append(
+            {
+                "step": len(cognitive_task.execution_plan),
+                "component": "model_selection",
+                "model": model,
+                "mode": self.config.mode,
+            }
+        )
+        self._record_cognitive_event(
+            "model_selection",
+            "completed",
+            {"model": model, "mode": self.config.mode},
+        )
 
         conversation = self.current_conversation
         conversation.messages.append({"role": "user", "content": text.strip()})
@@ -400,7 +430,32 @@ class MainWindow(QMainWindow):
         self.statusBar().showMessage(
             f"Plano cognitivo: {cognitive_task.intent} • {plan_label}modelo {model}"
         )
+        self._record_cognitive_event(
+            "ollama_chat",
+            "started",
+            {"model": model},
+        )
         worker.start()
+
+    def _record_cognitive_event(
+        self,
+        stage: str,
+        status: str,
+        details: dict[str, Any] | None = None,
+    ) -> None:
+        """Anexa um evento observável à última tarefa e atualiza o Inspector."""
+        task = self.last_cognitive_task
+        if task is None:
+            return
+        event = {
+            "stage": stage,
+            "status": status,
+            "timestamp": datetime.now(UTC).isoformat(),
+            "details": details or {},
+        }
+        task.execution_trace.append(event)
+        self.cognitive_view.set_task(task)
+        self.cognitive_view.set_runtime_status(f"{stage}: {status}")
 
     def _assistant_message(self) -> dict[str, str] | None:
         index = self._current_assistant_index
@@ -425,6 +480,32 @@ class MainWindow(QMainWindow):
     def _on_chat_completed(self, metadata: object) -> None:
         self._persist_conversations()
         details = metadata if isinstance(metadata, dict) else {}
+        if self.last_cognitive_task is not None:
+            assistant_message = self._assistant_message()
+            if assistant_message is not None:
+                selected_model = next(
+                    (
+                        step.get("model")
+                        for step in self.last_cognitive_task.execution_plan
+                        if step.get("component") == "model_selection"
+                    ),
+                    None,
+                )
+                self.last_cognitive_task.result = {
+                    "route": "llm_assisted",
+                    "status": "completed",
+                    "model": selected_model,
+                    "content": assistant_message.get("content", ""),
+                }
+        self._record_cognitive_event(
+            "ollama_chat",
+            "completed",
+            {
+                key: details[key]
+                for key in ("model", "eval_count", "eval_duration", "prompt_eval_count")
+                if key in details
+            },
+        )
         eval_count = details.get("eval_count")
         eval_duration = details.get("eval_duration")
         suffix = ""
@@ -438,6 +519,13 @@ class MainWindow(QMainWindow):
         self.statusBar().showMessage("Geração concluída" + suffix, 8000)
 
     def _on_chat_error(self, message: str) -> None:
+        if self.last_cognitive_task is not None:
+            self.last_cognitive_task.result = {
+                "route": "llm_assisted",
+                "status": "failed",
+                "error": message,
+            }
+        self._record_cognitive_event("ollama_chat", "failed", {"error": message})
         self._discard_empty_assistant_message()
         self._persist_conversations()
         self.chat_view.set_status("Falha na geração")
@@ -445,6 +533,12 @@ class MainWindow(QMainWindow):
         QMessageBox.warning(self, "Falha no Ollama", message)
 
     def _on_chat_cancelled(self) -> None:
+        if self.last_cognitive_task is not None:
+            self.last_cognitive_task.result = {
+                "route": "llm_assisted",
+                "status": "cancelled",
+            }
+        self._record_cognitive_event("ollama_chat", "cancelled")
         self._discard_empty_assistant_message()
         self._persist_conversations()
         self.chat_view.set_status("Geração cancelada")
