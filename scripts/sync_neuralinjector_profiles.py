@@ -12,7 +12,6 @@ import json
 import sys
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[1]
 PROFILE_DIR = ROOT / "examples" / "neuralinjector" / "hardware" / "profiles"
 
