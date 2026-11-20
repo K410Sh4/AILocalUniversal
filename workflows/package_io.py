@@ -91,9 +91,15 @@ def _read_package(path: Path) -> dict[str, bytes]:
                     )
                 files[info.filename] = archive.read(info)
     except zipfile.BadZipFile as exc:
-        raise PackageGraphError("INVALID_PACKAGE_ZIP", "O arquivo .neuralinjector está corrompido.") from exc
+        raise PackageGraphError(
+            "INVALID_PACKAGE_ZIP",
+            "O arquivo .neuralinjector está corrompido.",
+        ) from exc
     except OSError as exc:
-        raise PackageGraphError("PACKAGE_READ_ERROR", f"Não foi possível ler o pacote: {exc}") from exc
+        raise PackageGraphError(
+            "PACKAGE_READ_ERROR",
+            f"Não foi possível ler o pacote: {exc}",
+        ) from exc
     return files
 
 
@@ -104,9 +110,15 @@ def _manifest(files: dict[str, bytes]) -> dict[str, Any]:
     try:
         manifest = json.loads(raw.decode("utf-8"))
     except (UnicodeDecodeError, json.JSONDecodeError) as exc:
-        raise PackageGraphError("PACKAGE_MANIFEST_INVALID", "manifest.json não é JSON UTF-8 válido.") from exc
+        raise PackageGraphError(
+            "PACKAGE_MANIFEST_INVALID",
+            "manifest.json não é JSON UTF-8 válido.",
+        ) from exc
     if not isinstance(manifest, dict) or manifest.get("format") != "ailocal.neuralinjector":
-        raise PackageGraphError("PACKAGE_FORMAT_INVALID", "O manifesto não identifica um NeuralInjector Package.")
+        raise PackageGraphError(
+            "PACKAGE_FORMAT_INVALID",
+            "O manifesto não identifica um NeuralInjector Package.",
+        )
     if manifest.get("signature"):
         raise PackageGraphError(
             "SIGNED_PACKAGE_CANNOT_BE_MODIFIED",
@@ -169,20 +181,23 @@ def _validate_graph_manifest_references(
         if model_id not in declared_models:
             raise PackageGraphError(
                 "MODEL_REFERENCE_NOT_DECLARED",
-                f"O modelo '{model_id}' do nó '{node.label}' não está declarado em compatibility.models.",
+                f"O modelo '{model_id}' do nó '{node.label}' não está declarado "
+                "em compatibility.models.",
                 ("Adicione o model_id ao manifesto antes de salvar o NeuralMap no pacote.",),
             )
         if engine_id not in declared_engines:
             raise PackageGraphError(
                 "ENGINE_REFERENCE_NOT_DECLARED",
-                f"O engine '{engine_id}' do nó '{node.label}' não está declarado em compatibility.engines.",
+                f"O engine '{engine_id}' do nó '{node.label}' não está declarado "
+                "em compatibility.engines.",
                 ("Declare o backend requerido no manifesto do pacote.",),
             )
         plugin_ref = node.config.get("plugin_ref")
         if plugin_ref and plugin_ref not in declared_plugins:
             raise PackageGraphError(
                 "PLUGIN_REFERENCE_NOT_DECLARED",
-                f"O NeuralPlugin '{plugin_ref}' do nó '{node.label}' não está declarado em components.plugins.",
+                f"O NeuralPlugin '{plugin_ref}' do nó '{node.label}' não está "
+                "declarado em components.plugins.",
                 ("Instale/declare o plugin no manifesto ou remova a referência do nó.",),
             )
         if node.node_type == "hardware.profile":
@@ -303,10 +318,14 @@ def save_graph_to_package(
             "UNSUPPORTED_GRAPH_PATH",
             f"Na NIP 0.1.0 o grafo deve ser salvo em {GRAPH_PATH}.",
         )
-    if graph_path in {MANIFEST_PATH, "security/checksums.sha256"} or graph_path.startswith("security/"):
+    if (
+        graph_path in {MANIFEST_PATH, "security/checksums.sha256"}
+        or graph_path.startswith("security/")
+    ):
         raise PackageGraphError(
             "RESERVED_PACKAGE_PATH",
-            "O caminho do grafo não pode sobrescrever manifesto, checksums ou arquivos de segurança.",
+            "O caminho do grafo não pode sobrescrever manifesto, checksums "
+            "ou arquivos de segurança.",
         )
     path = Path(package_path).expanduser().resolve()
     files = _read_package(path)
