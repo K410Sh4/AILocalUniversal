@@ -34,8 +34,8 @@ class ModelsView(QWidget):
         super().__init__(parent)
         self.refresh_button = QPushButton("Atualizar")
         self.status_label = QLabel("Inventário ainda não consultado.")
-        self.table = QTableWidget(0, 3)
-        self.table.setHorizontalHeaderLabels(["Modelo", "Tamanho", "Digest"])
+        self.table = QTableWidget(0, 4)
+        self.table.setHorizontalHeaderLabels(["Modelo", "Capacidades", "Tamanho", "Digest"])
         self.table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self.table.horizontalHeader().setStretchLastSection(True)
         self.refresh_button.clicked.connect(self.refresh_requested.emit)
@@ -50,9 +50,25 @@ class ModelsView(QWidget):
     def set_models(self, models: list[ModelInfo], healthy: bool) -> None:
         self.table.setRowCount(len(models))
         for row, model in enumerate(models):
+            capabilities = model.capabilities
+            if not capabilities.verified:
+                capability_label = "Não verificado"
+            else:
+                labels = []
+                if capabilities.chat:
+                    labels.append("Chat")
+                if capabilities.embeddings:
+                    labels.append("Embeddings")
+                if capabilities.vision:
+                    labels.append("Visão")
+                if capabilities.tool_calling:
+                    labels.append("Tools")
+                capability_label = " + ".join(labels) or "Outras"
+
             self.table.setItem(row, 0, QTableWidgetItem(model.name))
-            self.table.setItem(row, 1, QTableWidgetItem(format_size(model.size_bytes)))
-            self.table.setItem(row, 2, QTableWidgetItem(model.digest or "—"))
+            self.table.setItem(row, 1, QTableWidgetItem(capability_label))
+            self.table.setItem(row, 2, QTableWidgetItem(format_size(model.size_bytes)))
+            self.table.setItem(row, 3, QTableWidgetItem(model.digest or "—"))
         if healthy:
             self.status_label.setText(f"Ollama conectado — {len(models)} modelo(s) instalado(s).")
         else:

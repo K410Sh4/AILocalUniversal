@@ -15,14 +15,16 @@ O AILocal Universal coordena modelos de linguagem, ferramentas determinísticas,
 - Consulta de disponibilidade do servidor Ollama.
 - Inventário de modelos instalados.
 - Chat via API /api/chat com streaming NDJSON.
-- Modo manual e modo automático de seleção.
+- Modo manual e modo automático de seleção, limitados a modelos com capacidade de chat verificada.
+- Identificação de capacidades via API `/api/show`, distinguindo chat, embeddings, visão e tools.
 - Modelo preferido para o modo automático.
+- Renderização de respostas em Markdown (negrito, listas, links, tabelas e blocos de código).
 - Histórico de conversas em JSON local.
 - Configurações persistentes de URL, keep-alive e system prompt.
 - Cancelamento de geração por worker em thread separada.
 - Tratamento de indisponibilidade, timeouts e erros do protocolo.
 
-O modo automático inicial escolhe o modelo preferido quando disponível ou, na ausência dele, o primeiro nome em ordem estável. Roteamento semântico por capacidades será implementado na Fase 2.
+O modo automático inicial escolhe o modelo preferido quando ele possui capacidade de chat verificada ou, na ausência dele, o primeiro modelo de chat em ordem estável. Modelos exclusivamente de embeddings e modelos sem metadados de capacidade verificáveis não entram no seletor de conversas. O roteamento semântico por tarefa e dificuldade será implementado na Fase 2.
 
 ## Arquitetura
 
@@ -100,8 +102,8 @@ O modelo acima é apenas um exemplo; escolha um modelo compatível com a memóri
 1. Abra a aba **Chat**.
 2. Clique em **Atualizar modelos** para consultar o Ollama.
 3. Escolha **Automático** ou **Manual**.
-4. No modo manual, selecione o modelo.
-5. No modo automático, selecione um modelo e clique em **Definir preferido** para gravar sua preferência.
+4. No modo manual, selecione um modelo identificado como compatível com chat.
+5. No modo automático, selecione um modelo de chat e clique em **Definir preferido** para gravar sua preferência. Modelos de embeddings aparecem na aba **Modelos**, mas não são oferecidos para conversação.
 6. Envie uma mensagem. A resposta será transmitida em streaming.
 7. Use **Cancelar** para interromper a geração.
 8. Abra **Configurações** para alterar URL, keep-alive ou system prompt.

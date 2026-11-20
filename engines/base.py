@@ -17,6 +17,8 @@ class EngineCapabilities:
     vision: bool = False
     tool_calling: bool = False
     context_window: int | None = None
+    embeddings: bool = False
+    verified: bool = True
 
 
 @dataclass(slots=True)

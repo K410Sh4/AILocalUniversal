@@ -23,3 +23,20 @@ def test_selector_rejects_no_chat_models() -> None:
     ]
     with pytest.raises(ModelSelectionError):
         choose_model(models)
+
+
+
+def test_selector_ignores_embedding_and_unverified_models() -> None:
+    models = [
+        ModelInfo(
+            "qwen3-embedding:0.6b",
+            capabilities=EngineCapabilities(chat=False, embeddings=True),
+        ),
+        ModelInfo(
+            "legacy-unknown",
+            capabilities=EngineCapabilities(chat=False, verified=False),
+        ),
+        ModelInfo("qwen3:4b"),
+    ]
+
+    assert choose_model(models, "qwen3-embedding:0.6b").name == "qwen3:4b"

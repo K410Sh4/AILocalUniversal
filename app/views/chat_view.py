@@ -2,9 +2,8 @@
 
 from __future__ import annotations
 
-from html import escape
-
 from PySide6.QtCore import Qt, Signal
+from PySide6.QtGui import QTextDocument
 from PySide6.QtWidgets import (
     QComboBox,
     QHBoxLayout,
@@ -18,6 +17,25 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+
+
+def markdown_to_html(markdown_text: str) -> str:
+    """Renderiza Markdown GitHub, descartando HTML fornecido no próprio texto."""
+    document = QTextDocument()
+    features = (
+        QTextDocument.MarkdownFeature.MarkdownDialectGitHub
+        | QTextDocument.MarkdownFeature.MarkdownNoHTML
+    )
+    document.setMarkdown(markdown_text, features)
+    html = document.toHtml()
+    body_start = html.find("<body")
+    if body_start < 0:
+        return html
+    content_start = html.find(">", body_start)
+    content_end = html.rfind("</body>")
+    if content_start < 0 or content_end < content_start:
+        return html
+    return html[content_start + 1 : content_end]
 
 
 class ChatView(QWidget):
@@ -73,7 +91,8 @@ class ChatView(QWidget):
         history_layout.addWidget(self.history_list)
 
         self.transcript = QTextBrowser()
-        self.transcript.setOpenExternalLinks(True)
+        self.transcript.setOpenExternalLinks(False)
+        self.transcript.setOpenLinks(False)
         self.transcript.setStyleSheet(
             "QTextBrowser { padding: 12px; border: 1px solid palette(mid); "
             "border-radius: 8px; }"
@@ -168,8 +187,19 @@ class ChatView(QWidget):
             ".message{padding:10px 12px;margin:8px 0;border-radius:8px;}"
             ".user{background:#24415b;color:#fff;margin-left:12%;}"
             ".assistant{background:#33363c;color:#f1f1f1;margin-right:12%;}"
-            ".role{font-weight:600;margin-bottom:5px;color:#a9c7e8;}"
-            "pre{white-space:pre-wrap;word-wrap:break-word;font-family:inherit;margin:0;}"
+            ".role{font-weight:600;margin-bottom:7px;color:#a9c7e8;}"
+            ".content{overflow-wrap:anywhere;}"
+            ".content p{margin:0 0 8px 0;}"
+            ".content p:last-child{margin-bottom:0;}"
+            ".content pre{white-space:pre-wrap;word-wrap:break-word;"
+            "font-family:monospace;background:#17191c;padding:8px;border-radius:5px;}"
+            ".content code{font-family:monospace;background:#202328;padding:1px 4px;"
+            "border-radius:3px;}"
+            ".content pre code{background:transparent;padding:0;}"
+            ".content ul,.content ol{margin-top:4px;margin-bottom:8px;}"
+            ".content a{color:#8ecbff;}"
+            ".content table{border-collapse:collapse;}"
+            ".content th,.content td{border:1px solid #666;padding:4px 7px;}"
             "</style></head><body>"
         ]
         for message in messages:
@@ -177,10 +207,10 @@ class ChatView(QWidget):
             if role not in {"user", "assistant"}:
                 continue
             label = "Você" if role == "user" else "AILocal"
-            content = escape(message.get("content", ""))
+            content = markdown_to_html(message.get("content", ""))
             pieces.append(
                 f'<div class="message {role}"><div class="role">{label}</div>'
-                f"<pre>{content}</pre></div>"
+                f'<div class="content">{content}</div></div>'
             )
         pieces.append("</body></html>")
         self.transcript.setHtml("".join(pieces))

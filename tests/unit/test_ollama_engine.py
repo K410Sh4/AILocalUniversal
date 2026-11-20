@@ -10,26 +10,45 @@ from engines.ollama_engine import OllamaEngine, OllamaError, OllamaProtocolError
 @pytest.mark.asyncio
 async def test_health_and_model_inventory() -> None:
     async def handler(request: httpx.Request) -> httpx.Response:
-        assert request.url.path == "/api/tags"
-        return httpx.Response(
-            200,
-            json={
-                "models": [
-                    {"name": "qwen2.5:7b", "size": 1234, "digest": "abc"},
-                    {"name": "llama3.2:3b", "size": 5678},
-                ]
-            },
-        )
+        if request.url.path == "/api/tags":
+            return httpx.Response(
+                200,
+                json={
+                    "models": [
+                        {"name": "qwen2.5:7b", "size": 1234, "digest": "abc"},
+                        {"name": "llama3.2:3b", "size": 5678},
+                        {"name": "qwen3-embedding:0.6b", "size": 9012},
+                    ]
+                },
+            )
+        assert request.url.path == "/api/show"
+        model_name = json.loads(request.content)["model"]
+        capabilities = {
+            "qwen2.5:7b": ["completion"],
+            "llama3.2:3b": ["completion", "tools", "vision"],
+            "qwen3-embedding:0.6b": ["embedding"],
+        }[model_name]
+        return httpx.Response(200, json={"capabilities": capabilities})
 
     engine = OllamaEngine(transport=httpx.MockTransport(handler))
 
     assert await engine.health()
     models = await engine.list_models()
 
-    assert [model.name for model in models] == ["qwen2.5:7b", "llama3.2:3b"]
+    assert [model.name for model in models] == [
+        "qwen2.5:7b",
+        "llama3.2:3b",
+        "qwen3-embedding:0.6b",
+    ]
     assert models[0].size_bytes == 1234
     assert models[0].digest == "abc"
+    assert models[0].capabilities.chat is True
     assert models[0].capabilities.streaming is True
+    assert models[1].capabilities.tool_calling is True
+    assert models[1].capabilities.vision is True
+    assert models[2].capabilities.chat is False
+    assert models[2].capabilities.embeddings is True
+    assert models[2].capabilities.verified is True
 
 
 @pytest.mark.asyncio
@@ -105,3 +124,19 @@ async def test_stream_chat_rejects_stream_without_done_event() -> None:
                 EngineRequest(model="test", messages=[{"role": "user", "content": "Oi"}])
             )
         ]
+
+
+@pytest.mark.asyncio
+async def test_model_without_capability_metadata_is_not_assumed_to_support_chat() -> None:
+    async def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path == "/api/tags":
+            return httpx.Response(200, json={"models": [{"name": "legacy-model"}]})
+        assert request.url.path == "/api/show"
+        return httpx.Response(200, json={"details": {"family": "unknown"}})
+
+    engine = OllamaEngine(transport=httpx.MockTransport(handler))
+    models = await engine.list_models()
+
+    assert len(models) == 1
+    assert models[0].capabilities.chat is False
+    assert models[0].capabilities.verified is False

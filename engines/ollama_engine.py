@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 from collections.abc import AsyncIterator
 from typing import Any
@@ -74,6 +75,39 @@ class OllamaEngine(EngineAdapter):
         except httpx.HTTPError:
             return False
 
+    async def _read_model_capabilities(
+        self,
+        client: httpx.AsyncClient,
+        model_name: str,
+        semaphore: asyncio.Semaphore,
+    ) -> EngineCapabilities:
+        """Lê capacidades declaradas pelo Ollama sem inferi-las pelo nome do modelo."""
+        async with semaphore:
+            try:
+                response = await client.post("/api/show", json={"model": model_name})
+                if not response.is_success:
+                    return EngineCapabilities(chat=False, verified=False)
+                payload = response.json()
+            except (httpx.HTTPError, ValueError):
+                return EngineCapabilities(chat=False, verified=False)
+
+        raw_capabilities = payload.get("capabilities") if isinstance(payload, dict) else None
+        if not isinstance(raw_capabilities, list) or not all(
+            isinstance(value, str) for value in raw_capabilities
+        ):
+            return EngineCapabilities(chat=False, verified=False)
+
+        capabilities = {value.casefold() for value in raw_capabilities}
+        supports_completion = "completion" in capabilities
+        return EngineCapabilities(
+            chat=supports_completion,
+            streaming=supports_completion,
+            vision="vision" in capabilities,
+            tool_calling="tools" in capabilities,
+            embeddings="embedding" in capabilities,
+            verified=True,
+        )
+
     async def list_models(self) -> list[ModelInfo]:
         try:
             async with self._client() as client:
@@ -81,6 +115,30 @@ class OllamaEngine(EngineAdapter):
                 if not response.is_success:
                     raise OllamaError(self._error_message(response))
                 payload = response.json()
+
+                if not isinstance(payload, dict):
+                    raise OllamaProtocolError("Resposta /api/tags deve ser um objeto JSON.")
+                raw_models = payload.get("models")
+                if not isinstance(raw_models, list):
+                    raise OllamaProtocolError("Resposta /api/tags sem uma lista 'models'.")
+
+                semaphore = asyncio.Semaphore(4)
+
+                async def build_model(item: object) -> ModelInfo | None:
+                    if not isinstance(item, dict) or not item.get("name"):
+                        return None
+                    name = str(item["name"])
+                    size = item.get("size")
+                    capabilities = await self._read_model_capabilities(client, name, semaphore)
+                    return ModelInfo(
+                        name=name,
+                        size_bytes=int(size) if isinstance(size, (int, float)) else None,
+                        digest=str(item["digest"]) if item.get("digest") else None,
+                        capabilities=capabilities,
+                    )
+
+                inspected = await asyncio.gather(*(build_model(item) for item in raw_models))
+                return [model for model in inspected if model is not None]
         except httpx.ConnectError as exc:
             raise OllamaConnectionError(
                 f"Não foi possível conectar ao Ollama em {self.base_url}. "
@@ -92,27 +150,6 @@ class OllamaEngine(EngineAdapter):
             raise OllamaConnectionError(f"Falha HTTP ao consultar Ollama: {exc}") from exc
         except ValueError as exc:
             raise OllamaProtocolError("Ollama retornou JSON inválido em /api/tags.") from exc
-
-        if not isinstance(payload, dict):
-            raise OllamaProtocolError("Resposta /api/tags deve ser um objeto JSON.")
-        raw_models = payload.get("models")
-        if not isinstance(raw_models, list):
-            raise OllamaProtocolError("Resposta /api/tags sem uma lista 'models'.")
-
-        models: list[ModelInfo] = []
-        for item in raw_models:
-            if not isinstance(item, dict) or not item.get("name"):
-                continue
-            size = item.get("size")
-            models.append(
-                ModelInfo(
-                    name=str(item["name"]),
-                    size_bytes=int(size) if isinstance(size, (int, float)) else None,
-                    digest=str(item["digest"]) if item.get("digest") else None,
-                    capabilities=EngineCapabilities(chat=True, streaming=True),
-                )
-            )
-        return models
 
     async def stream_chat(self, request: EngineRequest) -> AsyncIterator[EngineEvent]:
         if not request.model.strip():

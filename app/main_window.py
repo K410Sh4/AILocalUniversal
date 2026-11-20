@@ -138,7 +138,12 @@ class MainWindow(QMainWindow):
         healthy = bool(payload.get("healthy"))
         models = payload.get("models", [])
         self.models = models if isinstance(models, list) else []
-        names = [model.name for model in self.models]
+        chat_models = [
+            model
+            for model in self.models
+            if model.capabilities.verified and model.capabilities.chat
+        ]
+        names = [model.name for model in chat_models]
         selected = (
             self.config.manual_model
             if self.config.mode == "manual"
@@ -147,7 +152,21 @@ class MainWindow(QMainWindow):
         self.chat_view.set_models(names, selected)
         self.models_view.set_models(self.models, healthy)
         if healthy:
-            message = f"Ollama conectado — {len(self.models)} modelo(s)."
+            if chat_models:
+                message = (
+                    f"Ollama conectado — {len(chat_models)} modelo(s) de chat "
+                    f"entre {len(self.models)} instalado(s)."
+                )
+            elif any(not model.capabilities.verified for model in self.models):
+                message = (
+                    "Ollama conectado, mas não foi possível identificar as capacidades "
+                    "dos modelos. Atualize o Ollama e tente novamente."
+                )
+            else:
+                message = (
+                    "Ollama conectado, mas nenhum modelo compatível com chat foi encontrado. "
+                    "Instale um modelo de geração."
+                )
             self.chat_view.set_status(message)
             self.statusBar().showMessage(message)
         else:
@@ -232,8 +251,23 @@ class MainWindow(QMainWindow):
             selected = self.chat_view.model_combo.currentText().strip()
             if not selected:
                 raise ModelSelectionError("Selecione um modelo no modo manual.")
-            if selected not in {model.name for model in self.models}:
-                raise ModelSelectionError("O modelo selecionado não está mais instalado.")
+            selected_model = next(
+                (model for model in self.models if model.name == selected),
+                None,
+            )
+            if selected_model is None:
+                raise ModelSelectionError(
+                    "O modelo selecionado não está disponível para conversa."
+                )
+            if not selected_model.capabilities.verified:
+                raise ModelSelectionError(
+                    "O Ollama não informou as capacidades deste modelo. "
+                    "Atualize o Ollama e atualize a lista de modelos."
+                )
+            if not selected_model.capabilities.chat:
+                raise ModelSelectionError(
+                    "Este modelo não oferece capacidade de chat. Selecione um modelo de geração."
+                )
             self.config.manual_model = selected
             return selected
         return choose_model(self.models, self.config.preferred_model).name
