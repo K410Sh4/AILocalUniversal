@@ -1,0 +1,149 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "NeuralInjector Hardware Profile",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "profile_id",
+    "profile_version",
+    "requirements",
+    "budget",
+    "execution",
+    "degradation",
+    "benchmark"
+  ],
+  "properties": {
+    "profile_id": {
+      "enum": [
+        "minimal",
+        "balanced",
+        "performance",
+        "max_quality"
+      ]
+    },
+    "profile_version": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "requirements": {
+      "type": "object",
+      "required": [
+        "min_ram_mb",
+        "min_vram_mb",
+        "min_disk_mb"
+      ],
+      "properties": {
+        "min_ram_mb": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "min_vram_mb": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "min_disk_mb": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "objectives": {
+      "type": "object"
+    },
+    "budget": {
+      "type": "object",
+      "required": [
+        "max_ram_fraction",
+        "target_context_tokens",
+        "max_parallelism"
+      ],
+      "properties": {
+        "max_ram_fraction": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 1
+        },
+        "target_context_tokens": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "max_parallelism": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "execution": {
+      "type": "object",
+      "required": [
+        "preferred_backends",
+        "allow_cpu_fallback",
+        "require_gpu"
+      ],
+      "properties": {
+        "preferred_backends": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "cpu",
+              "gpu"
+            ]
+          },
+          "minItems": 1
+        },
+        "allow_cpu_fallback": {
+          "type": "boolean"
+        },
+        "require_gpu": {
+          "type": "boolean"
+        }
+      }
+    },
+    "degradation": {
+      "type": "object",
+      "properties": {
+        "disable_optional_components": {
+          "type": "boolean"
+        },
+        "reduce_context": {
+          "type": "boolean"
+        },
+        "reduce_parallelism": {
+          "type": "boolean"
+        },
+        "allow_artifact_fallback": {
+          "type": "boolean"
+        }
+      }
+    },
+    "benchmark": {
+      "type": "object",
+      "required": [
+        "default",
+        "allowed"
+      ],
+      "properties": {
+        "default": {
+          "enum": [
+            "none",
+            "quick",
+            "full"
+          ]
+        },
+        "allowed": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "none",
+              "quick",
+              "full"
+            ]
+          },
+          "minItems": 1
+        }
+      }
+    }
+  }
+}
