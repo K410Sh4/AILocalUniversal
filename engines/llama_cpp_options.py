@@ -42,7 +42,6 @@ def llama_cpp_constructor_options(
     return options
 
 
-
 def create_llama_cpp_runtime(
     model_path: str | Path,
     budget: ResourceBudget,
