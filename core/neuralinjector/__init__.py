@@ -16,6 +16,7 @@ from .resources import (
     detect_gpu_devices,
     detect_hardware,
     select_profile,
+    serialize_hardware_profile,
 )
 from .monitor import ResourceMonitor
 
@@ -38,4 +39,5 @@ __all__ = [
     "detect_gpu_devices",
     "detect_hardware",
     "select_profile",
+    "serialize_hardware_profile",
 ]
