@@ -9,17 +9,51 @@
       "family": "Qwen 3.5",
       "summary": "Modelo compacto de linguagem e visão com raciocínio, uso de ferramentas e capacidades multimodais. A variante 2B é a opção menor desta família.",
       "publisher": "Alibaba Cloud — Qwen",
-      "categories": ["general", "reasoning", "vision", "multimodal", "agents"],
-      "capabilities": ["chat", "reasoning", "tool_calling", "vision"],
-      "modalities": ["text", "image"],
+      "categories": [
+        "general",
+        "reasoning",
+        "vision",
+        "multimodal",
+        "agents"
+      ],
+      "capabilities": [
+        "chat",
+        "reasoning",
+        "tool_calling",
+        "vision"
+      ],
+      "modalities": [
+        "text",
+        "image"
+      ],
       "parameter_count": 2000000000,
       "context_window": 262144,
       "source_url": "https://ollama.com/library/qwen3.5/tags",
       "metadata_updated_at": "2026-11-20",
       "license_verified": false,
       "variants": [
-        {"reference": "qwen3.5:2b-q4_K_M", "size_bytes": 2040109465, "size_label": "1.9 GB", "quantization": "Q4_K_M", "installable": true, "supported_platforms": ["linux", "macos", "windows"]},
-        {"reference": "qwen3.5:2b-q8_0", "size_bytes": 2899102924, "size_label": "2.7 GB", "quantization": "Q8_0", "installable": true, "supported_platforms": ["linux", "macos", "windows"]}
+        {
+          "reference": "qwen3.5:2b-q4_K_M",
+          "size_label": "1.9 GB",
+          "quantization": "Q4_K_M",
+          "installable": true,
+          "supported_platforms": [
+            "linux",
+            "macos",
+            "windows"
+          ]
+        },
+        {
+          "reference": "qwen3.5:2b-q8_0",
+          "size_label": "2.7 GB",
+          "quantization": "Q8_0",
+          "installable": true,
+          "supported_platforms": [
+            "linux",
+            "macos",
+            "windows"
+          ]
+        }
       ]
     },
     {
@@ -28,17 +62,53 @@
       "family": "Qwen 3.5",
       "summary": "Variante maior da família Qwen 3.5, com chat, raciocínio, ferramentas e entrada de imagens. Pode atender tarefas de programação e agentes, mas exige mais recursos que a variante 2B.",
       "publisher": "Alibaba Cloud — Qwen",
-      "categories": ["general", "coding", "reasoning", "vision", "multimodal", "agents"],
-      "capabilities": ["chat", "reasoning", "tool_calling", "vision", "coding"],
-      "modalities": ["text", "image"],
+      "categories": [
+        "general",
+        "coding",
+        "reasoning",
+        "vision",
+        "multimodal",
+        "agents"
+      ],
+      "capabilities": [
+        "chat",
+        "reasoning",
+        "tool_calling",
+        "vision",
+        "coding"
+      ],
+      "modalities": [
+        "text",
+        "image"
+      ],
       "parameter_count": 4000000000,
       "context_window": 262144,
       "source_url": "https://ollama.com/library/qwen3.5/tags",
       "metadata_updated_at": "2026-11-20",
       "license_verified": false,
       "variants": [
-        {"reference": "qwen3.5:4b-q4_K_M", "size_bytes": 3543348019, "size_label": "3.3 GB", "quantization": "Q4_K_M", "installable": true, "supported_platforms": ["linux", "macos", "windows"]},
-        {"reference": "qwen3.5:4b-q8_0", "size_bytes": 5583457484, "size_label": "5.2 GB", "quantization": "Q8_0", "installable": true, "supported_platforms": ["linux", "macos", "windows"]}
+        {
+          "reference": "qwen3.5:4b-q4_K_M",
+          "size_label": "3.3 GB",
+          "quantization": "Q4_K_M",
+          "installable": true,
+          "supported_platforms": [
+            "linux",
+            "macos",
+            "windows"
+          ]
+        },
+        {
+          "reference": "qwen3.5:4b-q8_0",
+          "size_label": "5.2 GB",
+          "quantization": "Q8_0",
+          "installable": true,
+          "supported_platforms": [
+            "linux",
+            "macos",
+            "windows"
+          ]
+        }
       ]
     },
     {
@@ -47,9 +117,18 @@
       "family": "Qwen3-Coder-Next",
       "summary": "Modelo especializado em programação e fluxos agentic. São 80B parâmetros totais e aproximadamente 3B ativos por token; a variante Q4_K_M tem cerca de 52 GB em disco.",
       "publisher": "Alibaba Cloud — Qwen",
-      "categories": ["coding", "agents"],
-      "capabilities": ["coding", "tool_calling", "agentic"],
-      "modalities": ["text"],
+      "categories": [
+        "coding",
+        "agents"
+      ],
+      "capabilities": [
+        "coding",
+        "tool_calling",
+        "agentic"
+      ],
+      "modalities": [
+        "text"
+      ],
       "parameter_count": 80000000000,
       "active_parameter_count": 3000000000,
       "context_window": 262144,
@@ -57,7 +136,18 @@
       "metadata_updated_at": "2026-11-20",
       "license_verified": false,
       "variants": [
-        {"reference": "qwen3-coder-next:q4_K_M", "size_bytes": 55834574848, "size_label": "52 GB", "quantization": "Q4_K_M", "installable": true, "supported_platforms": ["linux", "macos", "windows"], "install_note": "Download grande: confirme o espaço disponível no volume configurado para OLLAMA_MODELS."}
+        {
+          "reference": "qwen3-coder-next:q4_K_M",
+          "size_label": "52 GB",
+          "quantization": "Q4_K_M",
+          "installable": true,
+          "supported_platforms": [
+            "linux",
+            "macos",
+            "windows"
+          ],
+          "install_note": "Download grande: confirme o espaço disponível no volume configurado para OLLAMA_MODELS."
+        }
       ]
     },
     {
@@ -66,16 +156,41 @@
       "family": "Gemma 4",
       "summary": "Modelo compacto multimodal para raciocínio, programação, fluxos com ferramentas e compreensão de imagens. O tamanho varia conforme a variante publicada.",
       "publisher": "Google DeepMind",
-      "categories": ["general", "coding", "reasoning", "vision", "multimodal", "agents"],
-      "capabilities": ["chat", "reasoning", "tool_calling", "vision", "audio"],
-      "modalities": ["text", "image", "audio"],
-      "parameter_count": 2000000000,
+      "categories": [
+        "general",
+        "coding",
+        "reasoning",
+        "vision",
+        "multimodal",
+        "agents"
+      ],
+      "capabilities": [
+        "chat",
+        "reasoning",
+        "tool_calling",
+        "vision",
+        "audio"
+      ],
+      "modalities": [
+        "text",
+        "image",
+        "audio"
+      ],
       "context_window": 131072,
       "source_url": "https://ollama.com/library/gemma4/tags",
       "metadata_updated_at": "2026-11-20",
       "license_verified": false,
       "variants": [
-        {"reference": "gemma4:e2b", "size_label": "4.6–7.5 GB (varia conforme o artefato publicado)", "installable": true, "supported_platforms": ["linux", "macos", "windows"]}
+        {
+          "reference": "gemma4:e2b",
+          "size_label": "4.6–7.5 GB (varia conforme o artefato publicado)",
+          "installable": true,
+          "supported_platforms": [
+            "linux",
+            "macos",
+            "windows"
+          ]
+        }
       ]
     },
     {
@@ -84,15 +199,35 @@
       "family": "GLM-OCR",
       "summary": "Modelo multimodal voltado a OCR e compreensão de documentos complexos, incluindo reconhecimento de texto, tabelas e figuras.",
       "publisher": "Z.ai",
-      "categories": ["vision", "ocr", "multimodal"],
-      "capabilities": ["vision", "ocr", "document_understanding"],
-      "modalities": ["text", "image"],
+      "categories": [
+        "vision",
+        "ocr",
+        "multimodal"
+      ],
+      "capabilities": [
+        "vision",
+        "ocr",
+        "document_understanding"
+      ],
+      "modalities": [
+        "text",
+        "image"
+      ],
       "context_window": 131072,
       "source_url": "https://ollama.com/library/glm-ocr/tags",
       "metadata_updated_at": "2026-11-20",
       "license_verified": false,
       "variants": [
-        {"reference": "glm-ocr:latest", "size_bytes": 2899102924, "size_label": "2.7 GB", "installable": true, "supported_platforms": ["linux", "macos", "windows"]}
+        {
+          "reference": "glm-ocr:latest",
+          "size_label": "2.7 GB",
+          "installable": true,
+          "supported_platforms": [
+            "linux",
+            "macos",
+            "windows"
+          ]
+        }
       ]
     },
     {
@@ -101,16 +236,33 @@
       "family": "EmbeddingGemma 2",
       "summary": "Modelo de embeddings compacto para busca semântica, recuperação de contexto, clustering e RAG. Esta variante é somente texto; outros tamanhos da família adicionam modalidades.",
       "publisher": "Google DeepMind",
-      "categories": ["embeddings"],
-      "capabilities": ["embeddings", "semantic_search", "rag"],
-      "modalities": ["text"],
+      "categories": [
+        "embeddings"
+      ],
+      "capabilities": [
+        "embeddings",
+        "semantic_search",
+        "rag"
+      ],
+      "modalities": [
+        "text"
+      ],
       "parameter_count": 270000000,
       "context_window": 262144,
       "source_url": "https://ollama.com/library/embeddinggemma-2",
       "metadata_updated_at": "2026-11-20",
       "license_verified": false,
       "variants": [
-        {"reference": "embeddinggemma-2:270m", "size_bytes": 396361728, "size_label": "304–378 MB", "installable": true, "supported_platforms": ["linux", "macos", "windows"]}
+        {
+          "reference": "embeddinggemma-2:270m",
+          "size_label": "304–378 MB",
+          "installable": true,
+          "supported_platforms": [
+            "linux",
+            "macos",
+            "windows"
+          ]
+        }
       ]
     },
     {
@@ -119,34 +271,67 @@
       "family": "BGE-M3",
       "summary": "Modelo de embeddings multilíngue e multifuncional para recuperação de informação e busca semântica.",
       "publisher": "BAAI",
-      "categories": ["embeddings"],
-      "capabilities": ["embeddings", "multilingual", "retrieval"],
-      "modalities": ["text"],
+      "categories": [
+        "embeddings"
+      ],
+      "capabilities": [
+        "embeddings",
+        "multilingual",
+        "retrieval"
+      ],
+      "modalities": [
+        "text"
+      ],
       "parameter_count": 567000000,
       "context_window": 8192,
       "source_url": "https://ollama.com/library/bge-m3",
       "metadata_updated_at": "2026-11-20",
       "license_verified": false,
       "variants": [
-        {"reference": "bge-m3:567m", "size_bytes": 1288490189, "size_label": "1.2 GB", "installable": true, "supported_platforms": ["linux", "macos", "windows"]}
+        {
+          "reference": "bge-m3:567m",
+          "size_label": "1.2 GB",
+          "installable": true,
+          "supported_platforms": [
+            "linux",
+            "macos",
+            "windows"
+          ]
+        }
       ]
     },
     {
-      "record_id": "ollama:phonon:40m-pt",
-      "display_name": "Phonon 40M — Português",
+      "record_id": "ollama:phonon:40m-multilingual",
+      "display_name": "Phonon 40M Multilingual (inclui português)",
       "family": "Phonon",
-      "summary": "Modelo de síntese de voz em português a partir de texto. No Ollama, os pacotes documentados exigem Apple Silicon; Linux e Windows foram indicados como futuros na verificação do catálogo.",
+      "summary": "Modelo de síntese de voz multilíngue a partir de texto. A documentação atual do Ollama lista suporte para Apple Silicon; Linux e Windows ainda não são suportados para este pacote.",
       "publisher": "Gradium",
-      "categories": ["audio", "speech"],
-      "capabilities": ["text_to_speech", "speech_generation"],
-      "modalities": ["text", "audio"],
+      "categories": [
+        "audio",
+        "speech"
+      ],
+      "capabilities": [
+        "text_to_speech",
+        "speech_generation"
+      ],
+      "modalities": [
+        "text",
+        "audio"
+      ],
       "source_url": "https://ollama.com/library/phonon",
       "license_name": "CC BY-NC 4.0",
       "license_url": "https://creativecommons.org/licenses/by-nc/4.0/",
       "license_verified": true,
       "metadata_updated_at": "2026-11-20",
       "variants": [
-        {"reference": "phonon:40m-pt", "installable": true, "supported_platforms": ["macos"], "install_note": "Indisponível no Linux/Arch: o suporte de plataforma publicado para este pacote é Apple Silicon."}
+        {
+          "reference": "phonon:40m-multilingual",
+          "installable": true,
+          "supported_platforms": [
+            "macos"
+          ],
+          "install_note": "Indisponível no Linux/Arch: o suporte publicado para este pacote é Apple Silicon."
+        }
       ]
     },
     {
@@ -155,17 +340,31 @@
       "family": "Z-Image",
       "summary": "Modelo de geração de imagens de 6B parâmetros. A publicação do Ollama consultada documentava suporte experimental em macOS, com Windows e Linux ainda pendentes.",
       "publisher": "Alibaba Tongyi Lab",
-      "categories": ["image_generation"],
-      "capabilities": ["text_to_image"],
-      "modalities": ["text", "image"],
+      "categories": [
+        "image_generation"
+      ],
+      "capabilities": [
+        "text_to_image"
+      ],
+      "modalities": [
+        "text",
+        "image"
+      ],
       "parameter_count": 6000000000,
-      "source_url": "https://ollama.com/library/x/z-image-turbo",
+      "source_url": "https://ollama.com/blog/image-generation",
       "license_name": "Apache-2.0",
       "license_url": "https://www.apache.org/licenses/LICENSE-2.0",
       "license_verified": true,
       "metadata_updated_at": "2026-11-20",
       "variants": [
-        {"reference": "x/z-image-turbo", "installable": true, "supported_platforms": ["macos"], "install_note": "Indisponível no Linux/Arch segundo a documentação de plataforma publicada para este recurso."}
+        {
+          "reference": "x/z-image-turbo",
+          "installable": true,
+          "supported_platforms": [
+            "macos"
+          ],
+          "install_note": "Indisponível no Linux/Arch segundo a documentação de plataforma publicada para este recurso."
+        }
       ]
     }
   ]
