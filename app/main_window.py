@@ -8,9 +8,9 @@ from typing import Any
 from PySide6.QtWidgets import QMainWindow, QMessageBox, QTabWidget
 
 from app.dialogs.settings_dialog import SettingsDialog
-from core.neuralinjector.resources import ResourceRequirements, detect_hardware
 from app.views.chat_view import ChatView
 from app.views.models_view import ModelsView
+from core.neuralinjector.resources import ResourceRequirements, detect_hardware
 from engines.base import EngineAdapter, EngineRequest, ModelInfo
 from engines.model_selector import ModelSelectionError, choose_model
 from engines.ollama_engine import OllamaEngine, OllamaResourceProtectionError
@@ -241,8 +241,6 @@ class MainWindow(QMainWindow):
 
     def _show_resource_protection(self, report) -> None:
         """Explain a resource refusal and provide actionable next steps."""
-        from PySide6.QtWidgets import QMessageBox
-
         reasons = "\\n".join(f"• {reason}" for reason in report.reasons)
         alternatives = "\\n".join(
             f"• {item}" for item in report.recommendations
