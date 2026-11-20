@@ -1,88 +1,225 @@
-# Adaptive Hardware — estado e contrato de execução
+# Adaptive Hardware — arquitetura, execução e limites
 
-Complemento da NIP 0.1.0. Consulte a [especificação](NEURALINJECTOR_NIP_0.1.0.md), os [perfis JSON](../examples/neuralinjector/hardware/profiles/) e o [planejador](../core/neuralinjector/resources.py).
+Complemento técnico da **NeuralInjector Package Specification (NIP) 0.1.0**. Esta página descreve o código que existe nesta branch, como os perfis são aplicados no chat com Ollama e quais etapas continuam pendentes.
 
-## O que o código oferece agora
+Referências: [NIP 0.1.0](NEURALINJECTOR_NIP_0.1.0.md), [perfis JSON](../examples/neuralinjector/hardware/profiles/), [planejador Python](../core/neuralinjector/resources.py), [monitor](../core/neuralinjector/monitor.py), [ponte Ollama](../engines/ollama_engine.py), [ponte llama.cpp](../engines/llama_cpp_options.py).
 
-O módulo `core/neuralinjector/resources.py` contém planejamento backend-agnóstico e políticas de recursos:
+## 1. Modelo de execução
 
-- Detecção de RAM total/disponível e contagem de CPU pela biblioteca padrão.
-- Inventário de GPU opcional: `nvidia-smi` para NVIDIA e sysfs DRM no Linux para dispositivos PCI visíveis, incluindo VRAM dedicada AMD quando os contadores existem.
-- Distinção entre GPU detectada e backend de execução registrado. Detectar uma placa não prova que CUDA, ROCm ou Vulkan esteja inicializado.
-- Orçamento conservador por dispositivo: VRAM de placas distintas não é somada como se fosse memória unificada.
-- Seleção entre cinco perfis: `ultra_light`, `minimal`, `balanced`, `performance` e `max_quality`.
-- Requisitos de RAM, VRAM, disco, contexto, backend e features.
-- Relatórios de compatibilidade, perfis elegíveis, fallbacks e modo de proteção.
-- Candidatos de quantização condicionados à lista de formatos que o backend declarar suportar.
-- Avaliador de pressão de memória com histerese, para orientar limites de novas cargas, concorrência e sessões futuras.
+O Adaptive Hardware separa cinco responsabilidades:
 
-A detecção de GPU é opt-in. A medição de espaço livre em disco exige que o chamador informe o diretório de destino. Sem medição confiável, um requisito obrigatório não é presumido como atendido.
+1. **Detecção:** coleta RAM total/disponível, CPU e, quando solicitado, inventário de GPU/VRAM.
+2. **Planejamento:** seleciona um perfil elegível e calcula orçamento de RAM, VRAM, contexto, concorrência e threads de CPU.
+3. **Proteção:** avalia requisitos do pacote e decide se a solicitação pode prosseguir.
+4. **Tradução para backend:** transforma apenas os campos que o backend realmente aceita em opções executáveis.
+5. **Telemetria:** consulta uso reportado pelo backend e pode recalcular recomendações a partir de novos snapshots.
 
-## Perfis canônicos iniciais
+Fluxo implementado na solicitação de chat:
 
-| Perfil | RAM mínima | Fração máxima da RAM disponível | Contexto-alvo | Paralelismo |
-|---|---:|---:|---:|---:|
-| `ultra_light` | 1.536 MiB | 35% | 1.024 | 1 |
-| `minimal` | 2.048 MiB | 55% | 2.048 | 1 |
-| `balanced` | 4.096 MiB | 65% | 4.096 | 1 |
-| `performance` | 8.192 MiB | 75% | 8.192 | 2 |
-| `max_quality` | 16.384 MiB | 80% | 16.384 | 4 |
+```text
+Usuário envia mensagem
+        |
+        v
+Detectar RAM e núcleos de CPU
+        |
+        v
+Selecionar perfil e gerar CompatibilityReport
+        |
+        +---- incompatível / protected ----> mostrar motivo e alternativas
+        |
+        v
+Traduzir orçamento para opções Ollama
+        |
+        v
+Adicionar mensagem ao histórico
+        |
+        v
+Enviar /api/chat
+```
 
-Os mínimos de RAM são critérios iniciais do perfil, não promessas de que determinado modelo caiba no orçamento. O tamanho dos pesos, KV cache, batch, runtime, multimodalidade e processos do sistema podem exigir muito mais memória. Um perfil de 1,5 GiB não torna viável um modelo de 7B ou maior.
+A pré-validação acontece **antes** de gravar a mensagem no histórico e antes de fazer requisição ao Ollama. A recusa não cria uma resposta vazia nem envia o prompt ao backend.
 
-## Quantização: política, não conversão
+## 2. Fonte canônica dos perfis
 
-Cada perfil ordena candidatos de quantização por condição de memória. O planejador só retorna um candidato quando recebe uma lista explícita de quantizações aceitas pelo backend.
+A definição normativa dos perfis fica em `CANONICAL_PROFILES` no arquivo `core/neuralinjector/resources.py`. Cada `HardwareProfile` fornece `to_dict()`, e `serialize_hardware_profile()` expõe a serialização pública.
 
-- Sem a lista de capacidades, nenhum formato é escolhido.
-- Sem candidato em comum, o relatório registra a incompatibilidade.
-- A política não converte pesos, não baixa outra variante e não altera um modelo já instalado.
-- O runtime futuro deverá resolver o artefato real, verificar arquitetura/digest e somente então pedir sua carga ao backend.
+Os JSON em `examples/neuralinjector/hardware/profiles/` são artefatos gerados a partir dessa definição. O teste de unidade compara cada arquivo com o dicionário produzido pelo perfil Python; divergências estruturais ou numéricas quebram o teste.
 
-## Modos de proteção
+Para regenerar os exemplos após alterar um perfil:
 
-- `permissive`: permite uma tentativa explícita mesmo com incompatibilidades; o relatório preserva todos os motivos. Não é o padrão recomendado.
-- `adaptive`: tenta selecionar um perfil elegível inferior. Requisitos mínimos declarados pelo pacote continuam obrigatórios.
-- `protected`: além dos requisitos mínimos, recusa um perfil explicitamente solicitado quando ele não é elegível.
+```bash
+python scripts/sync_neuralinjector_profiles.py
+```
 
-O planejador fornece `activation_allowed`, mas o carregador/gerenciador precisa respeitar esse valor antes de ativar um pacote. A NIP ainda não tem um NeuralPlugin Manager completo; portanto, o bloqueio de instalação/ativação ainda não está ligado a um fluxo real de instalação.
+Para somente verificar se estão sincronizados:
 
-## Pressão dinâmica e histerese
+```bash
+python scripts/sync_neuralinjector_profiles.py --check
+```
 
-`AdaptiveResourceManager.evaluate(snapshot)` recalcula a política quando recebe um novo snapshot. Os estados são:
+O JSON Schema `schemas/neuralinjector-hardware-profile.schema.json` valida o contrato serializado. Alterações em campos, tipos ou identificadores devem atualizar conjuntamente a classe Python, o schema, os exemplos e os testes.
 
-- `normal`: nenhuma redução sugerida.
-- `constrained`: evitar cargas pesadas e reduzir concorrência de novas solicitações quando necessário.
-- `critical`: pausar novas cargas e recomendar contexto/concorrência menores.
-- `emergency`: recusar novas cargas e suspender trabalho opcional ainda não iniciado.
+## 3. Perfis canônicos
 
-A recuperação usa histerese: a memória precisa ultrapassar um limite de recuperação antes de abandonar um estado de pressão. Isso reduz oscilações rápidas. A classe `ResourceMonitor` pode fazer amostragem periódica (padrão de 5 segundos), mas só começa após `start()`; por padrão lê RAM/CPU e pode receber um provedor de snapshot e callback próprios. O callback roda na thread do monitor e deve encaminhar atualizações de UI para a thread principal. O avaliador/monitor retorna ações sugeridas; não encerra gerações em curso, não descarrega modelos nem controla filas por conta própria. Ainda falta ligar o monitor ao ciclo de vida da aplicação e implementar um executor de ações seguro.
+Os valores abaixo são limites de planejamento, não garantia de que qualquer modelo caiba no computador.
 
-## Integração inicial com Ollama
+| Perfil | RAM total mínima | RAM disponível mínima | Fração da RAM disponível | Contexto mínimo | Contexto-alvo | Máx. threads CPU | Concorrência-alvo |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| `ultra_light` | 1.536 MiB | 1.536 MiB | 35% | 512 | 1.024 | 2 | 1 |
+| `minimal` | 2.048 MiB | 2.048 MiB | 55% | 1.024 | 2.048 | 4 | 1 |
+| `balanced` | 4.096 MiB | 4.096 MiB | 65% | 2.048 | 4.096 | 8 | 1 |
+| `performance` | 8.192 MiB | 8.192 MiB | 75% | 4.096 | 8.192 | 16 | 2 |
+| `max_quality` | 16.384 MiB | 16.384 MiB | 80% | 8.192 | 16.384 | 16 | 4 |
 
-O adaptador `engines/ollama_engine.py` agora oferece:
+O perfil automático seleciona o perfil de maior capacidade entre os elegíveis. A escolha usa **RAM total e RAM disponível**: possuir 16 GiB instalados não torna o host elegível para um perfil de 16 GiB se a memória disponível naquele momento estiver abaixo do limite.
 
-- `list_running_models()`, que consulta `GET /api/ps` e normaliza nome, tamanho residente, `size_vram`, contexto e nível de quantização quando informados pelo servidor.
-- `apply_resource_budget(request, budget)`, que aplica `num_ctx` ao objeto de opções da solicitação e nunca aumenta um limite de contexto menor definido pelo usuário.
+### 3.1 Semântica do orçamento
 
-A API do Ollama documenta `/api/ps` para listar modelos carregados e informa o uso de VRAM em `size_vram`; também aceita parâmetros do modelo em `options`, incluindo `num_ctx`. Referências: [API /api/ps](https://github.com/ollama/ollama/blob/main/docs/api.md#list-running-models), [opções de contexto](https://github.com/ollama/ollama/blob/main/docs/faq.mdx#how-can-i-specify-the-context-window-size).
+- `ram_limit_mb`: fração da RAM disponível que o planejador recomenda como teto de orçamento. Não cria uma reserva do kernel, cgroup ou sistema operacional.
+- `vram_limit_mb`: VRAM livre medida para um dispositivo individual. Não é soma artificial de GPUs.
+- `context_tokens`: contexto-alvo entregue ao adaptador, respeitando um limite menor já definido pelo usuário.
+- `parallelism`: limite lógico de solicitações simultâneas pretendido pelo planejador. Não é número de threads.
+- `cpu_threads`: limite de threads de CPU a traduzir para o backend.
 
-**Limites desta integração:** a aplicação ainda não chama automaticamente esses métodos no fluxo principal de chat. O helper de orçamento precisa ser chamado pelo consumidor antes de enviar a solicitação. O código não configura paralelismo global do servidor, não força GPU/CPU, não faz offloading manual, não descarrega modelos e não converte quantização. O Ollama continua responsável pela distribuição de camadas e pela execução que realmente suporta.
+Separar concorrência de threads evita o erro de interpretar `parallelism=1` como “usar somente uma thread de CPU”. O adaptador limita threads pela quantidade de núcleos detectados e pelo teto do perfil.
 
-## Limitações conhecidas
+### 3.2 O que o perfil não promete
 
-- A enumeração cobre NVIDIA via `nvidia-smi` e dispositivos Linux DRM; ainda não há detector dedicado para Windows/macOS, ROCm API ou Vulkan.
-- iGPUs que não expõem memória dedicada são identificadas como memória compartilhada/desconhecida; não recebem uma VRAM fictícia.
-- A seleção de GPU do Ollama não é derivada apenas da presença física de uma placa. Um backend executável precisa ser registrado e a telemetria real deve ser consultada.
-- O orçamento de RAM é um teto planejado, não uma reserva do sistema operacional.
-- Quantização, offloading, poda e transformações de pesos não são executados pelo planejador.
-- O benchmark padrão permanece `none`; quick/full exigem solicitação e executor explícitos.
-- Os testes unitários foram adicionados, mas precisam ser executados no ambiente de desenvolvimento/CI antes de considerar esta entrega validada.
+Um perfil `ultra_light` com orçamento de 1,5 GiB não torna viável um modelo de 7B, 14B ou maior. A memória real também depende de pesos, KV cache, tamanho do contexto, lote, arquitetura, runtime, multimodalidade, offloading e processos do sistema. A elegibilidade do perfil é somente uma primeira barreira; requisitos específicos do pacote/modelo precisam ser avaliados separadamente.
 
-## Próximas integrações
+## 4. Piso absoluto de segurança
 
-1. Ligar detecção e planejamento ao ciclo de solicitação do AILocal Universal.
-2. Adicionar monitor periódico em worker, com cancelamento e limites de overhead.
-3. Ligar o avaliador de pressão a uma política de novas cargas e componentes opcionais.
-4. Integrar medição real e opções aceitas do Ollama; depois adicionar llama.cpp.
-5. Validar em máquinas de 4–8 GiB, 16 GiB e 32+ GiB, incluindo GPU dedicada e iGPU.
+O planejador define **1.536 MiB de RAM total e disponível** como piso absoluto de elegibilidade desta implementação.
+
+Abaixo desse valor:
+
+- Nenhum perfil é considerado compatível.
+- O modo protegido e o adaptativo recusam a carga.
+- O modo permissivo também não consegue ultrapassar esse piso.
+- O relatório contém uma explicação específica, em vez de apenas “hardware incompatível”.
+
+A interface mostra uma janela de proteção com os motivos e alternativas. A mensagem deixa claro que nenhuma mensagem foi enviada ao Ollama. As ações sugeridas são fechar aplicativos pesados, descarregar modelos residentes, medir novamente e considerar um modelo menor ou mais RAM física.
+
+Swap pode ajudar o sistema a sobreviver a pressão de memória em certos cenários, mas não é contabilizada como RAM disponível nem torna um modelo adequado para inferência. Pressão de swap pode aumentar muito a latência e não deve ser apresentada como solução garantida.
+
+## 5. Modos de proteção e UX
+
+A configuração persistente inclui:
+
+- `hardware_profile`: `auto`, `ultra_light`, `minimal`, `balanced`, `performance` ou `max_quality`.
+- `protection_mode`: `protected`, `adaptive` ou `permissive`.
+
+Os valores padrão para instalações novas e configurações antigas migradas são `auto` e `protected`.
+
+| Modo | Comportamento |
+|---|---|
+| `protected` | Recusa quando o perfil explicitamente escolhido não cabe ou quando requisitos obrigatórios não são cumpridos. |
+| `adaptive` | Se um perfil preferido não cabe, tenta um perfil inferior elegível; requisitos mínimos continuam obrigatórios. |
+| `permissive` | Permite tentativa explícita apesar de incompatibilidades não absolutas. Nunca ignora o piso de 1,5 GiB. |
+
+Quando há recusa, `CompatibilityReport` fornece:
+
+- `reasons`: motivos técnicos identificados.
+- `fallbacks`: alternativas/recomendações geradas pelo planejador.
+- `user_message`: explicação principal em linguagem direta.
+- `recommendations`: próximos passos voltados ao usuário.
+- `activation_allowed`: decisão que o chamador deve respeitar.
+
+A janela do AILocal Universal mostra a explicação principal e um painel de detalhes com motivos e alternativas. O modo protegido não deve ser reduzido a uma caixa de erro genérica. A próxima evolução de UX poderá acrescentar ações diretas para abrir configurações e escolher o perfil automático/adaptativo; nesta versão, as opções ficam disponíveis no diálogo Configurações.
+
+## 6. Integração aplicada com Ollama
+
+O adaptador `engines/ollama_engine.py` possui `prepare_resource_aware_request()`, que executa planejamento e tradução antes da chamada de rede. Se o relatório não autorizar a solicitação, lança `OllamaResourceProtectionError` contendo o próprio `CompatibilityReport`.
+
+### 6.1 Opções aplicadas por requisição
+
+O orçamento é traduzido para:
+
+| Campo Ollama | Origem | Efeito |
+|---|---|---|
+| `options.num_ctx` | `ResourceBudget.context_tokens` | Define o limite de contexto da requisição. |
+| `options.num_thread` | `ResourceBudget.cpu_threads` | Limita threads de CPU usadas pelo runner. |
+
+Um limite menor que o usuário já tenha definido é preservado. O adaptador não aumenta um `num_ctx` ou `num_thread` já configurado para um valor maior que o orçamento.
+
+A documentação e os tipos da API do Ollama definem `num_ctx` e `num_thread` entre as opções do runner. A aplicação não depende de alterar o Modelfile para esses dois parâmetros por requisição.
+
+### 6.2 Operações que continuam sob controle do Ollama
+
+- **Posicionamento CPU/GPU:** o AILocal Universal não força GPU nem CPU com base apenas na detecção física. O Ollama faz o offload de acordo com o backend e os dispositivos efetivamente disponíveis.
+- **Concorrência global:** `parallelism` é um limite de política do AILocal. Não altera por si só as variáveis/configurações globais do servidor Ollama.
+- **Offloading:** o adaptador não move camadas manualmente.
+- **Descarregamento:** consultar modelos carregados não significa que o adaptador os descarregue automaticamente.
+
+### 6.3 Telemetria de modelos carregados
+
+`list_running_models()` consulta `GET /api/ps` e normaliza o nome, tamanho residente, VRAM reportada, contexto e quantização quando disponíveis. Esses valores podem apoiar uma política futura de reavaliação. A telemetria do Ollama é a fonte para o que o próprio servidor informa; não deve ser confundida com detecção universal de VRAM de todo o computador.
+
+### 6.4 Quantização no Ollama
+
+Quantização não é uma opção que se altere na chamada `/api/chat`. Ela pertence ao artefato/modelo instalado (por exemplo, uma tag quantizada diferente). O AILocal Universal pode recomendar uma variante e ler a quantização reportada pelo modelo carregado, mas ainda não baixa, converte ou substitui automaticamente o modelo. Qualquer troca futura deve validar a identidade/arquitetura do modelo, disponibilidade do artefato, espaço em disco, licença e consentimento do usuário.
+
+## 7. Ponte de opções para llama.cpp
+
+O repositório inclui `engines/llama_cpp_options.py`, que traduz um `ResourceBudget` para argumentos do construtor `llama_cpp.Llama`:
+
+| Orçamento AILocal | Argumento llama-cpp-python |
+|---|---|
+| `context_tokens` | `n_ctx` |
+| `cpu_threads` | `n_threads` |
+| camada GPU já validada pelo backend | `n_gpu_layers` (opcional) |
+
+A camada de GPU é omitida por padrão; só é incluída se o chamador fornecer explicitamente uma contagem validada. O helper não presume que uma GPU detectada seja utilizável.
+
+**Limite atual:** esta é a tradução testável de opções do construtor, não um `EngineAdapter` llama.cpp completo e ainda não está conectada ao seletor de backend da interface. As opções de contexto e threads do llama.cpp são aplicadas ao construir/recriar a instância do modelo; não são parâmetros de amostragem de cada token.
+
+A quantização é incorporada ao arquivo GGUF selecionado. `n_ctx`, `n_threads` ou `n_gpu_layers` não convertem um arquivo FP16 em Q4 nem trocam uma variante Q4 por Q8.
+
+## 8. Detecção de GPU e cautelas
+
+O detector opcional fornece inventário de dispositivos via:
+
+- `nvidia-smi` para NVIDIA.
+- Linux DRM/sysfs para dispositivos PCI AMD, NVIDIA e Intel visíveis ao sistema.
+
+A disponibilidade de VRAM dedicada é preenchida somente quando o driver expõe contadores confiáveis. iGPU com memória compartilhada não recebe um número fictício de VRAM dedicada. A maior VRAM disponível de um único dispositivo é usada no resumo; placas independentes não são somadas.
+
+O inventário de GPU e o conjunto `execution_backends` são campos separados. Uma Radeon visível no sysfs não comprova que ROCm, Vulkan ou outro backend esteja inicializado. A aplicação desktop ainda usa detecção RAM/CPU no preflight de chat; o Ollama mantém sua própria seleção de dispositivo. A detecção GPU ainda não é usada para forçar a colocação de camadas.
+
+## 9. Monitoramento durante a execução
+
+`AdaptiveResourceManager.evaluate(snapshot)` classifica pressão de memória em quatro estados:
+
+- `normal`: nenhuma redução dinâmica sugerida.
+- `constrained`: evitar novas cargas pesadas e reduzir concorrência de solicitações futuras.
+- `critical`: pausar novas cargas e recomendar redução do contexto de sessões futuras.
+- `emergency`: recusar novas cargas e suspender tarefas opcionais ainda não iniciadas.
+
+A histerese evita alternar de estado por pequenas oscilações. `ResourceMonitor` oferece amostragem periódica opt-in, com intervalo mínimo de um segundo e padrão de cinco segundos. É necessário chamar `start()`; o monitor não começa sozinho.
+
+O monitor chama o provedor de snapshot e o callback na sua própria thread. Qualquer callback que altere interface deve encaminhar o trabalho para a thread Qt principal. O monitor não descarrega modelos, não mata gerações em andamento, não altera filas e não executa ações recomendadas. A integração desse monitor ao ciclo de vida do aplicativo e um executor seguro continuam pendentes.
+
+## 10. Validação e testes
+
+A suíte cobre contratos de recursos, perfis, modo protegido, piso absoluto, quantização declarativa, histerese, monitor, telemetria Ollama, aplicação de `num_ctx`/`num_thread` ao payload e tradução de opções llama.cpp.
+
+Com ambiente de desenvolvimento instalado:
+
+```bash
+python scripts/sync_neuralinjector_profiles.py --check
+python -m ruff check .
+python -m pytest -q
+```
+
+Testes com transporte HTTP simulado demonstram que as opções chegam ao payload da chamada Ollama. Eles não substituem teste de integração com serviço Ollama real, nem benchmark em hardware físico.
+
+## 11. Limitações conhecidas e trabalho restante
+
+1. Criar um `EngineAdapter` llama.cpp completo e integrá-lo ao registro/seletor de modelos.
+2. Consultar periodicamente telemetria de backend e integrar o ResourceMonitor ao ciclo de vida Qt, com baixo overhead.
+3. Implementar executor seguro para pausar novas cargas, limitar fila e descarregar componentes opcionais somente quando o backend confirmar suporte.
+4. Ligar a resolução de variantes quantizadas à disponibilidade de artefatos GGUF/Ollama, sem prometer conversão automática.
+5. Adicionar detecção GPU robusta para mais plataformas e integrar métricas do backend efetivamente inicializado.
+6. Validar em hosts abaixo de 4 GiB, máquinas intermediárias e workstations, registrando RAM/VRAM, modelo, quantização, contexto, versão do backend, latência e qualidade.
+
+O objetivo é que o computador leve receba limites e recusas seguras quando não houver recursos, enquanto computadores potentes possam usar contextos e threads maiores com confirmação do backend. Não há promessa de velocidade absoluta independente do hardware.
