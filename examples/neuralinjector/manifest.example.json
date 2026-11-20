@@ -8,9 +8,9 @@
     "kind": "specialization",
     "description": "Exemplo de pacote de regras de programação e português brasileiro. Não inclui pesos de modelo.",
     "authors": [
-      "AILocal Universal Community"
+      "K410Sh4"
     ],
-    "license": "CC-BY-4.0"
+    "license": "LicenseRef-AILocal-Universal-Proprietary"
   },
   "compatibility": {
     "models": [

@@ -67,6 +67,12 @@ Contém pipelines declarativos, gramáticas, templates e referências a ferramen
 
 Pode declarar fontes, documentos, metadados e parâmetros de ingestão/recuperação. Índices vetoriais específicos de um backend devem declarar o formato e as dependências; quando não forem portáveis, o pacote deve transportar os documentos/fontes necessários para reconstrução ou indicar claramente a dependência externa.
 
+### Licença e autoria obrigatórias
+
+Cada manifesto individual de NeuralPlugin declara `authors` e `license`. Esses campos identificam os autores dos materiais do plugin e a licença que realmente rege seu conteúdo. O schema oficial exige ambos; o manager deve rejeitar manifestos sem eles e preservar os valores durante importação, exportação e atualização.
+
+A licença do AILocal Universal não é aplicada automaticamente a plugins externos. O identificador `LicenseRef-AILocal-Universal-Proprietary` só deve ser usado para conteúdo original pertencente ao titular do projeto e deve acompanhar o texto da licença. Um plugin de terceiro deve declarar sua própria licença e preservar os avisos de todos os componentes que incorpora.
+
 ## 4. Experiência na interface
 
 O IA Hub deverá oferecer uma aba **NeuralPlugin** dentro de Configurações.

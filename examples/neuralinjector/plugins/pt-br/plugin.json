@@ -23,5 +23,9 @@
     "merge_strategy": "compose_by_sections"
   },
   "dependencies": [],
-  "permissions": []
+  "permissions": [],
+  "authors": [
+    "K410Sh4"
+  ],
+  "license": "LicenseRef-AILocal-Universal-Proprietary"
 }

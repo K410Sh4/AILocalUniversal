@@ -13,3 +13,9 @@ Este diretório contém arquivos-fonte ilustrativos para demonstrar a estrutura 
 - `evaluations/smoke.jsonl`: exemplos mínimos de avaliação.
 
 O exemplo não contém adaptadores de pesos, poda, deltas de restauração ou código executável. Esses componentes só devem ser incluídos quando houver artefatos reais, compatibilidade declarada e um backend capaz de aplicá-los.
+
+## Licença deste exemplo
+
+Os manifestos, regras, workflow declarativo, perfis, avaliações e demais materiais originais deste exemplo são disponibilizados sob `LicenseRef-AILocal-Universal-Proprietary`, conforme o arquivo `LICENSE` na raiz do repositório. O exemplo não concede uma licença aberta para os componentes originais. Modelos mencionados são apenas referências de compatibilidade e não estão incluídos nem licenciados por este exemplo.
+
+Pacotes ou plugins criados por usuários/terceiros devem substituir autoria e licença pelos dados reais de seus próprios materiais, sem reutilizar a licença proprietária por padrão.

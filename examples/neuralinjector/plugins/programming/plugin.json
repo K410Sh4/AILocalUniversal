@@ -29,5 +29,9 @@
       "version_range": "^1.0.0"
     }
   ],
-  "permissions": []
+  "permissions": [],
+  "authors": [
+    "K410Sh4"
+  ],
+  "license": "LicenseRef-AILocal-Universal-Proprietary"
 }

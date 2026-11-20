@@ -95,9 +95,17 @@ Metadados do pacote:
 - `version`: versão do pacote em SemVer.
 - `kind`: specialization, optimization, adapter_bundle ou workflow.
 - `description`: descrição opcional.
-- `authors`: autores ou mantenedores.
-- `license`: licença declarada.
+- `authors`: lista obrigatória de autores ou mantenedores do pacote.
+- `license`: licença obrigatória declarada para o conteúdo agregado do pacote. Cada NeuralPlugin interno também declara seus próprios autores e licença.
 - `homepage`: endereço informativo opcional.
+
+### 4.3.1 Autoria e licenças dos componentes
+
+O manifesto do pacote declara autoria e licença do conjunto agregado. Cada manifesto de NeuralPlugin, por sua vez, declara obrigatoriamente `authors` e `license`. A licença do pacote não pode sobrescrever uma licença específica do componente interno.
+
+Quando um pacote combina componentes com licenças diferentes, o manifesto e os avisos complementares precisam identificar a licença de cada componente e as obrigações aplicáveis. O consumidor não deve inferir que todos os arquivos possuem a licença do pacote se algum componente declarar uma licença própria.
+
+Para conteúdo original coberto pela licença proprietária do AILocal Universal, o identificador é `LicenseRef-AILocal-Universal-Proprietary` e o pacote/plugin deve incluir ou referenciar o texto dessa licença. Não utilizar esse identificador para conteúdo de usuários ou terceiros.
 
 ### 4.4 compatibility
 
