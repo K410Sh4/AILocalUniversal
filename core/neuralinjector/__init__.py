@@ -1,4 +1,3 @@
-from .monitor import ResourceMonitor
 from .resources import (
     AdaptiveResourceManager,
     BenchmarkMode,
@@ -18,6 +17,7 @@ from .resources import (
     detect_hardware,
     select_profile,
 )
+from .monitor import ResourceMonitor
 
 __all__ = [
     "AdaptiveResourceManager",
