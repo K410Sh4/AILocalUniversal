@@ -291,23 +291,56 @@ O manifesto de exemplo é ilustrativo. Ele não é, isoladamente, um arquivo `.n
 Até que esses critérios sejam atendidos, a NIP 0.1.0 permanece uma proposta de especificação, não uma tecnologia já implementada.
 
 
-## 6A. Perfis canônicos, orçamento e degradação graciosa
+## 6A. Perfis canônicos, orçamento e proteção adaptativa
 
-| Perfil | Objetivo | Contexto-alvo inicial | Concorrência |
-|---|---|---:|---:|
-| minimal | Contenção de memória; CPU-first | 2.048 tokens | 1 |
-| balanced | Equilíbrio geral | 4.096 tokens | 1 |
-| performance | Menor latência com recursos suficientes | 8.192 tokens | 2 |
-| max_quality | Qualidade e contexto em workstations | 16.384 tokens | 4 |
+A implementação inicial do planejador fornece cinco perfis canônicos:
 
-Os valores são presets declarativos, não garantias nem requisitos universais. Modelo e backend prevalecem. Requisitos mínimos não podem ser violados silenciosamente.
+| Perfil | RAM mínima do host | Fração máxima da RAM disponível | Contexto-alvo | Concorrência-alvo |
+|---|---:|---:|---:|---:|
+| ultra_light | 1.536 MiB | 35% | 1.024 tokens | 1 |
+| minimal | 2.048 MiB | 55% | 2.048 tokens | 1 |
+| balanced | 4.096 MiB | 65% | 4.096 tokens | 1 |
+| performance | 8.192 MiB | 75% | 8.192 tokens | 2 |
+| max_quality | 16.384 MiB | 80% | 16.384 tokens | 4 |
 
-O manifesto pode declarar hardware_requirements.minimum, recommended e runtime. A detecção deve distinguir RAM total e disponível. VRAM desconhecida nunca equivale a VRAM disponível; componentes que exigem GPU permanecem incompatíveis até haver medição confiável do backend.
+Os valores são presets declarativos e critérios iniciais de elegibilidade, não garantias de execução. O tamanho dos pesos, KV cache, batch, multimodalidade, runtime e processos do sistema podem exigir mais memória. O perfil ultra_light não torna modelos grandes automaticamente viáveis.
 
-O Adaptive Resource Manager produz snapshot, perfis elegíveis e motivos de rejeição, perfil escolhido, orçamento de RAM/VRAM/contexto/concorrência, recursos ausentes, fallbacks e métricas de benchmark. Ele não carrega modelos nem modifica pesos. GPU/VRAM dependem de integração explícita com backend.
+### 6A.1 Requisitos e seleção
 
-O benchmark padrão é none. quick executa medições curtas; full executa avaliação mais ampla. Ambos exigem solicitação explícita e executor de backend. Sem executor, nenhuma métrica é inventada.
+O manifesto pode declarar requisitos mínimos/recomendados de RAM, VRAM e disco, além de contexto, backends e features necessárias. RAM total e RAM disponível são medidas distintas. Um requisito obrigatório de VRAM ou disco não é considerado atendido quando a medição correspondente está ausente.
 
-Ordem de degradação permitida: (1) desativar componentes opcionais, (2) reduzir concorrência, (3) reduzir contexto sem ficar abaixo do mínimo, (4) selecionar artefato alternativo já fornecido e validado, (5) usar offloading somente se suportado. Recomendações não quantizam, podam, restauram neurônios nem alteram pesos. Se não houver configuração viável, o pacote permanece incompatível e o relatório explica por quê.
+A detecção de GPU é opcional e separada da disponibilidade de um backend executável. A presença física de uma GPU não prova que CUDA, ROCm, Vulkan ou outro backend esteja inicializado. Para múltiplas GPUs, o planejador inicial considera a maior VRAM livre de um único dispositivo; não soma placas independentes como se compartilhassem um único espaço de endereçamento.
 
-O NeuralPlugin Manager deve validar metadados sob demanda e sem carregar modelos. Benchmarks e avaliações são opt-in; nenhuma operação pesada em background sem consentimento.
+### 6A.2 Quantização declarativa
+
+Perfis podem ordenar candidatos de quantização para condições normais e de pouca memória. O planejador só seleciona um candidato presente na lista de formatos que o backend declarar suportar. Sem capacidades explícitas, o candidato permanece indefinido.
+
+A política não converte pesos, não baixa variantes e não altera modelos existentes. O runtime deve localizar um artefato compatível, verificar formato e identidade do modelo-base e só então solicitar sua carga. Preferir Q4 ou Q2 em um perfil não prova que tal variante exista nem que seja compatível com o modelo.
+
+### 6A.3 Modos de proteção
+
+O relatório suporta três modos:
+
+- **permissive:** permite tentativa explícita mesmo quando há incompatibilidades, mantendo todos os motivos visíveis.
+- **adaptive:** seleciona um perfil elegível inferior quando o perfil preferido não cabe; requisitos mínimos do pacote continuam obrigatórios.
+- **protected:** além dos requisitos mínimos, bloqueia um perfil explicitamente solicitado quando ele não é elegível.
+
+O relatório fornece `activation_allowed`; qualquer instalador ou gerenciador deve verificar esse valor antes da ativação. A NIP 0.1.0 ainda não inclui um NeuralPlugin Manager completo, portanto esse bloqueio ainda não está conectado a um fluxo transacional de instalação.
+
+### 6A.4 Orçamento dinâmico
+
+O Adaptive Resource Manager aceita novos snapshots e classifica a pressão de memória como normal, constrained, critical ou emergency. Os estados mais severos recomendam limitar concorrência futura, pausar novas cargas, suspender trabalho opcional ainda não iniciado ou recusar novas cargas. Uma histerese exige recuperação suficiente antes de voltar a um estado menos restritivo.
+
+O avaliador não executa essas ações, não termina gerações em andamento e não descarrega modelos. Monitor periódico, executor de ações e integração completa com o ciclo de vida do backend permanecem trabalho futuro.
+
+### 6A.5 Integração inicial com Ollama
+
+O adaptador inicial consulta `GET /api/ps` para obter modelos carregados e métricas fornecidas pelo servidor, incluindo tamanho residente, uso de VRAM, contexto e quantização quando disponíveis. Ele também fornece um helper explícito que traduz o limite de contexto para `options.num_ctx` e preserva um limite menor definido pelo usuário.
+
+A integração não configura paralelismo global, não força a escolha CPU/GPU, não executa offloading manual e não converte quantização. Os helpers ainda precisam ser ligados automaticamente ao fluxo principal da aplicação. O backend continua responsável pelas operações que realmente suporta.
+
+### 6A.6 Benchmark e resultados
+
+O benchmark padrão é `none`. Os modos quick/full exigem solicitação explícita e executor do backend. Sem executor, nenhuma métrica é inventada. Nenhum ganho de velocidade deve ser declarado sem benchmark reproduzível, versão do modelo/backend, quantização, contexto, condição fria/quente, pico de RAM/VRAM e avaliação de qualidade.
+
+A implementação atual é um planejador e uma integração inicial de telemetria/contexto, não um mecanismo completo de quantização, offloading, poda, restauração ou gerenciamento automático de memória.
