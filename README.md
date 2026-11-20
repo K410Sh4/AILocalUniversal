@@ -1,264 +1,183 @@
 # AILocal Universal
 
-> **Plataforma cognitiva local, adaptativa e distribuída.**  
-> Uma arquitetura que coordena modelos de linguagem, ferramentas determinísticas, conhecimento local e recursos computacionais para resolver tarefas com eficiência, rastreabilidade e controle.
+> **Plataforma cognitiva local, adaptativa e distribuída.**
 
-**Status:** em fundação — arquitetura e contratos iniciais em construção  
-**Plataforma prioritária:** Linux (com foco inicial em Arch Linux)  
-**Interface prevista:** Python + PySide6  
-**Primeiro backend de inferência:** Ollama
+O AILocal Universal coordena modelos de linguagem, ferramentas determinísticas, conhecimento local e recursos computacionais. Seu princípio central é usar o mecanismo mais adequado para cada parte da tarefa — não acionar um LLM para tudo.
 
----
+**Estado:** Fase 1 em validação operacional; núcleo cognitivo inicial da Fase 2 implementado em branch de desenvolvimento.  
+**Plataforma prioritária:** Linux / Arch Linux.  
+**Interface:** Python + PySide6.  
+**Backend inicial:** Ollama.
 
-## Visão
+## Funcionalidades da Fase 1
 
-O AILocal Universal pretende ir além de um chat conectado a um modelo local. Será uma plataforma modular que recebe uma tarefa, identifica o que é necessário para resolvê-la, escolhe ferramentas e modelos compatíveis, recupera conhecimento quando pertinente, acompanha a execução e verifica o resultado.
+- Interface desktop PySide6 com abas Chat e Modelos.
+- Consulta de disponibilidade do servidor Ollama.
+- Inventário de modelos instalados.
+- Chat via API /api/chat com streaming NDJSON.
+- Modo manual e modo automático de seleção, limitados a modelos com capacidade de chat verificada.
+- Identificação de capacidades via API `/api/show`, distinguindo chat, embeddings, visão e tools.
+- Modelo preferido para o modo automático.
+- Renderização de respostas em Markdown (negrito, listas, links, tabelas e blocos de código).
+- Renderização local de um subconjunto de LaTeX: integrais, frações, raízes, potências, índices, símbolos gregos, vetores e barras superiores.
+- Equações em bloco (`\\[...\\]` ou `$...$`) são exibidas centralizadas em painéis destacados; expressões inline permanecem no fluxo do texto. O parser preserva comandos desconhecidos visíveis e só corrige três erros frequentes e inequívocos (`\\limn`, `\\barx`, `\\vecE`). Não é um motor LaTeX completo.
+- A fonte das equações display usa unidade absoluta em pontos (`20pt`), enquanto o texto padrão da conversa passou para `11pt`; os blocos matemáticos usam uma única célula sem separadores vazios e margens suaves.
+- Histórico de conversas em JSON local.
+- Configurações persistentes de URL, keep-alive e system prompt.
+- Cancelamento de geração por worker em thread separada.
+- Tratamento de indisponibilidade, timeouts e erros do protocolo.
 
-O princípio central é **usar o mecanismo mais adequado para cada parte da tarefa — e não usar um LLM para tudo**.
+O modo automático da interface escolhe o modelo preferido quando ele possui capacidade de chat verificada ou, na ausência dele, o primeiro modelo de chat em ordem estável. Modelos exclusivamente de embeddings e modelos sem metadados de capacidade verificáveis não entram no seletor de conversas.
 
-Cálculos, parsing, conversões, consultas estruturadas e testes devem ser executados por ferramentas determinísticas sempre que possível. Modelos de linguagem entram quando interpretação semântica, planejamento, geração ou síntese agregam valor.
+## Fase 2 — Núcleo cognitivo (implementação inicial)
 
-A execução será local por padrão. Em uma etapa posterior, computadores autorizados poderão cooperar em tarefas distribuíveis, compartilhamento de arquivos e sincronização de conhecimento.
+O envio de mensagens passa por um pipeline local antes de decidir a execução. Pedidos com duas ou mais partes explícitas usam o Cognitive Task Executor sequencial; resultados são conferidos antes da síntese final:
 
-## Objetivos
+- Input Processing: normalização Unicode e de espaços, preservando o texto original e limitando entradas excessivas.
+- Semantic Analysis: classificação heurística de intenção e indicadores separados de dificuldade, incerteza, risco e urgência.
+- Task Decomposer: reconhecimento de listas e sequências explícitas, com subtarefas, intenção, afinidades e dependências.
+- Cognitive Inspector: painel da última tarefa da sessão, com análise, indicadores heurísticos, capacidades, plano, subtarefas, rota, modelo, resultado e Execution Trace.
+- Capability Vectorizer: vetor lexical explicável de 12 dimensões, usando âncoras em português e inglês.
+- Deterministic Processing: calculadora com AST restrita e conversões explícitas de unidades comuns; não executa código arbitrário.
+- Cognitive Planner: encaminha operações suportadas e de baixo risco para ferramentas locais; as demais seguem para o modelo configurado.
+- Orchestrator: executa estágios e registra trace de início, conclusão e falhas.
+- Cognitive Task Executor: executa subtarefas individualmente, respeita dependências, reaproveita ferramentas determinísticas de baixo risco, envia as demais ao mesmo modelo e sintetiza os resultados.
+- Validation Layer: confere estrutura, completude, dependências e reproduz resultados determinísticos antes de aceitá-los.
 
-- **Orquestração cognitiva:** decompor solicitações em etapas e selecionar estratégias de execução.
-- **Independência de backend:** manter o núcleo desacoplado do Ollama e permitir outros motores.
-- **Eficiência de recursos:** considerar RAM, VRAM, CPU, GPU, carregamento, filas e latência.
-- **Conhecimento verificável:** recuperar documentos e preservar a origem das evidências.
-- **Execução adaptativa:** escolher ferramentas, modelos e nós conforme a tarefa e os recursos.
-- **Distribuição segura:** permitir cooperação entre máquinas sem presumir memória ou GPU compartilhada.
-- **Rastreabilidade:** registrar decisões, tempos, recursos e resultados para diagnóstico.
+Os scores são afinidades heurísticas entre 0 e 1, não probabilidades calibradas. Não há embeddings semânticos, classificador treinado, decomposição semântica livre, execução paralela ou seleção automática de especialistas por domínio. A decomposição atual depende de estrutura explícita. Cada parte é executada separadamente e depois sintetizada pelo mesmo modelo, aumentando o número de chamadas Ollama em pedidos compostos. As conversões de dados usam fatores decimais (base 1000). O conjunto de ferramentas é intencionalmente pequeno e será ampliado com testes específicos.
 
-## Arquitetura em uma visão
+## Arquitetura
 
-```mermaid
+~~~mermaid
 flowchart TD
-    A[Entrada: texto, imagem, documento] --> B[Input Processing]
-    B --> C[Semantic Analysis]
-    C --> D{Processamento determinístico resolve?}
-    D -->|Sim| E[Deterministic Tools]
-    D -->|Não| F[Knowledge Retrieval]
-    E --> J[Validation]
-    F --> G[Context Composer]
-    G --> H[Cognitive Planner]
-    H --> I[Adaptive Execution Engine]
-    I --> J
-    J --> K[Synthesis]
-    K --> L[Resposta + Execution Trace]
-    L --> M[Memória e métricas]
-    R[Adaptive Resource Manager] -. recursos e filas .-> I
-    S[Swarm Manager] -. nós autorizados .-> I
-```
+ A[Entrada do usuário] --> B[ChatView]
+ B --> C[MainWindow]
+ C --> D[Seleção de modelo]
+ D --> E[OllamaChatWorker]
+ E --> F[OllamaEngine]
+ F --> G[Ollama API]
+ G --> H[Tokens NDJSON]
+ H --> E
+ E --> B
+ C --> I[ConversationStore]
+ C --> J[ConfigurationStore]
+ C --> K[ModelsView]
+ K --> L[OllamaStatusWorker]
+ L --> F
+~~~
 
-O fluxo é adaptativo: tarefas simples podem seguir caminhos curtos e não precisam atravessar todas as etapas.
+A Validation Layer atual é estrutural e determinística: reproduz cálculos/conversões locais, confere dependências e completude e registra avisos para saídas de LLM. Ela não comprova fatos de explicações livres sem evidência externa. RAG, Context Composer e verificação factual baseada em fontes serão construídos na Fase 3.
 
-### Camadas principais
+## Estrutura
 
-| Camada | Responsabilidade |
-|---|---|
-| Input Processing | Receber entradas e anexos, preservando o conteúdo original |
-| Semantic Analysis | Estimar intenção, capacidades, dificuldade, incerteza, risco e urgência |
-| Deterministic Processing | Executar cálculos, parsers, consultas e verificações por código |
-| Knowledge Retrieval | Recuperar documentos, trechos e evidências |
-| Context Composer | Selecionar e organizar contexto com proveniência |
-| Cognitive Planner | Decompor tarefas e definir dependências |
-| Adaptive Execution Engine | Selecionar motor, modelo, ferramenta ou nó |
-| Validation | Verificar cálculos, evidências, restrições e saídas |
-| Synthesis | Produzir a resposta final quando geração linguística for necessária |
-| Memory and Trace | Registrar histórico, métricas e rastros de execução |
+- app/: janela, views e diálogos PySide6, incluindo o Cognitive Inspector.
+- core/: projeção somente de leitura dos dados cognitivos para inspeção.
+- core/: CognitiveTask, Input Processing, Semantic Analysis, Task Decomposer, Capability Vectorizer, ferramentas determinísticas, Cognitive Planner, Orchestrator e traces.
+- engines/: contratos e adaptadores de inferência.
+- workers/: operações de rede fora da thread da UI.
+- storage/: configurações e histórico local.
+- pipeline/: futuras etapas cognitivas.
+- knowledge/: futura ingestão e recuperação RAG.
+- resources/: futuro gerenciamento de recursos.
+- swarm/: futura comunicação cooperativa P2P.
+- docs/: arquitetura, contratos, roadmap, segurança e status.
 
-Serviços transversais: **Adaptive Resource Manager**, **Model Manager**, **Knowledge Manager**, **Swarm Manager**, **Telemetry** e **Storage**.
+## Requisitos
 
-## Núcleo cognitivo
+- Python 3.11 ou superior.
+- PySide6 6.7 ou superior.
+- httpx 0.27 ou superior.
+- Ollama instalado e executando localmente.
+- Pelo menos um modelo de chat baixado no Ollama.
 
-### CognitiveTask
+## Instalação no Linux / Arch Linux
 
-É o contrato intermediário padronizado entre as camadas. Reúne a entrada original, análise, evidências, plano, limites de recursos, rastros e resultado. O contrato terá versão para permitir evolução compatível.
+Enquanto a Fase 1 estiver em revisão:
 
-Campos planejados incluem:
+~~~bash
+git clone https://github.com/K410Sh4/AILocalUniversal.git
+cd AILocalUniversal
+git checkout bootstrap/project-structure
+./install.sh
+~~~
 
-- Identidade da tarefa e versão do esquema.
-- Texto original, texto normalizado e anexos.
-- Intenção e capacidades necessárias.
-- Dificuldade, incerteza, risco e urgência.
-- Resultados determinísticos e evidências.
-- Plano de execução e subtarefas.
-- Orçamento de tokens, memória e prazo.
-- Rastro de execução e resultado.
+Após a integração da PR, basta clonar a branch padrão. O instalador cria um ambiente virtual em .venv e instala as dependências. Não instala nem inicia o Ollama automaticamente.
 
-Pontuações serão indicadores até que sejam calibradas com dados de avaliação; não serão tratadas como probabilidades confiáveis por padrão.
+Inicie o aplicativo:
 
-### Capability Vectorizer
+~~~bash
+.venv/bin/ailocal
+~~~
 
-A primeira taxonomia terá 12 dimensões:
+Se necessário, em outro terminal, inicie o serviço Ollama conforme a instalação local e baixe um modelo:
 
-| Dimensão | Capacidade |
-|---|---|
-| D0 | Conversa geral |
-| D1 | Programação |
-| D2 | Matemática e lógica |
-| D3 | Ciências e conhecimento |
-| D4 | RAG e memória externa |
-| D5 | Visão e multimodalidade |
-| D6 | Escrita e criatividade |
-| D7 | Pesquisa externa |
-| D8 | Ferramentas |
-| D9 | Planejamento |
-| D10 | Verificação |
-| D11 | Interdisciplinaridade |
+~~~bash
+ollama serve
+ollama pull qwen2.5:7b
+~~~
 
-A implementação inicial combinará embeddings, âncoras semânticas e regras multilabel. Dificuldade, risco, incerteza e urgência serão avaliados separadamente.
+O modelo acima é apenas um exemplo; escolha um modelo compatível com a memória do seu computador.
 
-## Motores de execução
+## Utilização
 
-O núcleo utilizará um contrato comum de engine adapter para consultar disponibilidade e capacidades, listar modelos, estimar recursos, executar tarefas, transmitir resultados, cancelar operações e descarregar modelos.
+1. Abra a aba **Chat**.
+2. Clique em **Atualizar modelos** para consultar o Ollama.
+3. Escolha **Automático** ou **Manual**.
+4. No modo manual, selecione um modelo identificado como compatível com chat.
+5. No modo automático, selecione um modelo de chat e clique em **Definir preferido** para gravar sua preferência. Modelos de embeddings aparecem na aba **Modelos**, mas não são oferecidos para conversação.
+6. Envie uma mensagem. A resposta será transmitida em streaming.
+7. Use **Cancelar** para interromper a geração.
+8. Abra **Configurações** para alterar URL, keep-alive ou system prompt.
+9. Abra a aba **Cognitivo** para inspecionar a última tarefa analisada nesta sessão. O painel não persiste tarefas após reiniciar o aplicativo.
 
-| Motor | Papel | Estado |
-|---|---|---|
-| Ollama | Primeiro backend local | Prioridade da Fase 1 |
-| llama.cpp | Backend alternativo | Planejado |
-| BitNet | Inferência experimental | Laboratório |
-| Remote Engine | Execução em nó autorizado | Planejado |
-| Specialist Engines | Motores especializados | Evolução futura |
+## Dados locais
 
-O modo manual deverá respeitar a escolha explícita do usuário. O modo automático permitirá que o Orchestrator selecione ferramentas e motores compatíveis.
+- Configuração: variável XDG_CONFIG_HOME, padrão em ~/.config/ailocal-universal/config.json.
+- Conversas: variável XDG_DATA_HOME, padrão em ~/.local/share/ailocal-universal/conversations.json.
 
-## Gerenciamento de recursos
+Os arquivos são escritos atomicamente e com permissões privadas no Linux. Faça backup se quiser preservar o histórico ao reinstalar.
 
-O **Adaptive Resource Manager** deverá observar RAM, VRAM, CPU, GPU, pressão de memória, carregamento de modelos, filas, cache e concorrência.
+## Testes e qualidade
 
-A estimativa de execução considerará, no mínimo:
+~~~bash
+.venv/bin/python -m pytest
+.venv/bin/ruff check .
+~~~
 
-**T previsto = tempo de fila + carregamento + transferência + execução.**
+A suíte cobre contratos, seleção, persistência, protocolo Ollama simulado, análise cognitiva, ferramentas determinísticas, execução sequencial, dependências, falhas, cancelamento, validação estrutural e projeção do Cognitive Inspector. A integração da Validation Layer com Ollama real ainda deve ser exercitada no Arch Linux.
 
-O orçamento de memória deverá incluir pesos, cache KV, contexto, buffers e sobrecarga do runtime. Paginação em SSD não será tratada como substituta de RAM/VRAM para inferência interativa.
-
-## Conhecimento e RAG
-
-A camada de conhecimento será composta por carregadores de documentos, parsers, chunker, embeddings, armazenamento vetorial, busca híbrida, reranking e composição de contexto.
-
-Toda evidência deverá preservar sua proveniência: documento, trecho, página ou localização, metadados, data de ingestão e hash do conteúdo. A compressão de contexto deverá preservar negações, números, unidades, condições, exceções e referências.
-
-## Swarm P2P
-
-A evolução distribuída será separada em três planos:
-
-1. **Control Plane:** descoberta, identidade, heartbeat, telemetria e inventário de capacidades.
-2. **Data Plane:** transferência autenticada de tarefas, resultados, arquivos e conhecimento.
-3. **Execution Plane:** despacho de subtarefas, especialistas remotos e Map-Reduce.
-
-O primeiro caso de uso será a distribuição de tarefas independentes e a sincronização de conhecimento.
-
-Descoberta na rede não concede autorização. Pareamento entre nós, autenticação, criptografia de transporte, limites de recursos, cancelamento e verificação SHA-256 serão requisitos. Inferência distribuída por camadas e RPC permanecerão experimentais: rede não equivale a memória compartilhada, e latência pode superar o benefício.
-
-## Interface prevista
-
-- **Chat:** conversas, streaming e seleção manual/automática de modelo.
-- **Modelos:** inventário, capacidades, carregamento e estado.
-- **Pipeline:** etapas, decisões e execution traces.
-- **Conhecimento:** documentos, indexação, busca e fontes.
-- **Rede:** nós autorizados, telemetria e tarefas distribuídas.
-- **Diagnóstico:** RAM/VRAM, CPU/GPU, latências e benchmarks.
-
-A interface deverá continuar acessível mesmo quando um backend estiver indisponível.
-
-## Estrutura do repositório
-
-```text
-AILocalUniversal/
-├── README.md
-├── pyproject.toml
-├── requirements.txt
-├── install.sh
-├── .gitignore
-├── CONTRIBUTING.md
-├── docs/
-│   ├── ARCHITECTURE.md
-│   ├── ROADMAP.md
-│   ├── SECURITY.md
-│   └── DATA_CONTRACTS.md
-├── app/
-│   ├── main.py
-│   ├── main_window.py
-│   └── views/
-├── core/
-│   ├── cognitive_task.py
-│   ├── orchestrator.py
-│   ├── task_router.py
-│   ├── capability_vectorizer.py
-│   └── execution_trace.py
-├── pipeline/
-├── engines/
-├── resources/
-├── knowledge/
-├── swarm/
-├── storage/
-├── tests/
-│   ├── unit/
-│   ├── integration/
-│   ├── network/
-│   └── benchmarks/
-└── scripts/
-```
-
-A árvore será preenchida incrementalmente. Diretórios podem ganhar submódulos à medida que existirem implementações e testes correspondentes.
-
-## Plano de desenvolvimento
+## Roadmap
 
 | Fase | Entrega |
 |---|---|
-| 0 — Fundação | Documentação, contratos, padrões, testes e empacotamento |
-| 1 — Aplicação base | PySide6, histórico, configurações, Engine Adapter e Ollama |
-| 2 — Núcleo cognitivo | CognitiveTask, análise semântica, ferramentas determinísticas e Orchestrator |
-| 3 — Conhecimento | RAG, Context Composer, memória e validação |
-| 4 — Recursos | Monitoramento, Model Manager, filas e seleção adaptativa |
-| 5 — Rede cooperativa | Node Agent, descoberta, protocolo seguro e Map-Reduce |
-| 6 — Laboratório | BitNet, RPC, speculative decoding e experimentos multi-host |
-
-**Diretriz:** primeiro um sistema local confiável; depois adaptativo; por último, distribuído. Cada fase deverá demonstrar funcionamento por testes e métricas antes de ampliar a complexidade.
-
-## Benchmark e critérios de qualidade
-
-Os benchmarks separarão modelo frio de modelo já carregado e registrarão:
-
-- Tempo até o primeiro token e tokens/s.
-- Latência total e tempo por etapa.
-- Tempo de carregamento.
-- Pico de RAM/VRAM e uso de CPU/GPU.
-- Bytes transferidos e custo de coordenação.
-- Qualidade da tarefa, precisão e cobertura de evidências.
-- Falhas, timeouts e cancelamentos.
-
-Cenários mínimos: pergunta simples, operação matemática, lógica, análise de código, RAG documental, planejamento complexo e Map-Reduce multi-host.
-
-Nenhuma melhoria de desempenho será declarada sem benchmark reproduzível e avaliação de qualidade.
+| 0 | Fundação, documentação e contratos |
+| 1 | Aplicação desktop, Ollama, streaming, histórico e configurações |
+| 2 | Núcleo cognitivo e ferramentas determinísticas |
+| 3 | RAG, Context Composer e validação |
+| 4 | Gerenciamento adaptativo de recursos |
+| 5 | Rede cooperativa, segurança e Map-Reduce |
+| 6 | Laboratório BitNet, RPC e otimizações multi-host |
 
 ## Segurança e privacidade
 
-- Processamento local por padrão.
-- Menor privilégio e autorização explícita para nós remotos.
-- Transporte criptografado e autenticação entre nós.
-- Limites de tempo, memória e concorrência.
-- Isolamento de tarefas remotas e proibição de comandos arbitrários por padrão.
-- Integridade de arquivos por hash.
-- Logs sem credenciais ou segredos.
-- Cancelamento e tratamento de falhas.
-- Separação entre resultados determinísticos, evidências recuperadas e conteúdo gerado por modelos.
+O processamento permanece local por padrão. Não exponha a API Ollama diretamente à internet sem controles adequados. A comunicação remota e a execução entre nós ainda não estão habilitadas nesta fase.
 
-Consulte [docs/SECURITY.md](docs/SECURITY.md) antes de habilitar funcionalidades de rede.
+Consulte docs/SECURITY.md.
 
-## Estado atual
+## Documentação adicional
 
-Este repositório está sendo inicializado. A documentação descreve a arquitetura-alvo; ela **não significa que todos os componentes estejam implementados**. O trabalho será acompanhado por fases, testes e registros explícitos de funcionalidades disponíveis, planejadas ou experimentais.
-
-## Como contribuir
-
-Leia [CONTRIBUTING.md](CONTRIBUTING.md), a [arquitetura](docs/ARCHITECTURE.md), o [roadmap](docs/ROADMAP.md) e os [contratos de dados](docs/DATA_CONTRACTS.md). Mudanças devem incluir testes adequados e não devem introduzir promessas de desempenho sem medição.
+- Arquitetura: docs/ARCHITECTURE.md
+- Roadmap: docs/ROADMAP.md
+- Estado da implementação: docs/IMPLEMENTATION_STATUS.md
+- Contratos de dados: docs/DATA_CONTRACTS.md
+- Contribuição: CONTRIBUTING.md
 
 ---
 
 **AILocal Universal — inteligência local coordenada por software, ferramentas e recursos reais.**
+
+- Blocos matemáticos display usam fundo ardósia suave, borda neutra e espaçamento vertical para integrar as equações ao balão da resposta sem perder destaque tipográfico.
+\n\n### Cognitive Task Executor\n\nPedidos decompostos em duas ou mais partes são executados sequencialmente. Subtarefas matemáticas ou conversões elegíveis podem usar ferramentas locais de baixo risco; as demais são enviadas individualmente ao mesmo modelo selecionado. Após todas as partes concluídas, uma chamada adicional produz a síntese final. O Inspector acompanha estados e resultados intermediários. Saídas de modelo ficam marcadas como não verificadas independentemente; não há paralelismo ou roteamento multi-modelo nesta etapa.\n
 
 ## Licença e propriedade intelectual
 
