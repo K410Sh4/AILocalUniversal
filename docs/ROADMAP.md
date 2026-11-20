@@ -97,3 +97,25 @@ Documentação: [NeuralPlugin Manager](NEURALPLUGIN.md), [NIP 0.1.0](NEURALINJEC
 ## Critérios transversais
 
 Cada entrega inclui testes, documentação, tratamento de erros e métricas. Benchmarks informam hardware, modelo, quantização, contexto e estado frio/quente.
+
+
+## Trilha experimental — Workflow Graph / NeuralMap
+
+- [x] Definir formato versionado `ailocal.pipeline-graph` e JSON Schema.
+- [x] Criar modelo Python de nós, portas, arestas e layout.
+- [x] Validar portas, referências, requisitos de entrada, caminhos input/output e ciclos não controlados.
+- [x] Implementar runtime assíncrono, handlers allowlisted, trace e cancelamento.
+- [x] Implementar loop de revisão limitado, feedback direcionado e fallback para melhor score.
+- [x] Criar template multi-especialista com Qwen, DeepSeek e nó de imagem opcional.
+- [x] Criar primeira aba NeuralMap com canvas, zoom/pan, biblioteca, propriedades, conexões condicionais e undo/redo.
+- [x] Integrar worker Qt e execução dry-run/real.
+- [x] Adicionar persistência do grafo em pacote .neuralinjector com verificação SHA-256 e referência no manifesto.
+- [ ] Integrar e validar backend real de imagem (Flux ou equivalente) e armazenamento de artefatos.
+- [ ] Adicionar anexos à UI e ao fluxo de especialistas.
+- [ ] Renderizar resultado estruturado no ChatView (código, Markdown e imagem).
+- [ ] Finalizar UX de exclusão/realce e validar visualmente no Linux/Arch.
+- [ ] Executar pytest/Ruff e validar fluxo com Ollama real antes de considerar a entrega aceita.
+
+Documentação: [NeuralMap](NEURALMAP.md), [schema de pipeline](../schemas/pipeline-graph.schema.json) e [template](../examples/workflows/multi_specialist.pipeline.graph.json).
+
+A implementação está isolada na branch `feature/neuralmap-v1`; não altera nem mescla `main`.
