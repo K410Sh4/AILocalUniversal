@@ -9,7 +9,7 @@ from urllib.parse import urlsplit
 CATEGORIES = {
     "general", "coding", "reasoning", "vision", "audio", "speech",
     "embeddings", "reranking", "image_generation", "video_generation",
-    "music_generation", "ocr", "object_detection", "translation", "unknown",
+    "music_generation", "ocr", "object_detection", "translation", "agents", "multimodal", "unknown",
 }
 MODALITIES = {"text", "image", "audio", "video", "spatial", "unknown"}
 METADATA_SOURCES = {"runtime_discovery", "user_curated", "catalog_import"}
