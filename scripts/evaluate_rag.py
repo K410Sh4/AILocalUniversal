@@ -72,7 +72,10 @@ def parse_args() -> argparse.Namespace:
         default="http://127.0.0.1:11434",
         help="URL do Ollama (padrão: %(default)s).",
     )
-    parser.add_argument("--k", type=int, default=3, help="Corte das métricas (padrão: %(default)s).")
+    parser.add_argument(
+        "--k", type=int, default=3,
+        help="Corte das métricas (padrão: %(default)s).",
+    )
     return parser.parse_args()
 
 
@@ -109,7 +112,11 @@ def main() -> int:
                 str(item["title"]): str(item["document_id"])
                 for item in documents
             }
-            missing = [item["title"] for item in CORPUS if item["title"] not in ids_by_title]
+            missing = [
+                item["title"]
+                for item in CORPUS
+                if item["title"] not in ids_by_title
+            ]
             if missing:
                 raise RuntimeError(f"Documentos ausentes no índice: {missing}")
 
@@ -129,7 +136,9 @@ def main() -> int:
                 relevant_id = ids_by_title[item["title"]]
                 relevant.append({relevant_id})
                 for evidence in bundle.evidence:
-                    retrieval_sources.update(evidence.metadata.get("retrieval_sources", []))
+                    retrieval_sources.update(
+                        evidence.metadata.get("retrieval_sources", [])
+                    )
                 per_query.append(
                     {
                         "query": item["query"],
