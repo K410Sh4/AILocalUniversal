@@ -346,9 +346,9 @@ A integração não força posicionamento CPU/GPU, não configura paralelismo gl
 
 ### 6A.6 llama.cpp — tradução de opções
 
-`engines/llama_cpp_options.py` traduz orçamento para argumentos do construtor llama-cpp-python: `context_tokens` → `n_ctx`, `cpu_threads` → `n_threads`. `n_gpu_layers` é omitido, a menos que o chamador forneça uma contagem já validada pelo backend.
+`engines/llama_cpp_options.py` traduz orçamento para argumentos do construtor llama-cpp-python: `context_tokens` → `n_ctx`, `cpu_threads` → `n_threads`. `n_gpu_layers` é omitido, a menos que o chamador forneça uma contagem já validada pelo backend. A função `create_llama_cpp_runtime()` valida o caminho/extensão GGUF, importa `llama_cpp.Llama` sob demanda e passa as opções orçamentárias ao construtor.
 
-Essa ponte é testável, mas ainda não constitui um `EngineAdapter` llama.cpp completo nem está conectada à interface. As opções devem ser aplicadas ao construir/recriar a instância do modelo. Quantização continua definida pelo arquivo GGUF selecionado.
+A fábrica aplica de fato contexto e threads ao criar a instância e é coberta por testes com construtor simulado. Ainda não constitui um `EngineAdapter` llama.cpp completo nem está conectada à interface. Quantização continua definida pelo arquivo GGUF selecionado.
 
 ### 6A.7 Validação e limitações
 
