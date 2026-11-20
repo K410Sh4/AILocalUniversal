@@ -24,7 +24,7 @@ ailocal = "app.main:main"
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["app*", "core*", "engines*", "pipeline*", "resources*", "knowledge*", "swarm*", "storage*", "workers*"]
+include = ["app*", "core*", "engines*", "pipeline*", "resources*", "knowledge*", "swarm*", "storage*", "workers*", "model_hub*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
