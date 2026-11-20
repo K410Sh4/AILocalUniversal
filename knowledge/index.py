@@ -12,7 +12,6 @@ from typing import Any
 from knowledge.errors import KnowledgeIndexError
 from knowledge.models import DocumentChunk, LoadedDocument, SearchHit
 
-
 _QUERY_STOPWORDS = {
     "a", "as", "ao", "aos", "aquela", "aquele", "aquilo", "até", "com",
     "como", "da", "das", "de", "dela", "dele", "do", "dos", "e", "é",
@@ -23,7 +22,7 @@ _QUERY_STOPWORDS = {
     "quando", "quanto", "quantos", "quantas", "que", "quem", "se", "ser",
     "seu", "sua", "são", "sao", "sob", "sobre", "também", "tem", "têm",
     "um", "uma", "umas", "uns", "você", "vocês",
-    "the", "a", "an", "and", "are", "as", "at", "be", "by", "for", "from",
+    "the", "an", "and", "are", "at", "be", "by", "for", "from",
     "how", "in", "is", "it", "of", "on", "or", "that", "this", "to", "was",
     "what", "when", "where", "which", "who", "why", "with",
 }
