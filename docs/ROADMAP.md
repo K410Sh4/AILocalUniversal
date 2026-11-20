@@ -25,14 +25,17 @@ As fases representam entregas e validações progressivas. Um componente só ser
 
 **Saída:** aplicação desktop local funcional após validação no ambiente-alvo.
 
-## Fase 2 — Núcleo cognitivo
+## Fase 2 — Núcleo cognitivo (implementação inicial)
 
-- Input Processing.
-- Semantic Analysis.
-- Capability Vectorizer calibrável.
-- Ferramentas determinísticas.
-- Cognitive Planner.
-- Orchestrator com trace e rotas adaptativas.
+- [x] Input Processing com normalização e preservação do texto original.
+- [x] Semantic Analysis heurística para intenção, dificuldade, incerteza, risco e urgência.
+- [x] Capability Vectorizer lexical com 12 dimensões e âncoras explicáveis.
+- [x] Ferramentas determinísticas iniciais: calculadora AST restrita e conversor de unidades.
+- [x] Cognitive Planner com rota determinística ou LLM assistida.
+- [x] Orchestrator com trace por estágio integrado ao pipeline cognitivo.
+- [x] Integração da rota determinística ao envio do Chat.
+
+Limites desta entrega: os scores ainda não são calibrados; embeddings, classificador treinado, decomposição de tarefas, validação independente de resultados e seleção de modelos especialistas continuam pendentes. Ferramentas não reconhecidas são encaminhadas ao modelo.
 
 ## Fase 3 — Conhecimento e validação
 

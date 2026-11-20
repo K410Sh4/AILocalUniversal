@@ -4,7 +4,7 @@
 
 O AILocal Universal coordena modelos de linguagem, ferramentas determinísticas, conhecimento local e recursos computacionais. Seu princípio central é usar o mecanismo mais adequado para cada parte da tarefa — não acionar um LLM para tudo.
 
-**Estado:** Fase 1 em implementação.  
+**Estado:** Fase 1 em validação operacional; núcleo cognitivo inicial da Fase 2 implementado em branch de desenvolvimento.  
 **Plataforma prioritária:** Linux / Arch Linux.  
 **Interface:** Python + PySide6.  
 **Backend inicial:** Ollama.
@@ -25,7 +25,20 @@ O AILocal Universal coordena modelos de linguagem, ferramentas determinísticas,
 - Cancelamento de geração por worker em thread separada.
 - Tratamento de indisponibilidade, timeouts e erros do protocolo.
 
-O modo automático inicial escolhe o modelo preferido quando ele possui capacidade de chat verificada ou, na ausência dele, o primeiro modelo de chat em ordem estável. Modelos exclusivamente de embeddings e modelos sem metadados de capacidade verificáveis não entram no seletor de conversas. O roteamento semântico por tarefa e dificuldade será implementado na Fase 2.
+O modo automático da interface escolhe o modelo preferido quando ele possui capacidade de chat verificada ou, na ausência dele, o primeiro modelo de chat em ordem estável. Modelos exclusivamente de embeddings e modelos sem metadados de capacidade verificáveis não entram no seletor de conversas.
+
+## Fase 2 — Núcleo cognitivo (implementação inicial)
+
+O envio de mensagens passa por um pipeline local antes de decidir a execução:
+
+- Input Processing: normalização Unicode e de espaços, preservando o texto original e limitando entradas excessivas.
+- Semantic Analysis: classificação heurística de intenção e indicadores separados de dificuldade, incerteza, risco e urgência.
+- Capability Vectorizer: vetor lexical explicável de 12 dimensões, usando âncoras em português e inglês.
+- Deterministic Processing: calculadora com AST restrita e conversões explícitas de unidades comuns; não executa código arbitrário.
+- Cognitive Planner: encaminha operações suportadas e de baixo risco para ferramentas locais; as demais seguem para o modelo configurado.
+- Orchestrator: executa estágios e registra trace de início, conclusão e falhas.
+
+Os scores são afinidades heurísticas entre 0 e 1, não probabilidades calibradas. Não há embeddings semânticos, classificador treinado, decomposição automática em subtarefas ou seleção de especialistas por competência de cada modelo nesta entrega. As conversões de dados usam fatores decimais (base 1000). O conjunto de ferramentas é intencionalmente pequeno e será ampliado com testes específicos.
 
 ## Arquitetura
 
@@ -47,12 +60,12 @@ flowchart TD
  L --> F
 ~~~
 
-A arquitetura cognitiva-alvo inclui Input Processing, Semantic Analysis, processamento determinístico, RAG, Context Composer, Planner, Adaptive Execution, Validation e Synthesis. Esses componentes serão implementados nas fases subsequentes; sua descrição não significa que estejam todos ativos.
+A arquitetura completa continua incluindo RAG, Context Composer, validação de evidências, Resource Manager e execução distribuída. Esses blocos permanecem em fases posteriores; a Fase 2 ativa apenas o pipeline local descrito acima.
 
 ## Estrutura
 
 - app/: janela, views e diálogos PySide6.
-- core/: CognitiveTask, Orchestrator, Capability Vectorizer e traces.
+- core/: CognitiveTask, Input Processing, Semantic Analysis, Capability Vectorizer, ferramentas determinísticas, Cognitive Planner, Orchestrator e traces.
 - engines/: contratos e adaptadores de inferência.
 - workers/: operações de rede fora da thread da UI.
 - storage/: configurações e histórico local.
@@ -123,7 +136,7 @@ Os arquivos são escritos atomicamente e com permissões privadas no Linux. Faç
 .venv/bin/ruff check .
 ~~~
 
-A suíte cobre contratos, seleção, persistência e protocolo Ollama usando transporte HTTP simulado. O uso com serviço Ollama real e o comportamento gráfico precisam de validação em máquina Linux.
+A suíte cobre contratos, seleção, persistência, protocolo Ollama simulado, análise cognitiva, ferramentas determinísticas e rotas do planejador. O fluxo visual e o uso integrado com Ollama real ainda precisam ser validados no Arch Linux.
 
 ## Roadmap
 

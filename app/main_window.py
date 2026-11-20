@@ -1,7 +1,8 @@
-"""Janela principal e composição dos serviços da Fase 1."""
+"""Janela principal com o pipeline cognitivo e o backend Ollama."""
 
 from __future__ import annotations
 
+import asyncio
 from datetime import UTC, datetime
 from typing import Any
 
@@ -10,6 +11,9 @@ from PySide6.QtWidgets import QMainWindow, QMessageBox, QTabWidget
 from app.dialogs.settings_dialog import SettingsDialog
 from app.views.chat_view import ChatView
 from app.views.models_view import ModelsView
+from core.cognitive_pipeline import analyze_request
+from core.cognitive_task import TaskStatus
+from core.input_processing import InputValidationError
 from engines.base import EngineAdapter, EngineRequest, ModelInfo
 from engines.model_selector import ModelSelectionError, choose_model
 from engines.ollama_engine import OllamaEngine
@@ -42,6 +46,7 @@ class MainWindow(QMainWindow):
         self._status_worker: OllamaStatusWorker | None = None
         self._chat_worker: OllamaChatWorker | None = None
         self._current_assistant_index: int | None = None
+        self.last_cognitive_task = None
 
         self.conversations = self._load_conversations()
         self.conversations.sort(key=lambda item: item.updated_at, reverse=True)
@@ -277,6 +282,63 @@ class MainWindow(QMainWindow):
             return
         if not text.strip():
             return
+
+        try:
+            cognitive_task = asyncio.run(analyze_request(text))
+        except InputValidationError as exc:
+            QMessageBox.information(self, "Entrada inválida", str(exc))
+            return
+        except RuntimeError as exc:
+            QMessageBox.warning(
+                self,
+                "Falha na análise cognitiva",
+                f"Não foi possível analisar a solicitação: {exc}",
+            )
+            return
+
+        self.last_cognitive_task = cognitive_task
+        if cognitive_task.status is TaskStatus.FAILED:
+            detail = (
+                cognitive_task.result.get("error", "Falha desconhecida.")
+                if isinstance(cognitive_task.result, dict)
+                else "Falha desconhecida."
+            )
+            QMessageBox.warning(self, "Falha na análise cognitiva", str(detail))
+            self.statusBar().showMessage("Análise cognitiva falhou", 8000)
+            return
+
+        route = (
+            str(cognitive_task.execution_plan[0].get("route", "llm_assisted"))
+            if cognitive_task.execution_plan
+            else "llm_assisted"
+        )
+        if route == "deterministic_only" and cognitive_task.result is not None:
+            conversation = self.current_conversation
+            normalized_text = cognitive_task.normalized_text or text.strip()
+            conversation.messages.append(
+                {"role": "user", "content": normalized_text}
+            )
+            if conversation.title == "Nova conversa":
+                conversation.title = normalized_text.splitlines()[0][:48]
+            conversation.messages.append(
+                {
+                    "role": "assistant",
+                    "content": str(cognitive_task.result.get("content", "")),
+                }
+            )
+            conversation.updated_at = datetime.now(UTC).isoformat()
+            self._persist_conversations()
+            self._refresh_history()
+            self._render_current_conversation()
+
+            tool_name = str(cognitive_task.result.get("tool", "ferramenta local"))
+            self.chat_view.set_status(f"Resolvido localmente — {tool_name}")
+            self.statusBar().showMessage(
+                f"Rota determinística: {tool_name} • tarefa {cognitive_task.task_id[:8]}",
+                8000,
+            )
+            return
+
         try:
             model = self._resolve_model()
         except ModelSelectionError as exc:
@@ -315,7 +377,9 @@ class MainWindow(QMainWindow):
         worker.finished.connect(lambda w=worker: self._chat_finished(w))
         self.chat_view.set_busy(True)
         self.chat_view.set_status(f"Gerando com {model}…")
-        self.statusBar().showMessage(f"Modelo: {model}")
+        self.statusBar().showMessage(
+            f"Plano cognitivo: {cognitive_task.intent} → modelo {model}"
+        )
         worker.start()
 
     def _assistant_message(self) -> dict[str, str] | None:

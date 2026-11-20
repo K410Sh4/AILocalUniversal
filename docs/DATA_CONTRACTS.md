@@ -6,7 +6,9 @@ Envelope versionado que atravessa o pipeline. Implementação inicial: `core/cog
 
 Campos conceituais: schema_version, task_id, original_text, normalized_text, intent, capabilities, difficulty, uncertainty, risk, urgency, evidence, deterministic_results, execution_plan, subtasks, token_budget, ram_budget_mb, deadline_ms, execution_trace, result e status.
 
-Scores são indicadores, não probabilidades calibradas. Implementações devem documentar escala e política.
+Scores de capacidades são afinidades heurísticas entre 0 e 1 nesta implementação, calculadas por âncoras lexicais e expostas em todas as 12 dimensões. Não representam probabilidades nem qualidade real do modelo. Dificuldade, incerteza, risco e urgência também são indicadores heurísticos independentes.
+
+execution_plan registra a rota selecionada (atualmente deterministic_only ou llm_assisted) e os componentes planejados. deterministic_results armazena a saída estruturada de ferramentas locais. O texto original permanece em original_text; normalized_text é usado para análise sem apagar a entrada original.
 
 ## Evidence
 

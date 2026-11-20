@@ -17,7 +17,11 @@ Coordenar ferramentas determinísticas, motores de inferência, recuperação de
 9. Synthesis — produz resposta quando geração linguística for necessária.
 10. Memory and Trace — registra decisões, estado e métricas.
 
-O fluxo é adaptativo: tarefas simples podem terminar em ferramentas determinísticas.
+O fluxo é adaptativo: tarefas simples podem terminar em ferramentas determinísticas. A implementação inicial em core/cognitive_pipeline.py executa Input Processing, Semantic Analysis, Deterministic Processing e Cognitive Planning por meio do Orchestrator. O planejador escolhe entre deterministic_only e llm_assisted.
+
+A análise atual é heurística e lexical. O vetor de capacidades tem 12 dimensões com âncoras de termos e expressões; não usa embeddings nem classificador treinado. Os valores entre 0 e 1 são afinidades indicativas, sem calibração probabilística. Os indicadores de dificuldade, incerteza, risco e urgência são independentes.
+
+As ferramentas determinísticas iniciais são uma calculadora baseada em AST com lista de operações permitidas e um conversor explícito de unidades. O sistema não executa código arbitrário. Marcadores de risco impedem o atalho determinístico e encaminham a solicitação ao modelo para análise; isso não equivale a revisão especializada ou validação clínica, jurídica ou financeira.
 
 ## Serviços transversais
 
@@ -32,7 +36,7 @@ O fluxo é adaptativo: tarefas simples podem terminar em ferramentas determinís
 
 Taxonomia inicial de 12 dimensões: conversa geral, programação, matemática/lógica, ciências/conhecimento, RAG/memória, visão, escrita/criatividade, pesquisa externa, ferramentas, planejamento, verificação e interdisciplinaridade.
 
-Embeddings e âncoras semânticas serão a primeira abordagem. Scores são indicadores que exigem calibração; dificuldade, risco, incerteza e urgência serão avaliados separadamente.
+Âncoras lexicais são a primeira implementação disponível. Embeddings e classificação semântica treinada ou calibrada permanecem futuros. Scores são afinidades heurísticas, não probabilidades; dificuldade, risco, incerteza e urgência são avaliados separadamente.
 
 ## Engines e recursos
 
