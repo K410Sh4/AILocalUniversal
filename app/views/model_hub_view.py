@@ -164,6 +164,8 @@ class ModelHubView(QWidget):
         self.details.clear()
         if records:
             self.table.selectRow(0)
+            # Qt may not emit itemSelectionChanged during initial population.
+            self._show_selected_details()
         else:
             self.details.setPlainText(
                 "Nenhum modelo foi descoberto. Inicie um runtime compatível "
