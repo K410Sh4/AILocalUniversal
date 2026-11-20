@@ -8,11 +8,12 @@ from typing import Any
 from PySide6.QtWidgets import QMainWindow, QMessageBox, QTabWidget
 
 from app.dialogs.settings_dialog import SettingsDialog
+from core.neuralinjector.resources import ResourceRequirements, detect_hardware
 from app.views.chat_view import ChatView
 from app.views.models_view import ModelsView
 from engines.base import EngineAdapter, EngineRequest, ModelInfo
 from engines.model_selector import ModelSelectionError, choose_model
-from engines.ollama_engine import OllamaEngine
+from engines.ollama_engine import OllamaEngine, OllamaResourceProtectionError
 from engines.registry import EngineRegistry
 from storage.configuration import AppConfig, ConfigurationError, ConfigurationStore
 from storage.conversations import Conversation, ConversationStore
@@ -238,6 +239,30 @@ class MainWindow(QMainWindow):
             return selected
         return choose_model(self.models, self.config.preferred_model).name
 
+    def _show_resource_protection(self, report) -> None:
+        """Explain a resource refusal and provide actionable next steps."""
+        reasons = "\\n".join(f"• {reason}" for reason in report.reasons)
+        alternatives = "\\n".join(f"• {item}" for item in report.recommendations)
+        details = "\\n\\n".join(
+            part for part in (reasons, alternatives) if part
+        )
+        QMessageBox.warning(
+            self,
+            "Proteção de hardware",
+            report.user_message or "A solicitação foi bloqueada pela política de recursos.",
+            QMessageBox.StandardButton.Ok,
+        )
+        if details:
+            # Keep the refusal readable; the detailed reasons are also recorded in status.
+            self.statusBar().showMessage(
+                "Proteção de hardware: " + "; ".join(report.reasons), 15000
+            )
+            QMessageBox.information(
+                self,
+                "Motivos e alternativas",
+                details,
+            )
+
     def send_message(self, text: str) -> None:
         if self._chat_worker is not None and self._chat_worker.isRunning():
             return
@@ -251,6 +276,42 @@ class MainWindow(QMainWindow):
             return
 
         conversation = self.current_conversation
+        messages: list[dict[str, Any]] = []
+        if self.config.system_prompt.strip():
+            messages.append({"role": "system", "content": self.config.system_prompt})
+        messages.extend(conversation.messages)
+        messages.append({"role": "user", "content": text.strip()})
+
+        request = EngineRequest(
+            model=model,
+            messages=messages,
+            options={"keep_alive": self.config.keep_alive},
+        )
+        try:
+            hardware = detect_hardware()
+            preferred_profile = (
+                None if self.config.hardware_profile == "auto"
+                else self.config.hardware_profile
+            )
+            request, report = OllamaEngine.prepare_resource_aware_request(
+                request,
+                hardware,
+                preferred_profile=preferred_profile,
+                protection_mode=self.config.protection_mode,
+                requirements=ResourceRequirements(min_context_tokens=512),
+            )
+        except OllamaResourceProtectionError as exc:
+            self._show_resource_protection(exc.report)
+            return
+        except (OSError, RuntimeError, ValueError) as exc:
+            QMessageBox.warning(
+                self,
+                "Não foi possível verificar o hardware",
+                "A geração foi bloqueada porque o AILocal Universal não conseguiu "
+                f"validar os recursos do computador.\\n\\n{exc}",
+            )
+            return
+
         conversation.messages.append({"role": "user", "content": text.strip()})
         if conversation.title == "Nova conversa":
             conversation.title = text.strip().splitlines()[0][:48]
@@ -261,17 +322,6 @@ class MainWindow(QMainWindow):
         self._persist_conversations()
         self._refresh_history()
         self._render_current_conversation()
-
-        messages: list[dict[str, Any]] = []
-        if self.config.system_prompt.strip():
-            messages.append({"role": "system", "content": self.config.system_prompt})
-        messages.extend(conversation.messages[: self._current_assistant_index])
-
-        request = EngineRequest(
-            model=model,
-            messages=messages,
-            options={"keep_alive": self.config.keep_alive},
-        )
         worker = OllamaChatWorker(self.engine, request, self)
         self._chat_worker = worker
         worker.token.connect(self._on_chat_token)
@@ -280,8 +330,16 @@ class MainWindow(QMainWindow):
         worker.cancelled.connect(self._on_chat_cancelled)
         worker.finished.connect(lambda w=worker: self._chat_finished(w))
         self.chat_view.set_busy(True)
-        self.chat_view.set_status(f"Gerando com {model}…")
-        self.statusBar().showMessage(f"Modelo: {model}")
+        self.chat_view.set_status(
+            f"Perfil {report.selected_profile} · "
+            f"contexto {report.budget.context_tokens} · "
+            f"{report.budget.cpu_threads} thread(s) CPU"
+        )
+        self.statusBar().showMessage(
+            f"Modelo: {model} · perfil {report.selected_profile} · "
+            f"contexto {report.budget.context_tokens} · "
+            f"{report.budget.cpu_threads} thread(s) CPU"
+        )
         worker.start()
 
     def _assistant_message(self) -> dict[str, str] | None:
