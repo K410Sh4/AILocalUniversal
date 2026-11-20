@@ -10,7 +10,11 @@ from PySide6.QtWidgets import QMainWindow, QMessageBox, QTabWidget
 from app.dialogs.settings_dialog import SettingsDialog
 from app.views.chat_view import ChatView
 from app.views.models_view import ModelsView
-from core.neuralinjector.resources import ResourceRequirements, detect_hardware
+from core.neuralinjector.resources import (
+    CompatibilityReport,
+    ResourceRequirements,
+    detect_hardware,
+)
 from engines.base import EngineAdapter, EngineRequest, ModelInfo
 from engines.model_selector import ModelSelectionError, choose_model
 from engines.ollama_engine import OllamaEngine, OllamaResourceProtectionError
@@ -239,7 +243,7 @@ class MainWindow(QMainWindow):
             return selected
         return choose_model(self.models, self.config.preferred_model).name
 
-    def _show_resource_protection(self, report) -> None:
+    def _show_resource_protection(self, report: CompatibilityReport) -> None:
         """Explain a resource refusal and provide actionable next steps."""
         reasons = "\\n".join(f"• {reason}" for reason in report.reasons)
         alternatives = "\\n".join(
