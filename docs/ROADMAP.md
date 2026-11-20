@@ -90,7 +90,8 @@ As fases são entregas progressivas. Uma funcionalidade só é considerada concl
 - [x] Integrar o KnowledgeRuntime ao MainWindow/CognitiveTaskExecutor com ativação explícita e recuperação em worker Qt.
 - [x] Integrar Context Composer ao contexto do modelo, delimitar documentos como dados não confiáveis e transportar Evidence ao CognitiveTask.
 - [x] Exibir fontes recuperadas no Chat e proveniência das evidências no Cognitive Inspector; validar vínculo/hash das citações sem declarar veracidade factual.
-- [ ] Criar corpus de avaliação RAG: precisão@k, recall@k, MRR, cobertura, fidelidade e conflitos.
+- [x] Criar microbenchmark sintético reproduzível com precision@k, recall@k, MRR e cobertura, executável em modo lexical ou híbrido por modelo.
+- [ ] Ampliar corpus de avaliação RAG com documentos representativos, julgamentos humanos de relevância, fidelidade e conflitos.
 - [x] Testar a delimitação de conteúdo documental não confiável e a rejeição de identificadores de citação inexistentes; resistência semântica do modelo continua sendo mitigação, não garantia.
 - [ ] Definir orçamento de tokens por tokenizer/backend; a primeira versão usa limite em caracteres.
 
