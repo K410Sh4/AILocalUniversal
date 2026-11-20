@@ -1,3 +1,4 @@
+from .monitor import ResourceMonitor
 from .resources import (
     AdaptiveResourceManager,
     BenchmarkMode,
@@ -30,6 +31,7 @@ __all__ = [
     "ProtectionMode",
     "QuantizationPolicy",
     "ResourceBudget",
+    "ResourceMonitor",
     "ResourcePressure",
     "ResourceRequirements",
     "build_compatibility_report",
