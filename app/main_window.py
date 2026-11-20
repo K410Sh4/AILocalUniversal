@@ -340,15 +340,17 @@ class MainWindow(QMainWindow):
         worker.cancelled.connect(self._on_chat_cancelled)
         worker.finished.connect(lambda w=worker: self._chat_finished(w))
         self.chat_view.set_busy(True)
-        self.chat_view.set_status(
+        resource_status = (
             f"Perfil {report.selected_profile} · "
             f"contexto {report.budget.context_tokens} · "
             f"{report.budget.cpu_threads} thread(s) CPU"
         )
+        if not report.compatible:
+            resource_status += " · AVISO: modo permissivo"
+        self.chat_view.set_status(resource_status)
         self.statusBar().showMessage(
-            f"Modelo: {model} · perfil {report.selected_profile} · "
-            f"contexto {report.budget.context_tokens} · "
-            f"{report.budget.cpu_threads} thread(s) CPU"
+            f"Modelo: {model} · {resource_status}",
+            15000 if not report.compatible else 0,
         )
         worker.start()
 
