@@ -19,7 +19,8 @@
   "budget": {
     "max_ram_fraction": 0.65,
     "target_context_tokens": 4096,
-    "max_parallelism": 1
+    "max_parallelism": 1,
+    "max_cpu_threads": 8
   },
   "execution": {
     "preferred_backends": [
@@ -45,9 +46,9 @@
   },
   "quantization_policy": {
     "preferred": [
-      "Q5_K_M",
       "Q4_K_M",
-      "Q4_0"
+      "Q4_0",
+      "Q5_K_M"
     ],
     "low_memory_preferred": [
       "Q4_K_M",
@@ -57,8 +58,5 @@
     ],
     "low_memory_threshold_mb": 8192,
     "allow_lower_precision_fallback": true
-  },
-  "notes": [
-    "O perfil negocia opções com o backend; não promete velocidade específica."
-  ]
+  }
 }
