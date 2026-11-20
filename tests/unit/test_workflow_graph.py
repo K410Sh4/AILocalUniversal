@@ -14,7 +14,6 @@ from workflows.graph import (
 )
 from workflows.runtime import GraphRuntime, HandlerRegistry
 
-
 TEMPLATE = (
     Path(__file__).resolve().parents[2]
     / "examples"
