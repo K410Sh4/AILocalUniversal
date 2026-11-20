@@ -196,3 +196,7 @@ O pacote de exemplo declara os modelos e engines do template em `examples/neural
 - Validar manualmente a interface em sessão gráfica Linux/Arch e executar o fluxo com Ollama real; benchmarks e latência em hardware-alvo permanecem pendentes.
 
 **Validação automatizada:** GitHub Actions no commit `d56e37e` — Ruff aprovado e 113 testes passaram, incluindo o smoke test PySide6 offscreen.
+
+## Licenciamento do NeuralMap
+
+O código original do editor, modelo de grafo, runtime, handlers, validação, schemas e integração com pacotes integra o escopo proprietário do AILocal Universal. Isso não transfere ao projeto a titularidade de workflows criados por usuários, documentos referenciados, modelos, adaptadores ou ativos de terceiros. Cada grafo exportado e cada conteúdo referenciado deve respeitar a licença do respectivo criador ou fornecedor.
