@@ -331,6 +331,34 @@ class GraphRuntime:
                     continue
                 break
 
+            if pass_filter is not None:
+                # A retry pass executes only invalidated specialists and their
+                # dependants. Final merge/response nodes are executed once after
+                # that pass reaches approval or the iteration limit.
+                for node_id in order:
+                    node = enabled[node_id]
+                    if node.node_type not in {
+                        "merge.outputs", "output.response", "output.trace"
+                    }:
+                        continue
+                    self._check_cancel(cancellation, node_id)
+                    incoming = self._incoming(graph.edges, node_id)
+                    node_inputs = self._collect_inputs(
+                        incoming,
+                        outputs,
+                        outcomes,
+                        target_node=node_id,
+                        include_loop_edges=True,
+                    )
+                    if incoming and not node_inputs:
+                        continue
+                    final_output = await self._execute_node(node, node_inputs, context)
+                    self._validate_outputs(node, final_output)
+                    outputs[node_id] = final_output
+                    outcomes[node_id] = True
+                    self._emit(trace, node_id, "completed", {"type": node.node_type})
+                pass_filter = None
+
             final_nodes = [
                 node_id for node_id in order
                 if node_id in outputs and nodes[node_id].node_type == "output.response"
