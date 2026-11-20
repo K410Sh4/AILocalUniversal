@@ -17,11 +17,11 @@ from core.neuralinjector.resources import (
     detect_hardware,
 )
 from workflows.graph import (
+    NODE_SPECS,
     EdgeType,
     GraphEdge,
     GraphError,
     GraphNode,
-    NODE_SPECS,
     WorkflowGraph,
     topological_order,
     validate_graph,
@@ -130,7 +130,10 @@ class GraphRuntime:
                 raise GraphError("EMPTY_INPUT", "Digite uma solicitação antes de executar o mapa.")
             while True:
                 if cancellation.is_set():
-                    raise GraphError("EXECUTION_CANCELLED", "A execução do NeuralMap foi cancelada.")
+                    raise GraphError(
+                        "EXECUTION_CANCELLED",
+                        "A execução do NeuralMap foi cancelada.",
+                    )
                 if pass_filter is not None:
                     for invalidated_id in pass_filter:
                         outputs.pop(invalidated_id, None)
@@ -206,8 +209,12 @@ class GraphRuntime:
                             if not target_ids:
                                 raise GraphError(
                                     "LOOP_TARGETS_EMPTY",
-                                    "A revisão pediu nova tentativa, mas não há especialistas conectados.",
-                                    ("Conecte control.loop.repeat a uma porta feedback de especialista.",),
+                                    "A revisão pediu nova tentativa, mas não há "
+                                    "especialistas conectados.",
+                                    (
+                                        "Conecte control.loop.repeat a uma porta "
+                                        "feedback de especialista.",
+                                    ),
                                 )
                             feedback = {
                                 "message": str(decision.get("feedback", "")),
@@ -224,7 +231,12 @@ class GraphRuntime:
                             pass_filter = self._affected_nodes(
                                 graph,
                                 target_ids,
-                                stop_at={"control.loop", "merge.outputs", "output.response", "output.trace"},
+                                stop_at={
+                                    "control.loop",
+                                    "merge.outputs",
+                                    "output.response",
+                                    "output.trace",
+                                },
                             )
                             repeat_requested = True
                             self._emit(
@@ -400,7 +412,9 @@ class GraphRuntime:
                 {
                     **review_decision,
                     "iterations": review_runs,
-                    "convergence": "approved" if review_decision.get("approved") else "not_reviewed",
+                    "convergence": (
+                        "approved" if review_decision.get("approved") else "not_reviewed"
+                    ),
                 },
             )
             response["trace_id"] = trace_id
@@ -495,7 +509,8 @@ class GraphRuntime:
             return await handler(node, inputs, context)
         raise GraphError(
             "ENGINE_UNAVAILABLE",
-            f"Não há backend registrado para o nó '{node.label}' ({node.config.get('engine', 'n/a')}).",
+            f"Não há backend registrado para o nó '{node.label}' "
+            f"({node.config.get('engine', 'n/a')}).",
             ("Instale/configure um backend compatível ou marque o nó como opcional.",),
         )
 
@@ -592,7 +607,8 @@ class GraphRuntime:
         if unknown:
             raise GraphError(
                 "UNKNOWN_NODE_OUTPUT",
-                f"O nó '{node.label}' produziu portas não declaradas: {', '.join(sorted(unknown))}.",
+                f"O nó '{node.label}' produziu portas não declaradas: "
+                f"{', '.join(sorted(unknown))}.",
             )
 
     @staticmethod
@@ -642,8 +658,15 @@ class GraphRuntime:
                 "A revisão solicitou nós que não estão conectados ao loop: "
                 + ", ".join(sorted(unknown)),
             )
-        if any(target not in known or not known[target].node_type.startswith("specialist.") for target in targets):
-            raise GraphError("INVALID_RETRY_TARGET", "retry_targets pode apontar somente para especialistas.")
+        if any(
+            target not in known
+            or not known[target].node_type.startswith("specialist.")
+            for target in targets
+        ):
+            raise GraphError(
+                "INVALID_RETRY_TARGET",
+                "retry_targets pode apontar somente para especialistas.",
+            )
         return {
             "approved": decision["approved"],
             "feedback": str(decision.get("feedback", "")),
