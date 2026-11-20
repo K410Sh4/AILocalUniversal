@@ -164,6 +164,11 @@ class GraphRuntime:
                             {"ports": sorted(missing_inputs)},
                         )
                         continue
+                    if node.node_type == "output.trace":
+                        node_inputs["trace"] = {
+                            "trace_id": trace_id,
+                            "events": trace.to_list(),
+                        }
                     if node_id in pending_feedback:
                         node_inputs["feedback"] = pending_feedback[node_id]
 
@@ -467,7 +472,7 @@ class GraphRuntime:
         if node.node_type == "output.response":
             return {"response": inputs.get("result", {})}
         if node.node_type == "output.trace":
-            return {"trace": {"trace_id": context.trace_id}}
+            return {"trace": inputs.get("trace", {"trace_id": context.trace_id})}
 
         if context.dry_run and node.node_type.startswith("specialist."):
             # Dry-run is a hard no-I/O mode; registered handlers must not be invoked.
