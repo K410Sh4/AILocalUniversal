@@ -1,0 +1,694 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AILocal NeuralMap Pipeline Graph",
+  "description": "Declarative and non-executable workflow graph for NeuralMap v1.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "format",
+    "version",
+    "id",
+    "name",
+    "nodes",
+    "edges"
+  ],
+  "properties": {
+    "format": {
+      "const": "ailocal.pipeline-graph"
+    },
+    "version": {
+      "const": "1.0"
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9._-]{1,120}$"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 160
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 4000
+    },
+    "nodes": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 500,
+      "items": {
+        "$ref": "#/$defs/node"
+      }
+    },
+    "edges": {
+      "type": "array",
+      "maxItems": 2000,
+      "items": {
+        "$ref": "#/$defs/edge"
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": true
+    }
+  },
+  "$defs": {
+    "node": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "id",
+            "type",
+            "label",
+            "config"
+          ],
+          "properties": {
+            "id": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9._-]{1,120}$"
+            },
+            "type": {
+              "const": "input.text"
+            },
+            "label": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 160
+            },
+            "enabled": {
+              "type": "boolean"
+            },
+            "config": {
+              "$ref": "#/$defs/input_textConfig"
+            },
+            "ui": {
+              "$ref": "#/$defs/nodeUi"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "id",
+            "type",
+            "label",
+            "config"
+          ],
+          "properties": {
+            "id": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9._-]{1,120}$"
+            },
+            "type": {
+              "const": "input.attachment"
+            },
+            "label": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 160
+            },
+            "enabled": {
+              "type": "boolean"
+            },
+            "config": {
+              "$ref": "#/$defs/input_attachmentConfig"
+            },
+            "ui": {
+              "$ref": "#/$defs/nodeUi"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "id",
+            "type",
+            "label",
+            "config"
+          ],
+          "properties": {
+            "id": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9._-]{1,120}$"
+            },
+            "type": {
+              "const": "specialist.code"
+            },
+            "label": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 160
+            },
+            "enabled": {
+              "type": "boolean"
+            },
+            "config": {
+              "$ref": "#/$defs/specialistConfig"
+            },
+            "ui": {
+              "$ref": "#/$defs/nodeUi"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "id",
+            "type",
+            "label",
+            "config"
+          ],
+          "properties": {
+            "id": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9._-]{1,120}$"
+            },
+            "type": {
+              "const": "specialist.chat"
+            },
+            "label": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 160
+            },
+            "enabled": {
+              "type": "boolean"
+            },
+            "config": {
+              "$ref": "#/$defs/specialistConfig"
+            },
+            "ui": {
+              "$ref": "#/$defs/nodeUi"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "id",
+            "type",
+            "label",
+            "config"
+          ],
+          "properties": {
+            "id": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9._-]{1,120}$"
+            },
+            "type": {
+              "const": "specialist.image"
+            },
+            "label": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 160
+            },
+            "enabled": {
+              "type": "boolean"
+            },
+            "config": {
+              "$ref": "#/$defs/specialistConfig"
+            },
+            "ui": {
+              "$ref": "#/$defs/nodeUi"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "id",
+            "type",
+            "label",
+            "config"
+          ],
+          "properties": {
+            "id": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9._-]{1,120}$"
+            },
+            "type": {
+              "const": "specialist.review"
+            },
+            "label": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 160
+            },
+            "enabled": {
+              "type": "boolean"
+            },
+            "config": {
+              "$ref": "#/$defs/specialistConfig"
+            },
+            "ui": {
+              "$ref": "#/$defs/nodeUi"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "id",
+            "type",
+            "label",
+            "config"
+          ],
+          "properties": {
+            "id": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9._-]{1,120}$"
+            },
+            "type": {
+              "const": "control.loop"
+            },
+            "label": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 160
+            },
+            "enabled": {
+              "type": "boolean"
+            },
+            "config": {
+              "$ref": "#/$defs/control_loopConfig"
+            },
+            "ui": {
+              "$ref": "#/$defs/nodeUi"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "id",
+            "type",
+            "label",
+            "config"
+          ],
+          "properties": {
+            "id": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9._-]{1,120}$"
+            },
+            "type": {
+              "const": "filter.context"
+            },
+            "label": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 160
+            },
+            "enabled": {
+              "type": "boolean"
+            },
+            "config": {
+              "$ref": "#/$defs/filter_contextConfig"
+            },
+            "ui": {
+              "$ref": "#/$defs/nodeUi"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "id",
+            "type",
+            "label",
+            "config"
+          ],
+          "properties": {
+            "id": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9._-]{1,120}$"
+            },
+            "type": {
+              "const": "hardware.profile"
+            },
+            "label": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 160
+            },
+            "enabled": {
+              "type": "boolean"
+            },
+            "config": {
+              "$ref": "#/$defs/hardware_profileConfig"
+            },
+            "ui": {
+              "$ref": "#/$defs/nodeUi"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "id",
+            "type",
+            "label",
+            "config"
+          ],
+          "properties": {
+            "id": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9._-]{1,120}$"
+            },
+            "type": {
+              "const": "merge.outputs"
+            },
+            "label": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 160
+            },
+            "enabled": {
+              "type": "boolean"
+            },
+            "config": {
+              "$ref": "#/$defs/merge_outputsConfig"
+            },
+            "ui": {
+              "$ref": "#/$defs/nodeUi"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "id",
+            "type",
+            "label",
+            "config"
+          ],
+          "properties": {
+            "id": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9._-]{1,120}$"
+            },
+            "type": {
+              "const": "output.response"
+            },
+            "label": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 160
+            },
+            "enabled": {
+              "type": "boolean"
+            },
+            "config": {
+              "$ref": "#/$defs/output_responseConfig"
+            },
+            "ui": {
+              "$ref": "#/$defs/nodeUi"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "id",
+            "type",
+            "label",
+            "config"
+          ],
+          "properties": {
+            "id": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9._-]{1,120}$"
+            },
+            "type": {
+              "const": "output.trace"
+            },
+            "label": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 160
+            },
+            "enabled": {
+              "type": "boolean"
+            },
+            "config": {
+              "$ref": "#/$defs/output_traceConfig"
+            },
+            "ui": {
+              "$ref": "#/$defs/nodeUi"
+            }
+          }
+        }
+      ]
+    },
+    "nodeUi": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "position": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "x",
+            "y"
+          ],
+          "properties": {
+            "x": {
+              "type": "number"
+            },
+            "y": {
+              "type": "number"
+            }
+          }
+        },
+        "color": {
+          "type": "string",
+          "pattern": "^#[0-9A-Fa-f]{6}$"
+        }
+      }
+    },
+    "edge": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "source",
+        "source_port",
+        "target",
+        "target_port",
+        "edge_type"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9._-]{1,120}$"
+        },
+        "source": {
+          "type": "string"
+        },
+        "source_port": {
+          "type": "string",
+          "minLength": 1
+        },
+        "target": {
+          "type": "string"
+        },
+        "target_port": {
+          "type": "string",
+          "minLength": 1
+        },
+        "edge_type": {
+          "enum": [
+            "always",
+            "on_success",
+            "on_failure"
+          ]
+        }
+      }
+    },
+    "specialistConfig": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "engine",
+        "model_id",
+        "generation",
+        "use_resource_budget",
+        "optional"
+      ],
+      "properties": {
+        "engine": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "model_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "system_prompt": {
+          "type": "string",
+          "maxLength": 50000
+        },
+        "plugin_ref": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "generation": {
+          "type": "object",
+          "additionalProperties": {
+            "type": [
+              "string",
+              "number",
+              "integer",
+              "boolean",
+              "null"
+            ]
+          }
+        },
+        "use_resource_budget": {
+          "type": "boolean"
+        },
+        "optional": {
+          "type": "boolean"
+        }
+      }
+    },
+    "input_textConfig": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "required": {
+          "type": "boolean"
+        }
+      }
+    },
+    "input_attachmentConfig": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "required": {
+          "type": "boolean"
+        },
+        "max_size_mb": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2048
+        }
+      }
+    },
+    "control_loopConfig": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "max_iterations",
+        "review_node_id",
+        "default_retry_targets",
+        "stop_condition"
+      ],
+      "properties": {
+        "max_iterations": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 20
+        },
+        "review_node_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "default_retry_targets": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "stop_condition": {
+          "const": "approved"
+        }
+      }
+    },
+    "filter_contextConfig": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "max_characters": {
+          "type": "integer",
+          "minimum": 256,
+          "maximum": 1000000
+        },
+        "preserve_attachments": {
+          "type": "boolean"
+        }
+      }
+    },
+    "hardware_profileConfig": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "profile": {
+          "enum": [
+            "auto",
+            "ultra_light",
+            "minimal",
+            "balanced",
+            "performance",
+            "max_quality"
+          ]
+        },
+        "protection_mode": {
+          "enum": [
+            "permissive",
+            "adaptive",
+            "protected"
+          ]
+        }
+      }
+    },
+    "merge_outputsConfig": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "include_trace": {
+          "type": "boolean"
+        }
+      }
+    },
+    "output_responseConfig": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "format": {
+          "enum": [
+            "structured",
+            "markdown"
+          ]
+        }
+      }
+    },
+    "output_traceConfig": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        }
+      }
+    }
+  }
+}
