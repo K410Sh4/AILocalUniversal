@@ -7,9 +7,9 @@ import os
 import sqlite3
 import struct
 import threading
+from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Sequence
 
 import httpx
 
