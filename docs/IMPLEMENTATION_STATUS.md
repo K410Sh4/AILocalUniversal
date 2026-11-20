@@ -35,3 +35,4 @@ Este arquivo diferencia código existente de funcionalidades futuras.
 - As ferramentas determinísticas cobrem apenas operações e unidades explicitamente suportadas; solicitações fora desse conjunto seguem para o Ollama.
 - O pipeline cognitivo inicial executa localmente e de forma síncrona no fluxo de envio da interface; estágios pesados ou externos devem ser movidos para workers antes de ampliar o pipeline.
 - O Cognitive Inspector mantém apenas a última tarefa em memória durante a sessão; não existe persistência nem consulta de tarefas antigas.
+- O renderizador matemático implementa um subconjunto local de LaTeX; comandos e ambientes não suportados permanecem visíveis e não são adivinhados. Fórmulas em `\\[...\\]` e `$...$` usam blocos centralizados destacados.

@@ -51,12 +51,12 @@ def test_inline_latex_renders_integrals_fractions_and_powers() -> None:
     assert "$" not in rendered
 
 
-def test_display_latex_and_parenthesis_delimiters_are_supported() -> None:
+def test_inline_latex_and_parenthesis_delimiters_are_supported() -> None:
     rendered = markdown_to_html(
-        r"$$E = mc^2$$ and \(x_1 + \pi\)."
+        r"$E = mc^2$ and \(x_1 + \pi\)."
     )
 
-    assert 'class="math-display"' in rendered
+    assert 'class="math-inline"' in rendered
     assert "<sup>2</sup>" in rendered
     assert "<sub>1</sub>" in rendered
     assert "π" in rendered
@@ -67,3 +67,55 @@ def test_math_delimiters_inside_code_are_preserved_as_code() -> None:
 
     assert "$x^2$" in rendered
     assert "math-inline" not in rendered
+
+
+
+def test_latex_supports_physics_symbols_vectors_and_overbars() -> None:
+    rendered = markdown_to_html(
+        r"Fluxo: $\Phi_E = \oint_S \vec{E}\cdot d\vec{A}$; "
+        r"massa: $\bar{x} = \frac{1}{M}\int x\,dm$; densidade $\rho(x)$."
+    )
+
+    assert "Φ" in rendered
+    assert "∮" in rendered
+    assert "⃗" in rendered
+    assert 'class="math-overbar"' in rendered
+    assert "ρ(x)" in rendered
+    assert "·" in rendered
+
+
+def test_display_equation_is_centered_and_highlighted_as_own_block() -> None:
+    rendered = markdown_to_html(
+        "Equação importante:\n\n"
+        r"\[ \Phi_E = \oint_S \vec{E}\cdot d\vec{A} \]"
+        "\n\nTexto depois."
+    )
+
+    assert 'td align="center" bgcolor="#1b222b"' in rendered
+    assert 'class="math-display"' in rendered
+    assert "Φ" in rendered
+    assert "∮" in rendered
+    assert "Texto depois." in rendered
+
+
+def test_display_dollar_delimiter_uses_highlighted_block() -> None:
+    rendered = markdown_to_html(r"$$E = mc^2$$")
+
+    assert 'td align="center" bgcolor="#1b222b"' in rendered
+    assert "E = mc" in rendered
+    assert "<sup>2</sup>" in rendered
+
+
+def test_limited_recovery_for_common_malformed_commands() -> None:
+    rendered = markdown_to_html(r"$\limn \barx + \vecE$")
+
+    assert "lim" in rendered
+    assert "<sub>n</sub>" in rendered
+    assert 'class="math-overbar">x</span>' in rendered
+    assert "E⃗" in rendered
+
+
+def test_unknown_latex_command_remains_visible_instead_of_being_guessed() -> None:
+    rendered = markdown_to_html(r"$\unknownmacro{x}$")
+
+    assert r"\unknownmacro" in rendered

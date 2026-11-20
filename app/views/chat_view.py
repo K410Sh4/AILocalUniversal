@@ -33,18 +33,46 @@ _CODE_PATTERN = re.compile(
 )
 _TEX_SYMBOLS = {
     "alpha": "α", "beta": "β", "gamma": "γ", "delta": "δ",
-    "epsilon": "ε", "theta": "θ", "lambda": "λ", "mu": "μ",
-    "sigma": "σ", "omega": "ω", "Delta": "Δ", "Gamma": "Γ",
-    "Lambda": "Λ", "Omega": "Ω", "pi": "π", "infty": "∞",
-    "int": "∫", "iint": "∬", "oint": "∮", "sum": "∑", "prod": "∏",
-    "cdot": "·", "times": "×", "div": "÷", "pm": "±", "mp": "∓",
+    "epsilon": "ε", "varepsilon": "ϵ", "theta": "θ", "vartheta": "ϑ",
+    "lambda": "λ", "mu": "μ", "nu": "ν", "xi": "ξ", "Xi": "Ξ",
+    "pi": "π", "varpi": "ϖ", "rho": "ρ", "varrho": "ϱ",
+    "sigma": "σ", "varsigma": "ς", "tau": "τ", "upsilon": "υ",
+    "phi": "ϕ", "varphi": "φ", "Phi": "Φ", "chi": "χ", "psi": "ψ",
+    "Psi": "Ψ", "omega": "ω", "Omega": "Ω", "eta": "η", "kappa": "κ",
+    "zeta": "ζ", "Gamma": "Γ", "Delta": "Δ", "Lambda": "Λ",
+    "infty": "∞", "ell": "ℓ",
+    "int": "∫", "iint": "∬", "iiint": "∭", "oint": "∮",
+    "sum": "∑", "prod": "∏",
+    "cdot": "·", "cdots": "⋯", "ldots": "…", "vdots": "⋮", "ddots": "⋱",
+    "times": "×", "div": "÷", "pm": "±", "mp": "∓",
     "le": "≤", "leq": "≤", "ge": "≥", "geq": "≥", "neq": "≠",
-    "approx": "≈", "equiv": "≡", "to": "→", "rightarrow": "→",
-    "leftarrow": "←", "in": "∈", "notin": "∉", "subset": "⊂",
-    "supset": "⊃", "cup": "∪", "cap": "∩", "partial": "∂",
-    "nabla": "∇", "therefore": "∴", "degree": "°", "ell": "ℓ",
+    "approx": "≈", "equiv": "≡", "sim": "∼", "simeq": "≃",
+    "propto": "∝", "to": "→", "rightarrow": "→", "leftarrow": "←",
+    "leftrightarrow": "↔", "Rightarrow": "⇒", "Leftarrow": "⇐",
+    "Leftrightarrow": "⇔", "mapsto": "↦",
+    "in": "∈", "notin": "∉", "subset": "⊂", "subseteq": "⊆",
+    "supset": "⊃", "supseteq": "⊇", "cup": "∪", "cap": "∩",
+    "partial": "∂", "nabla": "∇", "therefore": "∴", "because": "∵",
+    "degree": "°", "perp": "⊥", "parallel": "∥",
+    "forall": "∀", "exists": "∃", "neg": "¬", "land": "∧", "lor": "∨",
+    "otimes": "⊗", "oplus": "⊕", "langle": "⟨", "rangle": "⟩",
+    "Vert": "‖", "mid": "∣",
 }
-_TEX_FORMAT_COMMANDS = {"text", "mathrm", "mathbf", "mathit", "operatorname"}
+_TEX_FORMAT_COMMANDS = {
+    "text", "textrm", "textit", "textbf", "mathrm", "mathbf",
+    "mathit", "mathsf", "mathtt", "operatorname",
+}
+_TEX_ACCENTS = {
+    "hat": "\u0302",
+    "tilde": "\u0303",
+    "dot": "\u0307",
+    "ddot": "\u0308",
+}
+_TEX_OPERATORS = {
+    "lim", "max", "min", "sup", "inf", "det", "log", "ln",
+    "sin", "cos", "tan", "cot", "sec", "csc", "exp",
+    "arg", "rank", "dim", "tr", "Pr",
+}
 
 
 def _read_tex_group(source: str, start: int) -> tuple[str, int]:
@@ -66,7 +94,7 @@ def _read_tex_group(source: str, start: int) -> tuple[str, int]:
 
 
 def _render_tex(source: str) -> str:
-    """Converte um subconjunto comum de LaTeX em HTML seguro e suportado pelo Qt."""
+    """Converte um subconjunto seguro de LaTeX para HTML aceito pelo QTextDocument."""
     output: list[str] = []
     index = 0
     while index < len(source):
@@ -88,6 +116,21 @@ def _render_tex(source: str) -> str:
             if not command:
                 output.append(" ")
                 index += 2
+                continue
+
+            # Recuperação conservadora de três erros frequentes do modelo.
+            # Não tenta adivinhar comandos desconhecidos em geral.
+            if command == "limn":
+                output.append('lim<sub>n</sub>')
+                index = end
+                continue
+            if command == "barx":
+                output.append('<span class="math-overbar">x</span>')
+                index = end
+                continue
+            if command == "vecE":
+                output.append('<span class="math-vector">E⃗</span>')
+                index = end
                 continue
 
             cursor = end
@@ -125,6 +168,48 @@ def _render_tex(source: str) -> str:
                     index = after
                 continue
 
+            if command in {"bar", "overline", "underline", "vec", "widehat", "widetilde"}:
+                argument, after = _read_tex_group(source, cursor)
+                if after == cursor:
+                    output.append(escape("\\" + command))
+                    index = end
+                    continue
+                rendered_argument = _render_tex(argument)
+                if command in {"bar", "overline"}:
+                    output.append(
+                        '<span class="math-overbar">' + rendered_argument + "</span>"
+                    )
+                elif command == "underline":
+                    output.append(
+                        '<span class="math-underline">' + rendered_argument + "</span>"
+                    )
+                elif command == "vec":
+                    output.append(
+                        '<span class="math-vector">' + rendered_argument + "⃗</span>"
+                    )
+                else:
+                    accent = "\u0302" if command == "widehat" else "\u0303"
+                    output.append(
+                        '<span class="math-accent">' + rendered_argument + accent + "</span>"
+                    )
+                index = after
+                continue
+
+            if command in _TEX_ACCENTS:
+                argument, after = _read_tex_group(source, cursor)
+                if after == cursor:
+                    output.append(escape("\\" + command))
+                    index = end
+                    continue
+                output.append(
+                    '<span class="math-accent">'
+                    + _render_tex(argument)
+                    + _TEX_ACCENTS[command]
+                    + "</span>"
+                )
+                index = after
+                continue
+
             if command in _TEX_FORMAT_COMMANDS:
                 argument, after = _read_tex_group(source, cursor)
                 if after == cursor:
@@ -137,10 +222,18 @@ def _render_tex(source: str) -> str:
                     index = after
                 continue
 
+            if command in _TEX_OPERATORS:
+                output.append(escape(command))
+                index = end
+                continue
+
             if command in {"left", "right", "displaystyle", "textstyle"}:
                 index = end
                 continue
-            if command in {"quad", "qquad", "enspace"}:
+            if command in {"big", "Big", "bigg", "Bigg", "bigl", "bigr", "Bigl", "Bigr"}:
+                index = end
+                continue
+            if command in {"quad", "qquad", "enspace", "thinspace"}:
                 output.append("&nbsp;&nbsp;" if command != "qquad" else "&nbsp;&nbsp;&nbsp;&nbsp;")
                 index = end
                 continue
@@ -169,10 +262,10 @@ def _render_tex(source: str) -> str:
     return "".join(output)
 
 
-def _replace_math(markdown_text: str) -> tuple[str, dict[str, str]]:
-    """Substitui fórmulas fora de trechos de código por marcadores opacos."""
+def _replace_math(markdown_text: str) -> tuple[str, dict[str, tuple[str, bool]]]:
+    """Protege fórmulas fora do código e marca as que devem ocupar um bloco."""
     code_ranges = [(match.start(), match.end()) for match in _CODE_PATTERN.finditer(markdown_text)]
-    replacements: dict[str, str] = {}
+    replacements: dict[str, tuple[str, bool]] = {}
     parts: list[str] = []
     cursor = 0
 
@@ -203,8 +296,7 @@ def _replace_math(markdown_text: str) -> tuple[str, dict[str, str]]:
         parts.append(markdown_text[cursor : match.start()])
         token = f"AILUMATHPLACEHOLDER{len(replacements):05d}X"
         expression = _render_tex(match.group(group).strip())
-        css_class = "math-display" if display_group else "math-inline"
-        replacements[token] = f'<span class="{css_class}">{expression}</span>'
+        replacements[token] = (expression, display_group is not None)
         parts.append(token)
         cursor = match.end()
 
@@ -212,8 +304,19 @@ def _replace_math(markdown_text: str) -> tuple[str, dict[str, str]]:
     return "".join(parts), replacements
 
 
+def _display_math_block(expression: str) -> str:
+    """Constrói um bloco destacado usando elementos HTML suportados pelo Qt."""
+    return (
+        '<table width="100%" border="0" cellspacing="0" cellpadding="0">'
+        '<tr><td align="center" bgcolor="#1b222b" style="padding:12px;">'
+        '<span class="math-display">'
+        + expression
+        + "</span></td></tr></table>"
+    )
+
+
 def markdown_to_html(markdown_text: str) -> str:
-    """Renderiza Markdown e um subconjunto seguro de notação matemática LaTeX."""
+    """Renderiza Markdown e notação LaTeX comum, destacando equações display."""
     prepared_markdown, math_replacements = _replace_math(markdown_text)
     document = QTextDocument()
     document.setIndentWidth(46.0)
@@ -239,8 +342,27 @@ def markdown_to_html(markdown_text: str) -> str:
         else:
             result = html[content_start + 1 : content_end]
 
-    for token, rendered_math in math_replacements.items():
-        result = result.replace(token, rendered_math)
+    for token, (expression, is_display) in math_replacements.items():
+        if not is_display:
+            result = result.replace(
+                token,
+                f'<span class="math-inline">{expression}</span>',
+            )
+            continue
+
+        block = _display_math_block(expression)
+        paragraph = re.compile(
+            rf"<p(?:\s+[^>]*)?>\s*{re.escape(token)}\s*</p>",
+            re.IGNORECASE,
+        )
+        result, count = paragraph.subn(block, result, count=1)
+        if count == 0:
+            # Se o delimitador display apareceu misturado ao texto de um parágrafo,
+            # preserva a fórmula, mas não injeta uma tabela dentro de outro bloco.
+            result = result.replace(
+                token,
+                f'<span class="math-inline">{expression}</span>',
+            )
     return result
 
 
@@ -268,9 +390,12 @@ def build_transcript_html(messages: list[dict[str, str]]) -> str:
         "blockquote{color:#cbd5e1;}"
         ".math-inline{font-family:'Noto Serif',serif;font-size:1.08em;color:#f1f5f9;"
         "white-space:nowrap;}"
-        ".math-display{display:block;text-align:center;padding:5px 12px;"
-        "margin:4px 2px;background-color:#1b222b;border-radius:5px;"
-        "font-family:'Noto Serif',serif;font-size:1.12em;color:#f1f5f9;}"
+        ".math-display{font-family:'Noto Serif',serif;font-size:1.16em;"
+        "font-weight:500;color:#f1f5f9;}"
+        ".math-overbar{text-decoration:overline;}"
+        ".math-underline{text-decoration:underline;}"
+        ".math-vector{font-style:italic;}"
+        ".math-accent{font-style:italic;}"
         ".math-frac{white-space:nowrap;}"
         ".math-frac sup,.math-frac sub{font-size:.78em;}"
         ".math-frac-slash{padding:0 1px;}"

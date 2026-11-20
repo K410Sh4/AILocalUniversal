@@ -394,6 +394,13 @@ class MainWindow(QMainWindow):
             if self.config.system_prompt.strip()
             else []
         )
+        system_parts.append(
+            "Formatação matemática: use \\( ... \\) para expressões dentro de frases e "
+            "\\[ ... \\] em linha própria para equações importantes. Em comandos LaTeX "
+            "que recebem argumentos, use chaves explícitas, por exemplo \\rho(x), "
+            "\\bar{x}, \\vec{E}, \\lim_{n\\to\\infty} e \\frac{a}{b}. "
+            "Não junte o nome do comando à variável seguinte e não omita delimitadores."
+        )
         subtask_count = len(cognitive_task.subtask_plan)
         if subtask_count > 1:
             system_parts.append(
