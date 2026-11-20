@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from knowledge.models import CitationRecord, ContextBundle, SearchHit
 from core.cognitive_task import Evidence
+from knowledge.models import CitationRecord, ContextBundle, SearchHit
 
 
 class ContextComposer:
