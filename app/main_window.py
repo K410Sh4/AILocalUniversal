@@ -241,27 +241,35 @@ class MainWindow(QMainWindow):
 
     def _show_resource_protection(self, report) -> None:
         """Explain a resource refusal and provide actionable next steps."""
+        from PySide6.QtWidgets import QMessageBox
+
         reasons = "\\n".join(f"• {reason}" for reason in report.reasons)
-        alternatives = "\\n".join(f"• {item}" for item in report.recommendations)
+        alternatives = "\\n".join(
+            f"• {item}" for item in report.recommendations
+        )
         details = "\\n\\n".join(
             part for part in (reasons, alternatives) if part
         )
-        QMessageBox.warning(
-            self,
-            "Proteção de hardware",
-            report.user_message or "A solicitação foi bloqueada pela política de recursos.",
-            QMessageBox.StandardButton.Ok,
+
+        dialog = QMessageBox(self)
+        dialog.setIcon(QMessageBox.Icon.Warning)
+        dialog.setWindowTitle("Proteção de hardware")
+        dialog.setText(
+            report.user_message
+            or "A solicitação foi bloqueada pela política de recursos."
+        )
+        dialog.setInformativeText(
+            "Nenhuma mensagem foi enviada ao Ollama. Consulte os detalhes "
+            "para entender o bloqueio e as alternativas."
         )
         if details:
-            # Keep the refusal readable; the detailed reasons are also recorded in status.
-            self.statusBar().showMessage(
-                "Proteção de hardware: " + "; ".join(report.reasons), 15000
-            )
-            QMessageBox.information(
-                self,
-                "Motivos e alternativas",
-                details,
-            )
+            dialog.setDetailedText(details)
+        dialog.setStandardButtons(QMessageBox.StandardButton.Ok)
+        dialog.exec()
+        self.chat_view.set_status("Geração bloqueada pela proteção de hardware")
+        self.statusBar().showMessage(
+            "Geração bloqueada: " + "; ".join(report.reasons), 15000
+        )
 
     def send_message(self, text: str) -> None:
         if self._chat_worker is not None and self._chat_worker.isRunning():
