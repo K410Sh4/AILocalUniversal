@@ -476,12 +476,21 @@ def _validate_node_config(node: GraphNode) -> None:
                 "preserve_attachments precisa ser booleano.",
             )
     if node.node_type == "hardware.profile":
-        if config.get("profile", "auto") not in {
-            "auto", "ultra_light", "minimal", "balanced", "performance", "max_quality"
+        profile = config.get("profile", "auto")
+        if not isinstance(profile, str) or profile not in {
+            "auto",
+            "ultra_light",
+            "minimal",
+            "balanced",
+            "performance",
+            "max_quality",
         }:
             raise GraphError("INVALID_HARDWARE_PROFILE", "Perfil de hardware desconhecido.")
-        if config.get("protection_mode", "protected") not in {
-            "permissive", "adaptive", "protected"
+        protection_mode = config.get("protection_mode", "protected")
+        if not isinstance(protection_mode, str) or protection_mode not in {
+            "permissive",
+            "adaptive",
+            "protected",
         }:
             raise GraphError("INVALID_PROTECTION_MODE", "Modo de proteção desconhecido.")
 
