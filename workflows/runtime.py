@@ -100,6 +100,34 @@ class GraphRuntime:
     ) -> GraphRunResult:
         trace_id = str(uuid4())
         trace = ExecutionTrace()
+        self._emit(trace, "graph", "started", {"dry_run": dry_run})
+        try:
+            validate_graph(graph)
+            order = topological_order(graph)
+            if not input_text.strip():
+                raise GraphError(
+                    "EMPTY_INPUT",
+                    "Digite uma solicitação antes de executar o mapa.",
+                )
+        except GraphError as exc:
+            self._emit(
+                trace,
+                "graph",
+                "failed",
+                {"reason_code": exc.reason_code, "message": exc.message},
+            )
+            return GraphRunResult(
+                trace_id=trace_id,
+                success=False,
+                output=None,
+                trace=trace.to_list(),
+                error={
+                    "reason_code": exc.reason_code,
+                    "message": exc.message,
+                    "alternatives": " | ".join(exc.alternatives),
+                },
+            )
+
         cancellation = cancel_event or asyncio.Event()
         context = NodeContext(
             trace_id=trace_id,
@@ -113,7 +141,6 @@ class GraphRuntime:
         outcomes: dict[str, bool] = {}
         nodes = {node.node_id: node for node in graph.nodes}
         enabled = {node_id: node for node_id, node in nodes.items() if node.enabled}
-        order = topological_order(graph)
         loop_count = 0
         best_bundle: dict[str, dict[str, Any]] = {}
         best_score = float("-inf")
@@ -123,11 +150,7 @@ class GraphRuntime:
         pending_feedback: dict[str, Any] = {}
         pass_filter: set[str] | None = None
 
-        self._emit(trace, "graph", "started", {"dry_run": dry_run})
         try:
-            validate_graph(graph)
-            if not input_text.strip():
-                raise GraphError("EMPTY_INPUT", "Digite uma solicitação antes de executar o mapa.")
             while True:
                 if cancellation.is_set():
                     raise GraphError(
