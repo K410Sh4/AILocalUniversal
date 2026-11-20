@@ -14,7 +14,6 @@ from typing import Any
 
 from workflows.graph import GraphError, WorkflowGraph
 
-
 GRAPH_PATH = "graph/pipeline.graph.json"
 MANIFEST_PATH = "manifest.json"
 MAX_ARCHIVE_ENTRIES = 20_000
