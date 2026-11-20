@@ -108,7 +108,7 @@ As fases são entregas progressivas. Uma funcionalidade só é considerada concl
 - [x] Reindexação explícita após troca de modelo de embeddings.
 - [x] Workers Qt para não bloquear a thread da interface.
 - [x] Fallback lexical e aviso explícito quando a consulta vetorial falhar.
-- [x] Testes automatizados do serviço, configuração e componentes básicos da UI; CI atual com 142 testes aprovados.
+- [x] Testes automatizados do serviço, configuração, métricas do benchmark e componentes básicos da UI; CI anterior à integração Chat com 142 testes aprovados.
 - [x] Validar visualmente a aba Conhecimento no Arch Linux.
 - [x] Ingerir e buscar um documento de teste no ambiente do usuário; recuperação lexical/vetorial e reindexação real validadas com EmbeddingGemma e Qwen3 Embedding.
 
