@@ -650,6 +650,26 @@ def build_compatibility_report(
             "Tente novamente após a memória disponível superar 1,5 GiB.",
             "Use um modelo menor/quantizado já instalado ou aumente a RAM física.",
         )
+    elif activation_allowed:
+        user_message = (
+            "Há incompatibilidades registradas, mas o modo permissivo autorizou "
+            "a tentativa. O backend ainda pode recusar a carga ou falhar por falta "
+            "de recursos; revise os detalhes antes de continuar usando este modo."
+        )
+        recommendations = tuple(fallbacks)
+    elif mode is ProtectionMode.PROTECTED and preferred_profile:
+        user_message = (
+            f"O perfil '{preferred_profile}' foi recusado porque não atende aos "
+            f"recursos medidos. A alternativa elegível mais próxima é "
+            f"'{profile.profile_id}', mas ela não foi aplicada porque o modo protegido "
+            "respeita a escolha explícita do usuário."
+        )
+        recommendations = (
+            f"Selecione o perfil '{profile.profile_id}' nas Configurações.",
+            "Escolha o perfil automático para usar o melhor perfil elegível.",
+            "Mude para o modo adaptativo para permitir fallback automático.",
+            *tuple(fallbacks),
+        )
     else:
         user_message = (
             "A configuração solicitada não atende aos requisitos de hardware "
