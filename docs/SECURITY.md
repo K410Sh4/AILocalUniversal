@@ -68,3 +68,14 @@ Considerar peers desconhecidos, dispositivos comprometidos, prompt injection, ar
 - A troca de modelo de embeddings não reindexa silenciosamente. A interface exige a ação explícita Reindexar vetores.
 - A prévia de busca na aba Conhecimento não insere resultados no histórico da conversa, não os injeta no system prompt e não ativa RAG automaticamente.
 - A UI bloqueia o encerramento enquanto um worker documental está ocupado, para evitar fechar a aplicação durante uma gravação do índice.
+
+
+ 
+## Integração RAG ao Chat
+
+- O uso da base local no Chat exige ativação explícita e é desativado por padrão.
+- A recuperação roda em worker Qt. Falhas de recuperação não elevam conteúdo parcial a instrução confiável e não bloqueiam o Chat; o fallback é responder sem contexto RAG, com evento de trace.
+- Trechos são enviados como conteúdo de mensagem separado, delimitado como dados não confiáveis. A instrução do prompt é uma mitigação contra prompt injection, não uma fronteira de segurança absoluta.
+- O modelo é instruído a citar somente IDs fornecidos. O validador rejeita IDs desconhecidos e confere a integridade da relação citação/chunk/hash/offset.
+- A lista de fontes exibida na resposta informa as fontes recuperadas, não prova que todas foram usadas para sustentar cada afirmação.
+- A validação não comprova verdade, entailment, ausência de omissão ou ausência de contradição. Saídas livres de LLM continuam exigindo revisão apropriada.
