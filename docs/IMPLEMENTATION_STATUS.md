@@ -19,7 +19,7 @@ Este documento diferencia código integrado, cobertura automatizada e validaçã
 | Cognitive Task Executor | Execução sequencial em worker, dependências, ferramenta local, subtarefas LLM e síntese | Sem paralelismo ou roteamento multi-modelo |
 | Validation Layer | Estrutura, dependências, replay determinístico, completude e relatório | Sem verificação factual geral de texto LLM |
 | Cognitive Inspector | Mostra resultados, estados, trace e relatório de validação | Mostra apenas a última tarefa da sessão |
-| RAG / Context Composer | Base lexical/vetorial, KnowledgeRuntime e aba Conhecimento implementados na `feature/rag-v1`; smoke test real no Arch aprovado com Ollama `embeddinggemma` (768 dimensões); CI atual: 142 testes | Sem chamada do KnowledgeRuntime pelo MainWindow/CognitiveTaskExecutor, citações no Chat, reranker concreto, UI Chat-RAG, avaliação em corpus real, OCR ou verificação factual/entailment |
+| RAG / Context Composer | Base lexical/vetorial, aba Conhecimento e integração opt-in ao Chat implementadas na `feature/rag-v1`; EmbeddingGemma e Qwen3 Embedding validados no Arch; CI anterior: 142 testes | Reranker concreto, benchmark representativo de corpus, OCR, orçamento por tokenizer e verificação factual/entailment permanecem fora desta entrega |
 | Adaptive Resource Manager | Planejado | Fase 4 |
 | Roteamento especialista | Planejado | Fase 5 |
 | Swarm P2P | Planejado | Fase 6 |
@@ -120,3 +120,17 @@ Implementado na branch `feature/rag-v1`:
 - Diretórios privados (0700) e arquivos SQLite privados (0600) no Linux.
 
 Validação automatizada atual: Ruff aprovado e 142 testes Pytest aprovados no CI. A validação visual e a execução de ingestão/remoção de um documento de teste no Arch ainda estão pendentes. O Chat não consome esses documentos automaticamente.
+
+
+ 
+## Integração RAG opt-in ao Chat — implementação pendente de CI final
+
+- Controle explícito "Usar conhecimento local" no Chat, persistido em configuração e desativado por padrão.
+- Recuperação executada em worker Qt independente; falhas de recuperação não bloqueiam o Chat e seguem com fallback sem contexto documental.
+- Contexto documental delimitado como dado não confiável e inserido antes da mensagem original do usuário.
+- Evidências anexadas à CognitiveTask sem duplicar chunk_id; plano e trace registram a recuperação.
+- A resposta recebe a lista de fontes recuperadas. Citações do modelo são verificadas quanto a identificadores conhecidos e integridade de proveniência.
+- Cognitive Inspector exibe documento, localizador e origem lexical/vetorial das evidências.
+- A validação de citações é estrutural: não certifica que as afirmações da resposta sejam semanticamente implicadas pelas fontes.
+
+A integração aguarda CI e validação operacional no Arch. Não altera a main.
