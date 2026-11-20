@@ -10,7 +10,6 @@ from enum import StrEnum
 from pathlib import Path
 from typing import Any
 
-
 GRAPH_FORMAT = "ailocal.pipeline-graph"
 GRAPH_VERSION = "1.0"
 
