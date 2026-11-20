@@ -62,14 +62,11 @@ class QuantizationPolicy:
             raise ValueError("quantization candidate lists cannot be empty")
 
     def candidates_for(self, available_ram_mb: int) -> tuple[str, ...]:
-        primary = (
-            self.low_memory_preferred
-            if available_ram_mb < self.low_memory_threshold_mb
-            else self.preferred
-        )
+        low_memory = available_ram_mb < self.low_memory_threshold_mb
+        primary = self.low_memory_preferred if low_memory else self.preferred
         if not self.allow_lower_precision_fallback:
             return tuple(dict.fromkeys(primary))
-        fallback = self.preferred if primary is self.low_memory_preferred else self.low_memory_preferred
+        fallback = self.preferred if low_memory else self.low_memory_preferred
         return tuple(dict.fromkeys((*primary, *fallback)))
 
 
@@ -91,6 +88,8 @@ class HardwareSnapshot:
             raise ValueError("invalid RAM measurements")
         if self.cpu_cores < 1:
             raise ValueError("cpu_cores must be positive")
+        if not self.execution_backends:
+            raise ValueError("execution_backends cannot be empty")
         if self.vram_total_mb is not None and self.vram_total_mb < 0:
             raise ValueError("vram_total_mb cannot be negative")
         if self.vram_available_mb is not None:
@@ -293,7 +292,13 @@ def detect_gpu_devices(*, timeout_seconds: float = 1.0) -> tuple[GPUDevice, ...]
             if total_bytes is not None and used_bytes is not None
             else None
         )
-        memory_kind = "dedicated" if total_mb is not None else "shared"
+        memory_kind = (
+            "dedicated"
+            if total_mb is not None
+            else "shared"
+            if vendor == "intel"
+            else "unknown"
+        )
         device_label = f"{vendor.upper()} GPU"
         if device_id is not None:
             device_label += f" ({device_id:#06x})"
