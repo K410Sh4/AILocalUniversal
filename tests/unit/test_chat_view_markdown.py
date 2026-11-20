@@ -96,7 +96,7 @@ def test_display_equation_is_centered_and_highlighted_as_own_block() -> None:
     assert 'padding:24px 18px' in rendered
     assert 'border:1px solid #477da8' in rendered
     assert "Φ" in rendered
-    assert "font-size:3em" in rendered
+    assert "font-size:20pt" in rendered
     assert "font-weight:600" in rendered
     assert "line-height:1.35" in rendered
     assert "∮" in rendered
