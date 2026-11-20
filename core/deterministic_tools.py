@@ -143,7 +143,10 @@ class CalculatorTool:
                 value=value,
                 metadata={"expression": expression},
             )
-        except (SyntaxError, TypeError, ValueError, ZeroDivisionError, OverflowError) as exc:
+        except SyntaxError:
+            # Texto composto ou expressão incompleta não é reivindicado pela calculadora.
+            return None
+        except (TypeError, ValueError, ZeroDivisionError, OverflowError) as exc:
             if isinstance(exc, _ExpressionRejected):
                 return None
             message = "Não foi possível calcular a expressão com segurança."

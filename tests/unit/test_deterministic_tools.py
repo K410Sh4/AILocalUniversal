@@ -57,3 +57,10 @@ def test_unit_converter_rejects_below_absolute_zero() -> None:
     assert result is not None
     assert result.success is False
     assert result.error == "below_absolute_zero"
+
+
+
+def test_calculator_does_not_claim_compound_natural_language() -> None:
+    result = CalculatorTool().execute("Calcule 2 + 2 e depois explique o resultado.")
+
+    assert result is None
