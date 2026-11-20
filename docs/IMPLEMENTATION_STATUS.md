@@ -20,6 +20,7 @@ Este documento diferencia código integrado, cobertura automatizada e validaçã
 | Validation Layer | Estrutura, dependências, replay determinístico, completude e relatório | Sem verificação factual geral de texto LLM |
 | Cognitive Inspector | Mostra resultados, estados, trace e relatório de validação | Mostra apenas a última tarefa da sessão |
 | RAG / Context Composer | Base lexical/vetorial, aba Conhecimento e integração opt-in ao Chat implementadas na `feature/rag-v1`; EmbeddingGemma e Qwen3 Embedding validados no Arch; CI atual: Ruff + 155 testes Pytest (Python 3.11) | Reranker concreto, benchmark representativo de corpus, OCR, orçamento por tokenizer e verificação factual/entailment permanecem fora desta entrega |
+| NeuralModel Hub | Registro de modelos descobertos pelo Ollama, fichas e artefatos separados, perfil de hardware Linux, compatibilidade conservadora e interface inicial na branch `feature/neural-model-hub-v1` | Fontes externas curadas, licenças verificadas por versão, probes adicionais, requisitos medidos por runtime/contexto e Adaptive Model Selector ainda pendentes; aceitação visual no Arch pendente |
 | Adaptive Resource Manager | Planejado | Fase 4 |
 | Roteamento especialista | Planejado | Fase 5 |
 | Swarm P2P | Planejado | Fase 6 |
