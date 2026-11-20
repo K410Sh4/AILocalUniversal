@@ -159,7 +159,7 @@ O helper `save_graph_to_package()`:
 5. Atualiza `components.pipelines` e adiciona `graph/pipeline.graph.json`.
 6. Recalcula checksums e grava pacote temporário, substituindo o original atomicamente.
 
-Pacotes com assinatura Ed25519 são recusados para gravação porque modificar o manifesto/conteúdo invalidaria a assinatura; o v1 ainda não oferece assinatura com uma chave de autoria. Nenhum script arbitrário é executado ao abrir, validar ou salvar um mapa.
+Pacotes que declaram assinatura Ed25519 são recusados para leitura/edição nesta versão porque ainda não existe verificação de assinatura com chave confiável. O v1 não oferece assinatura com uma chave de autoria; use um pacote sem assinatura até essa capacidade existir. Nenhum script arbitrário é executado ao abrir, validar ou salvar um mapa.
 
 ## 10. Segurança
 
