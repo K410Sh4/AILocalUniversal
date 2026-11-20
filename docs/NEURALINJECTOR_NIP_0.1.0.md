@@ -338,7 +338,7 @@ O adaptador `engines/ollama_engine.py` implementa `prepare_resource_aware_reques
 - `options.num_ctx` recebe o contexto do orçamento.
 - `options.num_thread` recebe o limite de threads CPU.
 
-Limites menores previamente definidos pelo usuário são preservados. A aplicação usa essa ponte no fluxo real de envio de chat e bloqueia antes do envio quando a política recusa.
+Limites menores previamente definidos pelo usuário são preservados. A aplicação usa essa ponte no fluxo real de envio de chat e bloqueia antes do envio quando a política recusa. Os tipos oficiais do Ollama classificam `num_ctx` e `num_thread` como opções do runner que precisam ser definidas no carregamento do modelo ([API types.go](https://github.com/ollama/ollama/blob/main/api/types.go)). O AILocal envia essas opções, mas ainda não força reload de um modelo residente nem comprova a aplicação efetiva sem um teste com serviço real.
 
 O adaptador também consulta `GET /api/ps` por meio de `list_running_models()`, lendo tamanho residente, VRAM reportada, contexto e quantização quando disponíveis.
 
@@ -348,7 +348,7 @@ A integração não força posicionamento CPU/GPU, não configura paralelismo gl
 
 `engines/llama_cpp_options.py` traduz orçamento para argumentos do construtor llama-cpp-python: `context_tokens` → `n_ctx`, `cpu_threads` → `n_threads`. `n_gpu_layers` é omitido, a menos que o chamador forneça uma contagem já validada pelo backend. A função `create_llama_cpp_runtime()` valida o caminho/extensão GGUF, importa `llama_cpp.Llama` sob demanda e passa as opções orçamentárias ao construtor.
 
-A fábrica aplica de fato contexto e threads ao criar a instância e é coberta por testes com construtor simulado. Ainda não constitui um `EngineAdapter` llama.cpp completo nem está conectada à interface. Quantização continua definida pelo arquivo GGUF selecionado.
+A fábrica passa contexto e threads ao construtor e é coberta por testes com construtor simulado. A API do llama-cpp-python documenta esses parâmetros no construtor de `Llama` ([referência](https://llama-cpp-python.readthedocs.io/en/latest/api-reference/)). Ainda não constitui um `EngineAdapter` llama.cpp completo nem está conectada à interface. Quantização continua definida pelo arquivo GGUF selecionado.
 
 ### 6A.7 Validação e limitações
 
