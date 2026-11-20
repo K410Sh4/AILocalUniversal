@@ -1,21 +1,31 @@
 # Estado da implementação
 
-Este arquivo diferencia contratos e scaffolding de funcionalidades completas.
+Este arquivo diferencia código existente de funcionalidades futuras.
 
-| Área | Estado nesta base |
+| Área | Estado |
 |---|---|
-| README e documentação de arquitetura | Inicializados |
-| Aplicativo PySide6 | Janela mínima de fundação |
-| CognitiveTask | Implementado como contrato/serialização inicial |
+| README e documentação de arquitetura | Inicializados e atualizados para a Fase 1 |
+| Interface PySide6 | Chat, inventário de modelos, preferências e configurações implementados |
+| CognitiveTask | Contrato e serialização inicial implementados |
 | ExecutionTrace | Registro local básico implementado |
-| Orchestrator | Execução sequencial de estágios assíncronos implementada |
-| Capability Vectorizer | Taxonomia e contrato de vetor; classificação ainda não implementada |
-| Engine Adapter | Interface abstrata e registry; backend ainda não implementado |
-| Integração Ollama | Planejada para Fase 1 |
-| Ferramentas determinísticas | Planejadas para Fase 2 |
+| Orchestrator | Pipeline sequencial assíncrono implementado |
+| Capability Vectorizer | Taxonomia e validação do vetor; classificação semântica pendente |
+| Engine Adapter | Contrato e registry implementados |
+| Ollama | Health check, listagem de modelos, chat NDJSON streaming e tratamento de erros implementados |
+| Seleção de modelos | Manual e automático determinístico implementados |
+| Histórico | Persistência JSON local, escrita atômica e permissões privadas implementados |
+| Configurações | Persistência JSON local e validação básica implementadas |
+| Workers | Operações HTTP fora da thread da interface e cancelamento cooperativo implementados |
+| Testes | Testes unitários para protocolo simulado, seleção e persistência adicionados |
 | RAG | Planejado para Fase 3 |
 | Resource Manager | Planejado para Fase 4 |
 | Swarm P2P | Planejado para Fase 5 |
 | BitNet e RPC | Laboratório futuro |
 
-Este estado deve ser atualizado junto com código e testes. Não marcar uma capacidade como pronta apenas por existir documentação ou diretório.
+## Limitações conhecidas
+
+- O modo automático desta fase escolhe o modelo preferido se estiver disponível; caso contrário, escolhe o nome em ordem estável. Não faz classificação semântica.
+- O histórico local usa JSON; banco de dados e migrações serão avaliados conforme escala.
+- O adaptador Ollama foi implementado com transporte HTTP simulado nos testes, mas precisa de teste de integração com Ollama real.
+- A interface foi construída, mas precisa ser validada em sessão gráfica Linux/Qt.
+- Os testes foram escritos; a execução da suíte depende de ambiente com as dependências instaladas.

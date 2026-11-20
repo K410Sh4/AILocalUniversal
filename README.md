@@ -4,146 +4,150 @@
 
 O AILocal Universal coordena modelos de linguagem, ferramentas determinísticas, conhecimento local e recursos computacionais. Seu princípio central é usar o mecanismo mais adequado para cada parte da tarefa — não acionar um LLM para tudo.
 
-**Estado:** fundação inicial; componentes estão sendo implementados por fases.  
+**Estado:** Fase 1 em implementação.  
 **Plataforma prioritária:** Linux / Arch Linux.  
 **Interface:** Python + PySide6.  
-**Primeiro backend planejado:** Ollama.
+**Backend inicial:** Ollama.
 
-## Visão
+## Funcionalidades da Fase 1
 
-O sistema recebe uma solicitação, identifica as capacidades necessárias, escolhe ferramentas e motores compatíveis, recupera conhecimento quando pertinente, acompanha a execução e valida resultados. O processamento será local por padrão. A cooperação entre computadores autorizados virá em uma etapa posterior.
+- Interface desktop PySide6 com abas Chat e Modelos.
+- Consulta de disponibilidade do servidor Ollama.
+- Inventário de modelos instalados.
+- Chat via API /api/chat com streaming NDJSON.
+- Modo manual e modo automático de seleção.
+- Modelo preferido para o modo automático.
+- Histórico de conversas em JSON local.
+- Configurações persistentes de URL, keep-alive e system prompt.
+- Cancelamento de geração por worker em thread separada.
+- Tratamento de indisponibilidade, timeouts e erros do protocolo.
 
-## Objetivos
+O modo automático inicial escolhe o modelo preferido quando disponível ou, na ausência dele, o primeiro nome em ordem estável. Roteamento semântico por capacidades será implementado na Fase 2.
 
-- Orquestração cognitiva e decomposição de tarefas.
-- Independência de backend de inferência.
-- Uso consciente de RAM, VRAM, CPU, GPU e latência.
-- Ferramentas determinísticas antes de LLM quando apropriado.
-- RAG com proveniência e evidências rastreáveis.
-- Execução adaptativa e, futuramente, distribuição segura entre nós.
-- Traces, métricas e benchmarks reproduzíveis.
+## Arquitetura
 
-## Pipeline conceitual
-
-```mermaid
+~~~mermaid
 flowchart TD
- A[Entrada] --> B[Input Processing]
- B --> C[Semantic Analysis]
- C --> D{Determinístico resolve?}
- D -->|Sim| E[Deterministic Tools]
- D -->|Não| F[Knowledge Retrieval]
- E --> J[Validation]
- F --> G[Context Composer]
- G --> H[Cognitive Planner]
- H --> I[Adaptive Execution Engine]
- I --> J
- J --> K[Synthesis]
- K --> L[Resposta + Trace]
- R[Resource Manager] -. recursos e filas .-> I
- S[Swarm Manager] -. peers autorizados .-> I
-```
+ A[Entrada do usuário] --> B[ChatView]
+ B --> C[MainWindow]
+ C --> D[Seleção de modelo]
+ D --> E[OllamaChatWorker]
+ E --> F[OllamaEngine]
+ F --> G[Ollama API]
+ G --> H[Tokens NDJSON]
+ H --> E
+ E --> B
+ C --> I[ConversationStore]
+ C --> J[ConfigurationStore]
+ C --> K[ModelsView]
+ K --> L[OllamaStatusWorker]
+ L --> F
+~~~
 
-Tarefas simples podem seguir caminhos curtos. O pipeline não obriga cada solicitação a atravessar todas as etapas.
-
-## Componentes
-
-| Componente | Responsabilidade |
-|---|---|
-| CognitiveTask | Contrato versionado entre camadas |
-| Capability Vectorizer | Representar as capacidades requeridas |
-| Orchestrator | Coordenar etapas e dependências |
-| Deterministic Tools | Cálculos, parsers, consultas e validações |
-| Knowledge / RAG | Ingestão, indexação e recuperação de evidências |
-| Context Composer | Montar contexto sem perder proveniência |
-| Adaptive Execution Engine | Selecionar ferramentas e motores |
-| Resource Manager | Observar recursos e controlar concorrência |
-| Swarm Manager | Coordenar tarefas entre nós autorizados |
-| Validation | Verificar resultados e restrições |
-| Execution Trace | Registrar decisões, etapas e métricas |
-
-### Capability Vectorizer
-
-Taxonomia inicial: conversa geral, programação, matemática/lógica, ciências/conhecimento, RAG/memória, visão, escrita/criatividade, pesquisa externa, ferramentas, planejamento, verificação e interdisciplinaridade. Dificuldade, risco, incerteza e urgência serão avaliados separadamente. Scores não serão tratados como probabilidades calibradas sem validação.
-
-## Execução e modelos
-
-O núcleo terá um contrato comum de Engine Adapter. Ollama é o primeiro backend planejado; llama.cpp, BitNet e Remote Engine são extensões futuras. O modo manual respeitará o modelo escolhido; o automático permitirá seleção pelo Orchestrator.
-
-A estimativa de execução considerará fila, carregamento, transferência e computação. O orçamento de memória deverá considerar pesos, cache KV, contexto, buffers e sobrecarga do runtime. SSD/swap não será tratado como extensão prática de RAM/VRAM para inferência interativa.
-
-## Conhecimento e RAG
-
-Document loaders, parsers, chunking, embeddings, busca híbrida, reranking e composição de contexto. Evidências preservarão origem, trecho, página/localização, metadados e hash. Negações, números, unidades, condições e exceções deverão ser preservados.
-
-## Swarm P2P
-
-Separação em Control Plane (descoberta e telemetria), Data Plane (tarefas, resultados e arquivos com autenticação/criptografia) e Execution Plane (despacho e Map-Reduce). O primeiro caso de uso será distribuir tarefas independentes e sincronizar conhecimento.
-
-Descobrir um peer não concede autorização. RPC e inferência distribuída por camadas serão experimentais: rede não equivale a memória compartilhada, e latência pode superar o benefício.
+A arquitetura cognitiva-alvo inclui Input Processing, Semantic Analysis, processamento determinístico, RAG, Context Composer, Planner, Adaptive Execution, Validation e Synthesis. Esses componentes serão implementados nas fases subsequentes; sua descrição não significa que estejam todos ativos.
 
 ## Estrutura
 
-```text
-app/          Interface PySide6
-core/         CognitiveTask, Orchestrator e contratos
-pipeline/     Etapas cognitivas
-engines/      Adaptadores de inferência
-resources/    Monitoramento e gerenciamento de recursos
-knowledge/    Ingestão, indexação e RAG
-swarm/        Nós e execução distribuída
-storage/      Configurações e persistência
-docs/         Arquitetura, roadmap, segurança e contratos
-tests/        Testes unitários, integração e rede
-scripts/      Diagnóstico e benchmarks
-```
+- app/: janela, views e diálogos PySide6.
+- core/: CognitiveTask, Orchestrator, Capability Vectorizer e traces.
+- engines/: contratos e adaptadores de inferência.
+- workers/: operações de rede fora da thread da UI.
+- storage/: configurações e histórico local.
+- pipeline/: futuras etapas cognitivas.
+- knowledge/: futura ingestão e recuperação RAG.
+- resources/: futuro gerenciamento de recursos.
+- swarm/: futura comunicação cooperativa P2P.
+- docs/: arquitetura, contratos, roadmap, segurança e status.
 
-## Instalação e execução
+## Requisitos
 
-Requer Python 3.11 ou superior.
+- Python 3.11 ou superior.
+- PySide6 6.7 ou superior.
+- httpx 0.27 ou superior.
+- Ollama instalado e executando localmente.
+- Pelo menos um modelo de chat baixado no Ollama.
 
-```bash
+## Instalação no Linux / Arch Linux
+
+Enquanto a Fase 1 estiver em revisão:
+
+~~~bash
+git clone https://github.com/K410Sh4/AILocalUniversal.git
+cd AILocalUniversal
+git checkout bootstrap/project-structure
 ./install.sh
+~~~
+
+Após a integração da PR, basta clonar a branch padrão. O instalador cria um ambiente virtual em .venv e instala as dependências. Não instala nem inicia o Ollama automaticamente.
+
+Inicie o aplicativo:
+
+~~~bash
 .venv/bin/ailocal
-```
+~~~
 
-Para executar os testes:
+Se necessário, em outro terminal, inicie o serviço Ollama conforme a instalação local e baixe um modelo:
 
-```bash
+~~~bash
+ollama serve
+ollama pull qwen2.5:7b
+~~~
+
+O modelo acima é apenas um exemplo; escolha um modelo compatível com a memória do seu computador.
+
+## Utilização
+
+1. Abra a aba **Chat**.
+2. Clique em **Atualizar modelos** para consultar o Ollama.
+3. Escolha **Automático** ou **Manual**.
+4. No modo manual, selecione o modelo.
+5. No modo automático, selecione um modelo e clique em **Definir preferido** para gravar sua preferência.
+6. Envie uma mensagem. A resposta será transmitida em streaming.
+7. Use **Cancelar** para interromper a geração.
+8. Abra **Configurações** para alterar URL, keep-alive ou system prompt.
+
+## Dados locais
+
+- Configuração: variável XDG_CONFIG_HOME, padrão em ~/.config/ailocal-universal/config.json.
+- Conversas: variável XDG_DATA_HOME, padrão em ~/.local/share/ailocal-universal/conversations.json.
+
+Os arquivos são escritos atomicamente e com permissões privadas no Linux. Faça backup se quiser preservar o histórico ao reinstalar.
+
+## Testes e qualidade
+
+~~~bash
 .venv/bin/python -m pytest
-```
-
-Para verificar estilo:
-
-```bash
 .venv/bin/ruff check .
-```
+~~~
+
+A suíte cobre contratos, seleção, persistência e protocolo Ollama usando transporte HTTP simulado. O uso com serviço Ollama real e o comportamento gráfico precisam de validação em máquina Linux.
 
 ## Roadmap
 
 | Fase | Entrega |
 |---|---|
-| 0 | Fundação, documentação, contratos e testes |
-| 1 | Aplicação PySide6, histórico e integração Ollama |
+| 0 | Fundação, documentação e contratos |
+| 1 | Aplicação desktop, Ollama, streaming, histórico e configurações |
 | 2 | Núcleo cognitivo e ferramentas determinísticas |
-| 3 | RAG, contexto e validação |
+| 3 | RAG, Context Composer e validação |
 | 4 | Gerenciamento adaptativo de recursos |
 | 5 | Rede cooperativa, segurança e Map-Reduce |
-| 6 | Laboratório BitNet, RPC e otimizações |
+| 6 | Laboratório BitNet, RPC e otimizações multi-host |
 
-## Benchmarks
+## Segurança e privacidade
 
-Medir tempo até primeiro token, tokens/s, latência total, carregamento, pico RAM/VRAM, CPU/GPU, bytes transferidos, qualidade, cobertura de evidências e falhas. Separar modelos frios e quentes. Nenhuma melhoria será declarada sem benchmark reproduzível.
+O processamento permanece local por padrão. Não exponha a API Ollama diretamente à internet sem controles adequados. A comunicação remota e a execução entre nós ainda não estão habilitadas nesta fase.
 
-## Segurança
+Consulte docs/SECURITY.md.
 
-Local-first, menor privilégio, autorização explícita dos peers, transporte criptografado, limites de recursos, cancelamento, integridade SHA-256 e logs sem segredos. Conteúdo recuperado deve ser tratado como dado não confiável.
+## Documentação adicional
 
-## Documentação
+- Arquitetura: docs/ARCHITECTURE.md
+- Roadmap: docs/ROADMAP.md
+- Estado da implementação: docs/IMPLEMENTATION_STATUS.md
+- Contratos de dados: docs/DATA_CONTRACTS.md
+- Contribuição: CONTRIBUTING.md
 
-- [Arquitetura](docs/ARCHITECTURE.md)
-- [Roadmap](docs/ROADMAP.md)
-- [Segurança](docs/SECURITY.md)
-- [Contratos de dados](docs/DATA_CONTRACTS.md)
-- [Contribuição](CONTRIBUTING.md)
+---
 
-> **Importante:** este repositório está em fundação. O README descreve a arquitetura-alvo e não afirma que todos os componentes estejam implementados.
+**AILocal Universal — inteligência local coordenada por software, ferramentas e recursos reais.**
