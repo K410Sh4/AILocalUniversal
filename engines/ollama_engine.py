@@ -165,7 +165,7 @@ class OllamaEngine(EngineAdapter):
         *,
         preferred_profile: str | None = None,
         protection_mode: ProtectionMode | str = ProtectionMode.PROTECTED,
-        requirements: ResourceRequirements = ResourceRequirements(),
+        requirements: ResourceRequirements | None = None,
     ) -> tuple[EngineRequest, CompatibilityReport]:
         """Plan a request and apply the Ollama-supported subset of its budget.
 
@@ -175,7 +175,7 @@ class OllamaEngine(EngineAdapter):
         """
         report = build_compatibility_report(
             hardware,
-            requirements,
+            requirements or ResourceRequirements(),
             preferred_profile,
             protection_mode=protection_mode,
         )
