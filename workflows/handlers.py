@@ -36,6 +36,7 @@ class ImageGenerationAdapter(Protocol):
         *,
         model_id: str,
         options: dict[str, Any],
+        resource_budget: ResourceBudget | None,
         cancel_event: Any,
     ) -> dict[str, Any]: ...
 
@@ -189,16 +190,30 @@ class OllamaSpecialistHandler:
         result = dict(options)
         existing_context = result.get("num_ctx")
         if existing_context is not None:
-            if isinstance(existing_context, bool) or not isinstance(existing_context, int):
-                raise GraphError("INVALID_CONTEXT_OPTION", "num_ctx precisa ser inteiro.")
+            if (
+                isinstance(existing_context, bool)
+                or not isinstance(existing_context, int)
+                or existing_context < 1
+            ):
+                raise GraphError(
+                    "INVALID_CONTEXT_OPTION",
+                    "num_ctx precisa ser um inteiro positivo.",
+                )
             result["num_ctx"] = min(existing_context, budget.context_tokens)
         else:
             result["num_ctx"] = budget.context_tokens
 
         existing_threads = result.get("num_thread")
         if existing_threads is not None:
-            if isinstance(existing_threads, bool) or not isinstance(existing_threads, int):
-                raise GraphError("INVALID_THREAD_OPTION", "num_thread precisa ser inteiro.")
+            if (
+                isinstance(existing_threads, bool)
+                or not isinstance(existing_threads, int)
+                or existing_threads < 1
+            ):
+                raise GraphError(
+                    "INVALID_THREAD_OPTION",
+                    "num_thread precisa ser um inteiro positivo.",
+                )
             result["num_thread"] = min(existing_threads, budget.cpu_threads)
         else:
             result["num_thread"] = budget.cpu_threads
@@ -247,10 +262,20 @@ class ImageSpecialistHandler:
                 "IMAGE_PROMPT_EMPTY",
                 "O especialista de imagem não recebeu um prompt.",
             )
+        resource_budget = None
+        if node.config.get("use_resource_budget", True):
+            resource_budget = inputs.get("budget")
+            if not isinstance(resource_budget, ResourceBudget):
+                raise GraphError(
+                    "RESOURCE_BUDGET_MISSING",
+                    f"O nó de imagem '{node.label}' exige ResourceBudget.",
+                    ("Conecte um nó hardware.profile ou desative use_resource_budget.",),
+                )
         result = await adapter.generate(
             prompt,
             model_id=str(node.config.get("model_id", "")),
             options=dict(node.config.get("generation", {})),
+            resource_budget=resource_budget,
             cancel_event=context.cancel_event,
         )
         if not isinstance(result, dict):
