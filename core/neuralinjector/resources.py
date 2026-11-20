@@ -129,6 +129,9 @@ def build_compatibility_report(hw: HardwareSnapshot,
     if not set(requirements.supported_execution).intersection(hw.execution_backends):
         reasons.append("Nenhum backend aceito está disponível")
     profile = select_profile(hw, preferred_profile)
+    profile_failures = _reasons(profile, hw)
+    if profile_failures:
+        reasons.extend(profile_failures)
     budget = ResourceBudget(int(hw.ram_available_mb * profile.max_ram_fraction),
         hw.vram_available_mb or 0, max(requirements.min_context_tokens, profile.context_tokens),
         min(profile.parallelism, max(1, hw.cpu_cores)))
