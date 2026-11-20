@@ -358,7 +358,7 @@ def markdown_to_html(markdown_text: str) -> str:
             rf"<p(?:\s+[^>]*)?>\s*{re.escape(token)}\s*</p>",
             re.IGNORECASE,
         )
-        result, count = paragraph.subn(lambda _match: block, result, count=1)
+        result, count = paragraph.subn(lambda _match, replacement=block: replacement, result, count=1)
         if count == 0:
             # Se o delimitador display apareceu misturado ao texto de um parágrafo,
             # preserva a fórmula, mas não injeta uma tabela dentro de outro bloco.
