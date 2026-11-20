@@ -17,3 +17,9 @@ def test_vectorizer_scores_are_heuristic_and_empty_input_is_zeroed() -> None:
     vector = CapabilityVectorizer().classify("xyz sem âncoras conhecidas")
 
     assert all(value == 0.0 for value in vector.scores.values())
+
+
+def test_vectorizer_does_not_match_anchor_inside_another_word() -> None:
+    vector = CapabilityVectorizer().classify("O sistema digital e capilar continua estável.")
+
+    assert vector.scores["programming"] == 0.0

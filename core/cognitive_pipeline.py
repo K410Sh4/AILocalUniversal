@@ -9,6 +9,7 @@ from core.deterministic_tools import DeterministicToolRegistry
 from core.input_processing import InputProcessingStage
 from core.orchestrator import Orchestrator
 from core.semantic_analysis import SemanticAnalysisStage
+from core.task_decomposer import TaskDecompositionStage
 
 
 class DeterministicProcessingStage:
@@ -40,6 +41,7 @@ class CognitivePipeline:
             [
                 InputProcessingStage(),
                 SemanticAnalysisStage(CapabilityVectorizer()),
+                TaskDecompositionStage(),
                 DeterministicProcessingStage(),
                 CognitivePlanningStage(),
             ]

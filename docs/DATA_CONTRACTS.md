@@ -8,7 +8,7 @@ Campos conceituais: schema_version, task_id, original_text, normalized_text, int
 
 Scores de capacidades são afinidades heurísticas entre 0 e 1 nesta implementação, calculadas por âncoras lexicais e expostas em todas as 12 dimensões. Não representam probabilidades nem qualidade real do modelo. Dificuldade, incerteza, risco e urgência também são indicadores heurísticos independentes.
 
-execution_plan registra a rota selecionada (atualmente deterministic_only ou llm_assisted) e os componentes planejados. deterministic_results armazena a saída estruturada de ferramentas locais. O texto original permanece em original_text; normalized_text é usado para análise sem apagar a entrada original.
+execution_plan registra a rota selecionada (atualmente deterministic_only ou llm_assisted) e os componentes planejados. subtask_plan é uma lista opcional de subtarefas com id, ordem, texto, intenção, afinidades, depends_on, estratégia e status. subtasks mantém os IDs correspondentes. deterministic_results armazena a saída estruturada de ferramentas locais. O texto original permanece em original_text; normalized_text é usado para análise sem apagar a entrada original.
 
 ## Evidence
 

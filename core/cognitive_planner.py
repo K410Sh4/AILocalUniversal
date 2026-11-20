@@ -52,14 +52,28 @@ class CognitivePlanner:
                 if risk >= 0.55
                 else "heuristic_analysis"
             )
-            task.execution_plan = [
+            task.execution_plan = []
+            next_step = 1
+            if len(task.subtask_plan) > 1:
+                task.execution_plan.append(
+                    {
+                        "step": next_step,
+                        "component": "subtask_plan",
+                        "strategy": task.subtask_plan[0].get("strategy", "independent"),
+                        "execution": "single_model_structured_response",
+                        "subtask_ids": [item["id"] for item in task.subtask_plan],
+                        "required": True,
+                    }
+                )
+                next_step += 1
+            task.execution_plan.append(
                 {
-                    "step": 1,
+                    "step": next_step,
                     "component": "ollama_chat",
                     "required": True,
                     "reason": reason,
                 }
-            ]
+            )
 
         difficulty = task.difficulty if task.difficulty is not None else 0.5
         task.token_budget = (

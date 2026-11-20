@@ -16,7 +16,7 @@ Este arquivo diferencia código existente de funcionalidades futuras.
 | Histórico | Persistência JSON local, escrita atômica e permissões privadas implementados |
 | Configurações | Persistência JSON local e validação básica implementadas |
 | Workers | Operações HTTP fora da thread da interface e cancelamento cooperativo implementados |
-| Núcleo cognitivo | Input Processing, Semantic Analysis, ferramentas determinísticas e Cognitive Planner integrados ao envio do Chat |
+| Núcleo cognitivo | Input Processing, Semantic Analysis, Task Decomposer, ferramentas determinísticas e Cognitive Planner integrados ao envio do Chat |
 | Ferramentas locais | Calculadora AST restrita e conversões de comprimento, massa, tempo, dados e temperatura |
 | Testes | Testes unitários para protocolo simulado, seleção, persistência, análise, ferramentas e rotas cognitivas |
 | RAG | Planejado para Fase 3 |
@@ -26,7 +26,8 @@ Este arquivo diferencia código existente de funcionalidades futuras.
 
 ## Limitações conhecidas
 
-- A afinidade de capacidades é lexical e heurística; não usa embeddings, não é calibrada e ainda não seleciona modelos especialistas por domínio.
+- A afinidade de capacidades é lexical e heurística; não usa embeddings e não é calibrada. Modelos especialistas por domínio ainda não são selecionados automaticamente.
+- A decomposição identifica listas e conectores explícitos, mas não cria agentes, não executa subtarefas em paralelo e não faz merge independente de resultados.
 - O histórico local usa JSON; banco de dados e migrações serão avaliados conforme escala.
 - O adaptador Ollama foi implementado com transporte HTTP simulado nos testes, mas precisa de teste de integração com Ollama real.
 - A interface foi construída, mas precisa ser validada em sessão gráfica Linux/Qt.

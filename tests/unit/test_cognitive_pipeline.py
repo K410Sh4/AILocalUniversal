@@ -44,3 +44,35 @@ async def test_high_risk_marker_prevents_deterministic_shortcut() -> None:
     assert task.result is None
     assert task.execution_plan[0]["route"] == "llm_assisted"
     assert task.execution_plan[1]["reason"] == "risk_marker_requires_model_review"
+
+
+@pytest.mark.asyncio
+async def test_pipeline_decomposes_explicit_bullet_list() -> None:
+    task = await analyze_request(
+        "Explique integrais e aborde:\n- definição\n- exemplo\n- aplicações"
+    )
+
+    assert len(task.subtask_plan) == 3
+    assert task.subtasks == [item["id"] for item in task.subtask_plan]
+    assert all(item["intent"] for item in task.subtask_plan)
+    assert task.execution_plan[1]["component"] == "subtask_plan"
+    assert task.execution_plan[1]["execution"] == "single_model_structured_response"
+
+
+@pytest.mark.asyncio
+async def test_pipeline_decomposes_explicit_sequence_with_dependencies() -> None:
+    task = await analyze_request("Calcule 2 + 2 e depois explique o resultado.")
+
+    assert len(task.subtask_plan) == 2
+    assert task.subtask_plan[1]["depends_on"] == [task.subtask_plan[0]["id"]]
+    assert task.subtask_plan[0]["intent"] == "calculation"
+    assert task.execution_plan[0]["route"] == "llm_assisted"
+
+
+@pytest.mark.asyncio
+async def test_pipeline_ignores_bullets_inside_fenced_code() -> None:
+    task = await analyze_request(
+        "Explique este exemplo:\n```text\n- item de código\n- outro item\n```"
+    )
+
+    assert task.subtask_plan == []

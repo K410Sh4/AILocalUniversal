@@ -359,8 +359,23 @@ class MainWindow(QMainWindow):
         self._render_current_conversation()
 
         messages: list[dict[str, Any]] = []
-        if self.config.system_prompt.strip():
-            messages.append({"role": "system", "content": self.config.system_prompt})
+        system_parts = (
+            [self.config.system_prompt.strip()]
+            if self.config.system_prompt.strip()
+            else []
+        )
+        subtask_count = len(cognitive_task.subtask_plan)
+        if subtask_count > 1:
+            system_parts.append(
+                "A solicitação do usuário contém "
+                f"{subtask_count} partes identificadas pelo planejador local. "
+                "Responda cobrindo cada parte explicitamente, na ordem apresentada pelo usuário, "
+                "e depois sintetize as relações entre elas quando isso for útil. "
+                "A decomposição é apenas uma estrutura auxiliar: preserve o sentido e as "
+                "restrições do pedido original."
+            )
+        if system_parts:
+            messages.append({"role": "system", "content": "\n\n".join(system_parts)})
         messages.extend(conversation.messages[: self._current_assistant_index])
 
         request = EngineRequest(
@@ -377,8 +392,13 @@ class MainWindow(QMainWindow):
         worker.finished.connect(lambda w=worker: self._chat_finished(w))
         self.chat_view.set_busy(True)
         self.chat_view.set_status(f"Gerando com {model}…")
+        plan_label = (
+            f"{len(cognitive_task.subtask_plan)} partes • "
+            if len(cognitive_task.subtask_plan) > 1
+            else ""
+        )
         self.statusBar().showMessage(
-            f"Plano cognitivo: {cognitive_task.intent} → modelo {model}"
+            f"Plano cognitivo: {cognitive_task.intent} • {plan_label}modelo {model}"
         )
         worker.start()
 

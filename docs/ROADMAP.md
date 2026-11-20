@@ -34,6 +34,8 @@ As fases representam entregas e validações progressivas. Um componente só ser
 - [x] Cognitive Planner com rota determinística ou LLM assistida.
 - [x] Orchestrator com trace por estágio integrado ao pipeline cognitivo.
 - [x] Integração da rota determinística ao envio do Chat.
+- [x] Task Decomposer com listas e sequências explícitas, IDs, intenções, afinidades e dependências.
+- [x] Instrução de síntese estruturada para pedidos compostos, usando um único modelo.
 
 Limites desta entrega: os scores ainda não são calibrados; embeddings, classificador treinado, decomposição de tarefas, validação independente de resultados e seleção de modelos especialistas continuam pendentes. Ferramentas não reconhecidas são encaminhadas ao modelo.
 

@@ -64,6 +64,7 @@ class CognitiveTask:
     evidence: list[Evidence] = field(default_factory=list)
     execution_plan: list[dict[str, Any]] = field(default_factory=list)
     subtasks: list[str] = field(default_factory=list)
+    subtask_plan: list[dict[str, Any]] = field(default_factory=list)
     token_budget: int | None = None
     ram_budget_mb: int | None = None
     deadline_ms: int | None = None
@@ -88,6 +89,7 @@ class CognitiveTask:
             "evidence": [item.to_dict() for item in self.evidence],
             "execution_plan": list(self.execution_plan),
             "subtasks": list(self.subtasks),
+            "subtask_plan": list(self.subtask_plan),
             "token_budget": self.token_budget,
             "ram_budget_mb": self.ram_budget_mb,
             "deadline_ms": self.deadline_ms,
@@ -114,6 +116,7 @@ class CognitiveTask:
             evidence=[Evidence.from_dict(item) for item in data.get("evidence", [])],
             execution_plan=list(data.get("execution_plan", [])),
             subtasks=list(data.get("subtasks", [])),
+            subtask_plan=list(data.get("subtask_plan", [])),
             token_budget=data.get("token_budget"),
             ram_budget_mb=data.get("ram_budget_mb"),
             deadline_ms=data.get("deadline_ms"),

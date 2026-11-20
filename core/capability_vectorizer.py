@@ -9,6 +9,7 @@ embeddings, nem uma avaliação calibrada da capacidade real necessária.
 from __future__ import annotations
 
 import dataclasses
+import re
 import unicodedata
 
 
@@ -116,7 +117,12 @@ class CapabilityVectorizer:
             if dimension == "interdisciplinary":
                 continue
             anchors = CAPABILITY_ANCHORS[dimension]
-            matches = sum(1 for anchor in anchors if _fold(anchor) in normalized)
+            matches = 0
+            for anchor in anchors:
+                folded_anchor = _fold(anchor)
+                pattern = rf"(?<!\w){re.escape(folded_anchor)}(?!\w)"
+                if re.search(pattern, normalized):
+                    matches += 1
             scores[dimension] = round(min(1.0, matches * 0.28), 3)
 
         active_dimensions = sum(

@@ -19,7 +19,9 @@ Coordenar ferramentas determinísticas, motores de inferência, recuperação de
 
 O fluxo é adaptativo: tarefas simples podem terminar em ferramentas determinísticas. A implementação inicial em core/cognitive_pipeline.py executa Input Processing, Semantic Analysis, Deterministic Processing e Cognitive Planning por meio do Orchestrator. O planejador escolhe entre deterministic_only e llm_assisted.
 
-A análise atual é heurística e lexical. O vetor de capacidades tem 12 dimensões com âncoras de termos e expressões; não usa embeddings nem classificador treinado. Os valores entre 0 e 1 são afinidades indicativas, sem calibração probabilística. Os indicadores de dificuldade, incerteza, risco e urgência são independentes.
+A análise atual é heurística e lexical. O vetor de capacidades tem 12 dimensões com âncoras completas de palavras e expressões, para evitar correspondências acidentais dentro de palavras maiores; não usa embeddings nem classificador treinado.
+
+O Task Decomposer reconhece listas numeradas ou marcadas e conectores sequenciais explícitos. Registra intenção, afinidades, ordem e dependências no subtask_plan. A interface orienta o único modelo selecionado a responder cada parte e sintetizar o conjunto. Não há execução paralela, agentes independentes ou seleção automática de modelos especialistas nesta etapa. Os valores entre 0 e 1 são afinidades indicativas, sem calibração probabilística. Os indicadores de dificuldade, incerteza, risco e urgência são independentes.
 
 As ferramentas determinísticas iniciais são uma calculadora baseada em AST com lista de operações permitidas e um conversor explícito de unidades. O sistema não executa código arbitrário. Marcadores de risco impedem o atalho determinístico e encaminham a solicitação ao modelo para análise; isso não equivale a revisão especializada ou validação clínica, jurídica ou financeira.
 

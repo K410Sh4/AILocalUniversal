@@ -33,12 +33,13 @@ O envio de mensagens passa por um pipeline local antes de decidir a execução:
 
 - Input Processing: normalização Unicode e de espaços, preservando o texto original e limitando entradas excessivas.
 - Semantic Analysis: classificação heurística de intenção e indicadores separados de dificuldade, incerteza, risco e urgência.
+- Task Decomposer: reconhecimento de listas e sequências explícitas, com subtarefas, intenção, afinidades e dependências.
 - Capability Vectorizer: vetor lexical explicável de 12 dimensões, usando âncoras em português e inglês.
 - Deterministic Processing: calculadora com AST restrita e conversões explícitas de unidades comuns; não executa código arbitrário.
 - Cognitive Planner: encaminha operações suportadas e de baixo risco para ferramentas locais; as demais seguem para o modelo configurado.
 - Orchestrator: executa estágios e registra trace de início, conclusão e falhas.
 
-Os scores são afinidades heurísticas entre 0 e 1, não probabilidades calibradas. Não há embeddings semânticos, classificador treinado, decomposição automática em subtarefas ou seleção de especialistas por competência de cada modelo nesta entrega. As conversões de dados usam fatores decimais (base 1000). O conjunto de ferramentas é intencionalmente pequeno e será ampliado com testes específicos.
+Os scores são afinidades heurísticas entre 0 e 1, não probabilidades calibradas. Não há embeddings semânticos, classificador treinado, decomposição semântica livre, execução paralela de subtarefas ou seleção automática de especialistas por domínio. A decomposição atual depende de estrutura explícita e todas as partes são respondidas por uma única geração. As conversões de dados usam fatores decimais (base 1000). O conjunto de ferramentas é intencionalmente pequeno e será ampliado com testes específicos.
 
 ## Arquitetura
 
@@ -65,7 +66,7 @@ A arquitetura completa continua incluindo RAG, Context Composer, validação de 
 ## Estrutura
 
 - app/: janela, views e diálogos PySide6.
-- core/: CognitiveTask, Input Processing, Semantic Analysis, Capability Vectorizer, ferramentas determinísticas, Cognitive Planner, Orchestrator e traces.
+- core/: CognitiveTask, Input Processing, Semantic Analysis, Task Decomposer, Capability Vectorizer, ferramentas determinísticas, Cognitive Planner, Orchestrator e traces.
 - engines/: contratos e adaptadores de inferência.
 - workers/: operações de rede fora da thread da UI.
 - storage/: configurações e histórico local.
