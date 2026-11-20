@@ -357,6 +357,58 @@
           "type": "string"
         }
       }
+    },
+    "hardware_requirements": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "minimum",
+        "recommended",
+        "runtime"
+      ],
+      "properties": {
+        "minimum": {
+          "$ref": "#/$defs/resourceRequirements"
+        },
+        "recommended": {
+          "$ref": "#/$defs/resourceRequirements"
+        },
+        "runtime": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "supported_execution",
+            "context_min",
+            "context_recommended"
+          ],
+          "properties": {
+            "supported_execution": {
+              "type": "array",
+              "items": {
+                "enum": [
+                  "cpu",
+                  "gpu"
+                ]
+              },
+              "minItems": 1
+            },
+            "context_min": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "context_recommended": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "required_features": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
     }
   },
   "$defs": {
@@ -364,6 +416,29 @@
       "type": "string",
       "minLength": 1,
       "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))[A-Za-z0-9._/-]+$"
+    },
+    "resourceRequirements": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "ram_mb",
+        "vram_mb",
+        "disk_free_mb"
+      ],
+      "properties": {
+        "ram_mb": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "vram_mb": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "disk_free_mb": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
     }
   }
 }
