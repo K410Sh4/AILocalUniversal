@@ -16,10 +16,10 @@ Este arquivo diferencia código existente de funcionalidades futuras.
 | Histórico | Persistência JSON local, escrita atômica e permissões privadas implementados |
 | Configurações | Persistência JSON local; perfil de hardware e modo de proteção configuráveis e validados |
 | Workers | Operações HTTP fora da thread da interface e cancelamento cooperativo implementados |
-| Testes | Testes unitários para protocolo simulado, seleção e persistência adicionados |
+| Testes | GitHub Actions: Ruff aprovado e 113 testes passaram (inclui smoke test PySide6 offscreen); validação manual no Arch e execução contra Ollama real pendentes |
 | RAG | Planejado para Fase 3 |
 | Resource Manager | Planejador NeuralInjector integrado ao preflight de chat Ollama: RAM/CPU, cinco perfis sincronizados por serializador, piso absoluto, modos protected/adaptive/permissive, orçamento separado de threads/concorrência; detecção GPU e monitor opt-in disponíveis, executor dinâmico ainda pendente |
-| Workflow Graph / NeuralMap | Primeira implementação em branch feature: schema, modelo de grafo, runtime assíncrono, loop de revisão, editor PySide6, handlers Ollama e persistência NIP; backend de imagem real e validação ainda pendentes |
+| Workflow Graph / NeuralMap | Primeira implementação na branch feature: schema, modelo de grafo, runtime assíncrono, loop de revisão, editor PySide6, handlers Ollama e persistência NIP; CI verde com 113 testes; backend de imagem real e validação manual no Arch pendentes |
 | Swarm P2P | Planejado para Fase 5 |
 | BitNet e RPC | Laboratório futuro |
 
@@ -32,8 +32,8 @@ Este arquivo diferencia código existente de funcionalidades futuras.
 - A detecção GPU atual é opcional e limitada a nvidia-smi e Linux DRM/sysfs; dispositivos identificados não significam que um backend acelerado esteja pronto.
 - Quantização é somente uma política de seleção de candidatos. O código ainda não converte pesos, baixa variantes ou faz offloading manual.
 - `engines/llama_cpp_options.py` constrói instância llama-cpp-python com contexto/threads do orçamento e GPU layers explicitamente validados; ainda não existe EngineAdapter llama.cpp completo nem integração na interface.
-- A interface foi construída, mas precisa ser validada em sessão gráfica Linux/Qt.
-- Os testes foram escritos; a execução da suíte depende de ambiente com as dependências instaladas.
+- A interface PySide6 passou no smoke test offscreen do CI; ainda precisa de validação visual manual em sessão gráfica Linux/Arch.
+- A suíte automatizada foi executada no GitHub Actions com as dependências Qt do runner: Ruff aprovado e 113 testes passaram.
 
 
 ## NeuralMap — estado da primeira implementação
@@ -44,4 +44,4 @@ Este arquivo diferencia código existente de funcionalidades futuras.
 - O especialista de imagem possui contrato de adapter registrado, mas o projeto ainda não registra um backend Flux real; o nó do template é opcional.
 - O resultado é exibido como JSON e trace na aba NeuralMap; renderização integrada no ChatView ainda pendente.
 - O salvamento em pacote verifica checksums e referências declaradas no manifesto; pacotes assinados não podem ser modificados sem implementar o fluxo de assinatura.
-- Testes unitários foram adicionados, mas ainda precisam ser executados em CI e em Linux/Arch antes de considerar a trilha validada.
+- CI no commit `d56e37e`: Ruff aprovado e 113 testes passaram. A interface ainda precisa de validação manual no Arch e o fluxo real precisa ser testado com Ollama local.
