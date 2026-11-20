@@ -506,7 +506,9 @@ def build_compatibility_report(
         profile.quantization_policy, hw, supported_quantizations
     )
     if supported_quantizations is None:
-        fallbacks.append("quantização não selecionada: backend ainda não declarou formatos suportados")
+        fallbacks.append(
+            "quantização não selecionada: backend ainda não declarou formatos suportados"
+        )
     elif quantization is None:
         fallbacks.append("nenhum candidato de quantização do perfil é suportado pelo backend")
 
@@ -520,7 +522,9 @@ def build_compatibility_report(
     compatible = not reasons
     activation_allowed = compatible or mode is ProtectionMode.PERMISSIVE
     if not compatible and mode is ProtectionMode.PERMISSIVE:
-        fallbacks.append("modo permissivo: tentativa autorizada apesar das incompatibilidades reportadas")
+        fallbacks.append(
+            "modo permissivo: tentativa autorizada apesar das incompatibilidades reportadas"
+        )
 
     return CompatibilityReport(
         compatible=compatible,
@@ -564,7 +568,9 @@ class AdaptiveResourceManager:
             emergency_threshold < critical_threshold
             < constrained_threshold < recovery_threshold
         ):
-            raise ValueError("thresholds must satisfy emergency < critical < constrained < recovery")
+            raise ValueError(
+                "thresholds must satisfy emergency < critical < constrained < recovery"
+            )
         self.constrained_threshold = constrained_threshold
         self.critical_threshold = critical_threshold
         self.emergency_threshold = emergency_threshold
