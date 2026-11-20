@@ -3,6 +3,7 @@ import pytest
 from core.neuralinjector.resources import (
     AdaptiveResourceManager,
     BenchmarkMode,
+    GPUDevice,
     HardwareSnapshot,
     ProtectionMode,
     ResourcePressure,
@@ -224,3 +225,78 @@ def test_dynamic_manager_rejects_invalid_thresholds():
             emergency_threshold=0.2,
             critical_threshold=0.1,
         )
+
+
+def test_detected_gpu_does_not_automatically_register_execution_backend(monkeypatch):
+    import core.neuralinjector.resources as resources
+
+    monkeypatch.setattr(
+        resources,
+        "_detect_ram",
+        lambda: type("Ram", (), {"total_mb": 16384, "available_mb": 12000})(),
+    )
+    monkeypatch.setattr(
+        resources,
+        "detect_gpu_devices",
+        lambda **_kwargs: (
+            GPUDevice("GPU", "amd", 8192, 6000, "dedicated", "test"),
+        ),
+    )
+
+    detected = detect_hardware(include_gpu=True)
+
+    assert detected.gpu_devices[0].vendor == "amd"
+    assert detected.vram_total_mb == 8192
+    assert detected.vram_available_mb == 6000
+    assert detected.execution_backends == frozenset({"cpu"})
+
+
+def test_multiple_gpus_are_not_counted_as_unified_vram(monkeypatch):
+    import core.neuralinjector.resources as resources
+
+    monkeypatch.setattr(
+        resources,
+        "_detect_ram",
+        lambda: type("Ram", (), {"total_mb": 32768, "available_mb": 24000})(),
+    )
+    monkeypatch.setattr(
+        resources,
+        "detect_gpu_devices",
+        lambda **_kwargs: (
+            GPUDevice("GPU A", "amd", 8192, 4096, "dedicated", "test"),
+            GPUDevice("GPU B", "nvidia", 4096, 3072, "dedicated", "test"),
+        ),
+    )
+
+    detected = detect_hardware(
+        include_gpu=True,
+        execution_backends=("cpu", "gpu"),
+    )
+
+    assert detected.vram_total_mb == 8192
+    assert detected.vram_available_mb == 4096
+    assert detected.vram_total_mb != 8192 + 4096
+
+
+def test_integrated_gpu_does_not_receive_invented_dedicated_vram(monkeypatch):
+    import core.neuralinjector.resources as resources
+
+    monkeypatch.setattr(
+        resources,
+        "_detect_ram",
+        lambda: type("Ram", (), {"total_mb": 8192, "available_mb": 6000})(),
+    )
+    monkeypatch.setattr(
+        resources,
+        "detect_gpu_devices",
+        lambda **_kwargs: (
+            GPUDevice("Integrated GPU", "intel", None, None, "shared", "test"),
+        ),
+    )
+
+    detected = detect_hardware(include_gpu=True)
+
+    assert len(detected.gpu_devices) == 1
+    assert detected.gpu_devices[0].memory_kind == "shared"
+    assert detected.vram_total_mb is None
+    assert detected.vram_available_mb is None
