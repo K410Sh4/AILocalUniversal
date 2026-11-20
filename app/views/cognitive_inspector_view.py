@@ -133,6 +133,7 @@ class CognitiveInspectorView(QWidget):
                 "Dependências",
                 "Estado",
                 "Execução",
+                "Validação",
                 "Verificação",
                 "Resultado",
             ]
@@ -160,6 +161,20 @@ class CognitiveInspectorView(QWidget):
         layout.addWidget(self._group_table("Subtarefas e dependências", self.subtasks_table))
         layout.addWidget(self._group_table("Plano de execução", self.plan_table))
         layout.addWidget(self._group_table("Execution Trace", self.trace_table))
+        validation_group = QGroupBox("Validation Layer")
+        validation_layout = QVBoxLayout(validation_group)
+        self.validation_summary = QLabel("A validação ainda não foi executada.")
+        self.validation_summary.setWordWrap(True)
+        self.validation_details = QPlainTextEdit()
+        self.validation_details.setReadOnly(True)
+        self.validation_details.setMaximumHeight(130)
+        self.validation_details.setPlaceholderText(
+            "Os resultados das verificações aparecerão aqui."
+        )
+        validation_layout.addWidget(self.validation_summary)
+        validation_layout.addWidget(self.validation_details)
+        layout.addWidget(validation_group)
+
         result_group = QGroupBox("Resultado da execução")
         result_layout = QVBoxLayout(result_group)
         result_layout.addWidget(self.result_text)
@@ -268,15 +283,25 @@ class CognitiveInspectorView(QWidget):
             status_label = {
                 "pending": "Pendente",
                 "running": "Em execução",
+                "validating": "Validando",
                 "completed": "Concluída",
                 "failed": "Falhou",
                 "blocked": "Bloqueada",
                 "cancelled": "Cancelada",
                 "skipped": "Ignorada",
             }.get(str(item.get("status", "")), str(item.get("status", "—")))
+            validation_label = {
+                "passed": "Aprovada",
+                "needs_review": "Revisão",
+                "failed": "Falhou",
+            }.get(
+                str(item.get("validation_status", "")),
+                str(item.get("validation_status", "Aguardando")),
+            )
             verification_label = {
                 "not_independently_verified": "Não verificada",
-                "verified": "Verificada",
+                "verified_deterministic": "Reproduzida localmente",
+                "failed": "Falhou",
             }.get(
                 str(item.get("verification_status", "")),
                 str(item.get("verification_status", "—")),
@@ -294,6 +319,7 @@ class CognitiveInspectorView(QWidget):
                     dependencies,
                     status_label,
                     execution_label,
+                    validation_label,
                     verification_label,
                     result_summary,
                 ]
@@ -328,6 +354,44 @@ class CognitiveInspectorView(QWidget):
                 ]
             )
         self._populate_table(self.trace_table, trace_rows)
+
+        validation_report = snapshot["validation_report"]
+        if validation_report is None:
+            self.validation_summary.setText("A validação ainda não foi executada.")
+            self.validation_details.clear()
+        else:
+            validation_status = str(validation_report.get("status", "unknown"))
+            status_label = {
+                "running": "Em andamento",
+                "passed": "Aprovada estruturalmente",
+                "needs_review": "Estrutura aprovada; revisão factual pendente",
+                "failed": "Falhou",
+                "cancelled": "Cancelada",
+            }.get(validation_status, validation_status)
+            factual_status = str(validation_report.get("factual_status", "—"))
+            self.validation_summary.setText(
+                f"Estado: {status_label} • Verificação factual: {factual_status}"
+            )
+            detail_lines = []
+            summary_data = validation_report.get("summary", {})
+            if summary_data:
+                detail_lines.append(
+                    "Verificações aprovadas: "
+                    f"{summary_data.get('checks_passed', 0)} • "
+                    f"Falhas: {summary_data.get('checks_failed', 0)} • "
+                    f"Avisos: {summary_data.get('warnings', 0)}"
+                )
+            for check in validation_report.get("checks", []):
+                detail_lines.append(
+                    f"[{check.get('status', '—')}] {check.get('name', 'verificação')}: "
+                    f"{check.get('message', '')}"
+                )
+            for issue in validation_report.get("issues", []):
+                detail_lines.append(
+                    f"[{issue.get('severity', 'info')}] {issue.get('code', 'issue')}: "
+                    f"{issue.get('message', '')}"
+                )
+            self.validation_details.setPlainText("\n".join(detail_lines))
 
         result = snapshot["result"]
         if result is not None:
@@ -377,4 +441,6 @@ class CognitiveInspectorView(QWidget):
         ):
             table.setRowCount(0)
         self.result_text.clear()
+        self.validation_summary.setText("A validação ainda não foi executada.")
+        self.validation_details.clear()
         self.set_runtime_status("Nenhuma tarefa analisada nesta sessão.")

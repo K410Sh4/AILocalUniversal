@@ -12,6 +12,7 @@ from typing import Any
 
 from core.cognitive_task import CognitiveTask, TaskStatus
 from core.deterministic_tools import DeterministicToolRegistry
+from core.validation_layer import ValidationLayer
 from engines.base import EngineAdapter, EngineRequest
 
 
@@ -35,6 +36,7 @@ class CognitiveTaskExecutor:
     ) -> None:
         self.engine = engine
         self.tools = tools or DeterministicToolRegistry()
+        self.validator = ValidationLayer(self.tools)
 
     @staticmethod
     def _trace(
@@ -284,6 +286,7 @@ class CognitiveTaskExecutor:
                     item["result"] = {
                         "content": tool_result.content,
                         "tool": tool_result.name,
+                        "success": tool_result.success,
                         "value": tool_result.value,
                     }
                     task.deterministic_results.append(tool_result.to_dict())
@@ -321,7 +324,32 @@ class CognitiveTaskExecutor:
                     }
 
                 item["execution_kind"] = execution_kind
-                item["verification_status"] = _NOT_INDEPENDENTLY_VERIFIED
+                item["status"] = "validating"
+                validation_report = self.validator.validate_subtask(task, item)
+                item["validation_report"] = validation_report
+                item["validation_status"] = validation_report["status"]
+                task.validation_report = self.validator.progress_report(task)
+                item["verification_status"] = validation_report["factual_status"]
+                self._trace(
+                    task,
+                    "validation_layer",
+                    validation_report["status"],
+                    {
+                        "subtask_id": subtask_id,
+                        "check_count": len(validation_report["checks"]),
+                        "issue_count": len(validation_report["issues"]),
+                    },
+                )
+                if validation_report["status"] == "failed":
+                    item["status"] = "failed"
+                    task.validation_report = dict(validation_report)
+                    self._notify(task, on_update)
+                    raise RuntimeError(
+                        f"Validação da subtarefa {subtask_id} falhou: "
+                        + "; ".join(
+                            issue["message"] for issue in validation_report["issues"]
+                        )
+                    )
                 item["status"] = "completed"
                 results_by_id[subtask_id] = item
                 self._trace(
@@ -332,7 +360,7 @@ class CognitiveTaskExecutor:
                         "subtask_id": subtask_id,
                         "order": index,
                         "execution_kind": execution_kind,
-                        "verification_status": _NOT_INDEPENDENTLY_VERIFIED,
+                        "verification_status": item["verification_status"],
                     },
                 )
                 self._notify(task, on_update)
@@ -358,6 +386,23 @@ class CognitiveTaskExecutor:
                 request_options,
                 on_token=on_token,
             )
+            validation_report = self.validator.validate_execution(task, final_content)
+            task.validation_report = validation_report
+            self._trace(
+                task,
+                "validation_layer",
+                validation_report["status"],
+                {
+                    "scope": "final_execution",
+                    "check_count": len(validation_report["checks"]),
+                    "issue_count": len(validation_report["issues"]),
+                },
+            )
+            if validation_report["status"] == "failed":
+                raise RuntimeError(
+                    "A Validation Layer bloqueou a síntese: "
+                    + "; ".join(issue["message"] for issue in validation_report["issues"])
+                )
             task.result = {
                 "route": "llm_assisted",
                 "status": "completed",
@@ -365,7 +410,8 @@ class CognitiveTaskExecutor:
                 "content": final_content,
                 "subtask_count": len(ordered),
                 "execution_strategy": "sequential",
-                "verification_status": _NOT_INDEPENDENTLY_VERIFIED,
+                "verification_status": validation_report["factual_status"],
+                "validation_status": validation_report["status"],
                 "synthesis_metadata": {
                     key: synthesis_metadata[key]
                     for key in (
@@ -399,6 +445,11 @@ class CognitiveTaskExecutor:
                 if item.get("status") == "pending":
                     item["status"] = "skipped"
             task.status = TaskStatus.CANCELLED
+            task.validation_report = self.validator.interrupted_report(
+                "cancelled",
+                "A validação não foi concluída porque a execução foi cancelada.",
+                str(current_item["id"]) if current_item is not None else None,
+            )
             task.result = {
                 "route": "llm_assisted",
                 "status": "cancelled",
@@ -417,9 +468,18 @@ class CognitiveTaskExecutor:
             self._notify(task, on_update)
             raise
         except Exception as exc:
-            if current_item is not None and current_item.get("status") == "running":
+            if current_item is not None and current_item.get("status") in {"running", "validating"}:
                 current_item["status"] = "failed"
                 current_item["error"] = str(exc)
+            if (
+                not isinstance(task.validation_report, dict)
+                or task.validation_report.get("status") != "failed"
+            ):
+                task.validation_report = self.validator.interrupted_report(
+                    "failed",
+                    str(exc),
+                    str(current_item["id"]) if current_item is not None else None,
+                )
             for item in task.subtask_plan:
                 if item.get("status") == "pending":
                     item["status"] = "blocked"

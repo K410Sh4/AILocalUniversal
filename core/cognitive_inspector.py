@@ -47,4 +47,9 @@ def build_inspector_snapshot(task: CognitiveTask) -> dict[str, Any]:
             dict(result) for result in task.deterministic_results
         ],
         "result": dict(task.result) if isinstance(task.result, dict) else None,
+        "validation_report": (
+            dict(task.validation_report)
+            if isinstance(task.validation_report, dict)
+            else None
+        ),
     }

@@ -71,6 +71,7 @@ class CognitiveTask:
     deadline_ms: int | None = None
     execution_trace: list[dict[str, Any]] = field(default_factory=list)
     result: dict[str, Any] | None = None
+    validation_report: dict[str, Any] | None = None
     status: TaskStatus = TaskStatus.PENDING
 
     def to_dict(self) -> dict[str, Any]:
@@ -96,6 +97,7 @@ class CognitiveTask:
             "deadline_ms": self.deadline_ms,
             "execution_trace": list(self.execution_trace),
             "result": self.result,
+            "validation_report": self.validation_report,
             "status": self.status.value,
         }
 
@@ -123,5 +125,6 @@ class CognitiveTask:
             deadline_ms=data.get("deadline_ms"),
             execution_trace=list(data.get("execution_trace", [])),
             result=data.get("result"),
+            validation_report=data.get("validation_report"),
             status=TaskStatus(data.get("status", TaskStatus.PENDING.value)),
         )

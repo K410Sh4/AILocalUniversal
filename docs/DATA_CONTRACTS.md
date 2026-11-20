@@ -2,33 +2,61 @@
 
 ## CognitiveTask
 
-Envelope versionado que atravessa o pipeline. Implementação inicial: `core/cognitive_task.py`.
+Envelope versionado que atravessa o pipeline. Implementação: core/cognitive_task.py.
 
-Campos conceituais: schema_version, task_id, original_text, normalized_text, intent, capabilities, difficulty, uncertainty, risk, urgency, evidence, deterministic_results, execution_plan, subtasks, token_budget, ram_budget_mb, deadline_ms, execution_trace, result e status.
+Campos principais: schema_version, task_id, original_text, normalized_text, intent, capabilities, indicadores heurísticos, evidence, deterministic_results, execution_plan, subtask_plan, execution_trace, result, validation_report e status.
 
-Scores de capacidades são afinidades heurísticas entre 0 e 1 nesta implementação, calculadas por âncoras lexicais e expostas em todas as 12 dimensões. Não representam probabilidades nem qualidade real do modelo. Dificuldade, incerteza, risco e urgência também são indicadores heurísticos independentes.
+O campo validation_report é opcional para compatibilidade com tarefas serializadas antes da Validation Layer. A ausência do campo equivale a validação ainda não executada; não deve ser interpretada como aprovação.
 
-execution_plan registra a rota selecionada (atualmente deterministic_only ou llm_assisted) e os componentes planejados. subtask_plan é uma lista opcional de subtarefas com id, ordem, texto, intenção, afinidades, depends_on, estratégia e status. subtasks mantém os IDs correspondentes. deterministic_results armazena a saída estruturada de ferramentas locais. O texto original permanece em original_text; normalized_text é usado para análise sem apagar a entrada original.
+## Subtask
+
+Cada item de subtask_plan pode conter:
+- id, order, text, intent, capabilities, depends_on e strategy;
+- status: pending, running, validating, completed, failed, blocked, cancelled ou skipped;
+- execution_kind: deterministic_tool ou llm;
+- result: conteúdo e metadados da execução;
+- validation_status: passed, needs_review ou failed;
+- verification_status: verified_deterministic ou not_independently_verified;
+- validation_report: checks e issues da etapa.
+
+O estado completed significa que a etapa produziu uma saída aceita estruturalmente. Não significa que todo o conteúdo está factualmente correto.
+
+## ValidationReport
+
+O relatório no nível de CognitiveTask.validation_report contém:
+- status: passed, needs_review, failed, running ou cancelled;
+- structural_status: passed, failed ou in_progress;
+- factual_status: verified_deterministic, not_independently_verified, failed ou not_verified;
+- checked_at: timestamp UTC;
+- summary: contagem de verificações, falhas, avisos e subtarefas verificadas;
+- checks: nome, status, mensagem e detalhes de cada verificação;
+- issues: código, severidade, mensagem e, quando aplicável, ID da subtarefa.
+
+Interpretação:
+- passed: verificações implementadas passaram e não existem avisos de revisão.
+- needs_review: integridade estrutural passou, mas conteúdo de LLM não tem verificação factual independente.
+- failed: inconsistência estrutural/determinística bloqueia a aceitação.
+- verified_deterministic: resultado reproduzido pela mesma ferramenta local, com comparação de identidade, saída, estado de sucesso/erro e valor.
+- not_independently_verified: conteúdo de LLM não foi confrontado com fonte independente nem validador específico do domínio.
+
+A Validation Layer não deve promover uma saída de LLM a verified sem evidência verificável ou um validador de domínio explicitamente registrado.
 
 ## Cognitive Inspector
 
-O Inspector consome uma projeção somente de leitura de CognitiveTask. Não altera o contrato nem persiste tarefas. Eventos de runtime podem ser anexados a execution_trace com stage, status, timestamp UTC e detalhes resumidos; não registrar prompts completos, segredos ou documentos no trace.
+O Inspector consome uma projeção somente de leitura do CognitiveTask. Exibe a última tarefa da sessão, sem persistir histórico de execuções. A projeção não altera os contratos.
 
 ## Evidence
 
-Cada evidência identifica origem e conteúdo, podendo conter localização (página, seção ou offset) e metadados. Não remover a relação entre resposta e fonte.
+Cada evidência identifica origem e conteúdo e pode conter localização (página, seção ou offset) e metadados. A relação entre afirmação e fonte deve ser preservada.
 
 ## ExecutionTrace
 
-Eventos registram estágio, estado, horário UTC e detalhes não sensíveis. Evitar armazenar segredos e documentos completos em logs.
+Eventos registram estágio, estado, horário UTC e detalhes não sensíveis. Não armazenar segredos, prompts completos ou documentos integrais no trace.
 
 ## Engine Adapter
 
-Contrato de engine fornece identificação, health check, inventário de modelos, capacidades, geração/streaming padronizados e fechamento/liberação de recursos.
+O contrato de engine fornece identificação, health check, inventário de modelos, capacidades e geração/streaming padronizados.
 
 ## Versionamento
 
-Mudanças incompatíveis no formato serializado exigem incremento de versão e migração explícita. Componentes não devem depender de campos internos não documentados.
-
-
-O campo token_budget do planejador inicial é uma estimativa indicativa para a rota. Nesta versão ele ainda não limita o parâmetro de geração do Engine Adapter.\n\n## Execução de subtarefas\n\nCada item de subtask_plan mantém status, execution_kind, result e verification_status. O estado completed indica que a etapa produziu uma saída, não que o conteúdo foi validado. Nesta versão a verificação é registrada como not_independently_verified. Falhas bloqueiam etapas ainda pendentes; cancelamento marca a etapa ativa como cancelled e as restantes como skipped. A síntese final fica em CognitiveTask.result.\n
+A adição opcional de validation_report mantém a leitura de payloads anteriores. Mudanças incompatíveis futuras exigem incremento de schema_version e migração explícita.

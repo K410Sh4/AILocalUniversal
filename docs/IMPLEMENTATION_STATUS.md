@@ -1,44 +1,64 @@
 # Estado da implementação
 
-Este arquivo diferencia código existente de funcionalidades futuras.
+Este documento diferencia código integrado, cobertura automatizada e validação operacional.
 
-| Área | Estado |
-|---|---|
-| README e documentação de arquitetura | Atualizados para a Fase 1 e a implementação inicial da Fase 2 |
-| Interface PySide6 | Chat, inventário de modelos, preferências e configurações implementados |
-| CognitiveTask | Contrato e serialização inicial implementados |
-| ExecutionTrace | Registro local básico implementado |
-| Orchestrator | Pipeline sequencial assíncrono com trace por estágio; usado no pipeline cognitivo |
-| Capability Vectorizer | Vetor lexical heurístico de 12 dimensões; embeddings e calibração pendentes |
-| Engine Adapter | Contrato e registry implementados |
-| Ollama | Health check, listagem de modelos, chat NDJSON streaming e tratamento de erros implementados |
-| Seleção de modelos | Manual e automático determinístico implementados |
-| Histórico | Persistência JSON local, escrita atômica e permissões privadas implementados |
-| Configurações | Persistência JSON local e validação básica implementadas |
-| Workers | Operações HTTP fora da thread da interface e cancelamento cooperativo implementados |
-| Núcleo cognitivo | Input Processing, Semantic Analysis, Task Decomposer, ferramentas determinísticas e Cognitive Planner integrados ao envio do Chat |
-| Cognitive Inspector | Painel somente de leitura da última tarefa da sessão, incluindo análise, plano, subtarefas, modelo, resultado e trace de geração |
-| Ferramentas locais | Calculadora AST restrita e conversões de comprimento, massa, tempo, dados e temperatura |
-| Testes | Testes unitários para protocolo simulado, seleção, persistência, análise, ferramentas e rotas cognitivas |
-| RAG | Planejado para Fase 3 |
-| Resource Manager | Planejado para Fase 4 |
-| Swarm P2P | Planejado para Fase 5 |
-| BitNet e RPC | Laboratório futuro |
+## Estado atual
+
+| Área | Implementado | Limite / próximo passo |
+|---|---|---|
+| Interface PySide6 | Chat, Modelos, configurações e Cognitive Inspector | Refinamentos conforme validação visual no Arch |
+| Engine Adapter | Contrato e registry | Novos backends em fases futuras |
+| Ollama | Health, inventário, capacidades, NDJSON e streaming | Expandir testes de integração e erros de runtime |
+| Storage | Histórico e configuração JSON, escrita atômica | Avaliar migração para banco conforme escala |
+| CognitiveTask | Contrato versionado, serialização e relatório de validação | Migrações formais quando houver mudança incompatível |
+| Input Processing | Normalização e preservação do original | Suporte posterior a anexos |
+| Semantic Analysis | Intenção e indicadores heurísticos | Embeddings, calibração e avaliação |
+| Capability Vectorizer | 12 dimensões lexicais explicáveis | Embeddings e classificador calibrado |
+| Task Decomposer | Listas e conectores sequenciais explícitos | Melhor decomposição de pedidos mistos e não estruturados |
+| Deterministic Tools | Calculadora AST restrita e conversor de unidades | Ampliar catálogo sob testes específicos |
+| Cognitive Task Executor | Execução sequencial em worker, dependências, ferramenta local, subtarefas LLM e síntese | Sem paralelismo ou roteamento multi-modelo |
+| Validation Layer | Estrutura, dependências, replay determinístico, completude e relatório | Sem verificação factual geral de texto LLM |
+| Cognitive Inspector | Mostra resultados, estados, trace e relatório de validação | Mostra apenas a última tarefa da sessão |
+| RAG / Context Composer | Planejado | Fase 3 |
+| Adaptive Resource Manager | Planejado | Fase 4 |
+| Roteamento especialista | Planejado | Fase 5 |
+| Swarm P2P | Planejado | Fase 6 |
+| BitNet / RPC | Experimental futuro | Fase 7 |
+
+## Validation Layer: escopo atual
+
+A camada atual executa verificações reproduzíveis:
+- resultado não vazio e saída estruturalmente presente;
+- dependências referenciadas e concluídas;
+- replay local de calculadora/conversor;
+- comparação de ferramenta, saída textual, estado de sucesso/erro e valor numérico;
+- presença de resultados para todas as subtarefas e da síntese final.
+
+Estados do relatório:
+- passed: verificações executáveis passaram e não existem avisos de revisão;
+- needs_review: estrutura passou, mas conteúdo gerado por LLM não foi verificado independentemente;
+- failed: inconsistência estrutural/determinística bloqueia a aceitação;
+- cancelled: execução interrompida antes da validação final.
+
+verified_deterministic significa que a mesma ferramenta local reproduziu a operação e a saída; não é prova formal de todo o domínio matemático. not_independently_verified significa que o texto do LLM não foi confrontado com fontes externas ou um verificador de domínio.
 
 ## Limitações conhecidas
 
-- A afinidade de capacidades é lexical e heurística; não usa embeddings e não é calibrada. Modelos especialistas por domínio ainda não são selecionados automaticamente.
-- A decomposição identifica listas e conectores explícitos, mas não cria agentes, não executa subtarefas em paralelo e não faz merge independente de resultados.
-- O histórico local usa JSON; banco de dados e migrações serão avaliados conforme escala.
-- O adaptador Ollama foi implementado com transporte HTTP simulado nos testes, mas precisa de teste de integração com Ollama real.
-- A interface foi construída, mas precisa ser validada em sessão gráfica Linux/Qt.
-- As ferramentas determinísticas cobrem apenas operações e unidades explicitamente suportadas; solicitações fora desse conjunto seguem para o Ollama.
-- O pipeline cognitivo inicial executa localmente e de forma síncrona no fluxo de envio da interface; estágios pesados ou externos devem ser movidos para workers antes de ampliar o pipeline.
-- O Cognitive Inspector mantém apenas a última tarefa em memória durante a sessão; não existe persistência nem consulta de tarefas antigas.
-- O renderizador matemático implementa um subconjunto local de LaTeX; comandos e ambientes não suportados permanecem visíveis e não são adivinhados. Fórmulas em `\\[...\\]` e `$...$` usam blocos centralizados destacados.
-- Equações display usam fonte absoluta de `20pt`: o rich text do Qt documenta `pt` e `px` para `font-size`; `em` não consta entre as unidades CSS suportadas.
+- Afinidades de capacidades e indicadores de dificuldade, incerteza, risco e urgência continuam heurísticos e não calibrados.
+- A decomposição depende de listas e conectores explícitos; pedidos mistos podem carregar contexto redundante nas subtarefas.
+- O executor é sequencial e usa o mesmo modelo em todas as subtarefas LLM e na síntese.
+- A síntese final é produzida por LLM e permanece factualmente não verificada.
+- A Validation Layer atual não prova teoremas, não verifica fatos gerais e não substitui validação de domínio.
+- O conjunto de ferramentas determinísticas é pequeno e cobre somente expressões/unidades suportadas.
+- O Cognitive Inspector mostra apenas a última tarefa da sessão; o relatório de validação não é persistido como histórico de execuções.
+- RAG, embeddings, Context Composer, gerenciamento de recursos, roteamento multi-modelo e Swarm ainda não foram implementados.
+- O renderizador matemático cobre um subconjunto de LaTeX, não um motor TeX completo.
+- O orçamento de tokens atual é indicativo e ainda não é aplicado como limite efetivo da engine.
 
-- Equações display usam uma única célula, sem linhas espaçadoras com bordas herdadas; o respiro é fornecido pela margem do bloco e pelo padding interno. O destaque prioriza tipografia e paleta ardósia neutra.
+## Validação operacional
 
-- Tipografia padrão do transcript elevada de 10pt para 11pt; títulos, código e listas ajustados proporcionalmente. Blocos matemáticos usam somente uma célula, sem linhas espaçadoras com bordas herdadas.
-\n- Cognitive Task Executor: execução sequencial, dependências, atalho determinístico de baixo risco, chamadas LLM individuais, síntese final, estados por subtarefa e atualização do Inspector; validação independente permanece pendente.\n
+O usuário já demonstrou no Arch Linux/KDE o Chat com Ollama/Qwen, o inventário de modelos, a decomposição de pedidos, a execução sequencial e a rota de calculadora local + explicação pelo modelo. A Validation Layer desta entrega ainda precisa ser exercitada no ambiente-alvo com:
+1. cálculo determinístico direto;
+2. pedido composto cálculo + explicação;
+3. explicação científica com aviso de revisão factual;
+4. falha/cancelamento durante execução.

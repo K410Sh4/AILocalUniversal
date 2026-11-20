@@ -75,6 +75,10 @@ async def test_executor_runs_independent_subtasks_sequentially_then_synthesizes(
     assert task.result is not None
     assert task.result["content"] == "Resposta sintetizada."
     assert task.result["subtask_count"] == 2
+    assert task.result["validation_status"] == "needs_review"
+    assert task.validation_report is not None
+    assert task.validation_report["structural_status"] == "passed"
+    assert task.validation_report["factual_status"] == "not_independently_verified"
     assert "".join(tokens) == "Resposta sintetizada."
     assert metadata["model"] == "fake:1b"
     assert any(event["status"] == "synthesis_started" for event in task.execution_trace)
@@ -96,11 +100,17 @@ async def test_executor_uses_local_calculation_for_dependency_then_model_and_syn
     first, second = task.subtask_plan
     assert first["execution_kind"] == "deterministic_tool"
     assert first["result"]["content"] == "Resultado: 4"
+    assert first["validation_status"] == "passed"
+    assert first["verification_status"] == "verified_deterministic"
     assert second["execution_kind"] == "llm"
+    assert second["validation_status"] == "needs_review"
     assert second["depends_on"] == [first["id"]]
     assert "Resultado: 4" in engine.requests[0].messages[-1]["content"]
     assert task.result is not None
     assert task.result["subtask_count"] == 2
+    assert second["verification_status"] == "not_independently_verified"
+    assert second["validation_status"] == "needs_review"
+    assert task.validation_report["status"] == "needs_review"
 
 
 @pytest.mark.asyncio
@@ -120,6 +130,7 @@ async def test_executor_marks_remaining_subtasks_blocked_after_failure() -> None
     assert task.subtask_plan[1]["status"] == "blocked"
     assert task.result is not None
     assert task.result["failed_subtask_id"] == task.subtask_plan[0]["id"]
+    assert task.validation_report["status"] == "failed"
 
 
 @pytest.mark.asyncio
@@ -183,3 +194,4 @@ async def test_executor_marks_active_subtask_cancelled_and_skips_remaining() -> 
     assert task.status is TaskStatus.CANCELLED
     assert task.subtask_plan[0]["status"] == "cancelled"
     assert task.subtask_plan[1]["status"] == "skipped"
+    assert task.validation_report["status"] == "cancelled"

@@ -31,7 +31,7 @@ O modo automático da interface escolhe o modelo preferido quando ele possui cap
 
 ## Fase 2 — Núcleo cognitivo (implementação inicial)
 
-O envio de mensagens passa por um pipeline local antes de decidir a execução:
+O envio de mensagens passa por um pipeline local antes de decidir a execução. Pedidos com duas ou mais partes explícitas usam o Cognitive Task Executor sequencial; resultados são conferidos antes da síntese final:
 
 - Input Processing: normalização Unicode e de espaços, preservando o texto original e limitando entradas excessivas.
 - Semantic Analysis: classificação heurística de intenção e indicadores separados de dificuldade, incerteza, risco e urgência.
@@ -41,8 +41,10 @@ O envio de mensagens passa por um pipeline local antes de decidir a execução:
 - Deterministic Processing: calculadora com AST restrita e conversões explícitas de unidades comuns; não executa código arbitrário.
 - Cognitive Planner: encaminha operações suportadas e de baixo risco para ferramentas locais; as demais seguem para o modelo configurado.
 - Orchestrator: executa estágios e registra trace de início, conclusão e falhas.
+- Cognitive Task Executor: executa subtarefas individualmente, respeita dependências, reaproveita ferramentas determinísticas de baixo risco, envia as demais ao mesmo modelo e sintetiza os resultados.
+- Validation Layer: confere estrutura, completude, dependências e reproduz resultados determinísticos antes de aceitá-los.
 
-Os scores são afinidades heurísticas entre 0 e 1, não probabilidades calibradas. Não há embeddings semânticos, classificador treinado, decomposição semântica livre, execução paralela de subtarefas ou seleção automática de especialistas por domínio. A decomposição atual depende de estrutura explícita e todas as partes são respondidas por uma única geração. As conversões de dados usam fatores decimais (base 1000). O conjunto de ferramentas é intencionalmente pequeno e será ampliado com testes específicos.
+Os scores são afinidades heurísticas entre 0 e 1, não probabilidades calibradas. Não há embeddings semânticos, classificador treinado, decomposição semântica livre, execução paralela ou seleção automática de especialistas por domínio. A decomposição atual depende de estrutura explícita. Cada parte é executada separadamente e depois sintetizada pelo mesmo modelo, aumentando o número de chamadas Ollama em pedidos compostos. As conversões de dados usam fatores decimais (base 1000). O conjunto de ferramentas é intencionalmente pequeno e será ampliado com testes específicos.
 
 ## Arquitetura
 
@@ -64,7 +66,7 @@ flowchart TD
  L --> F
 ~~~
 
-A arquitetura completa continua incluindo RAG, Context Composer, validação de evidências, Resource Manager e execução distribuída. Esses blocos permanecem em fases posteriores; a Fase 2 ativa apenas o pipeline local descrito acima.
+A Validation Layer atual é estrutural e determinística: reproduz cálculos/conversões locais, confere dependências e completude e registra avisos para saídas de LLM. Ela não comprova fatos de explicações livres sem evidência externa. RAG, Context Composer e verificação factual baseada em fontes serão construídos na Fase 3.
 
 ## Estrutura
 
@@ -142,7 +144,7 @@ Os arquivos são escritos atomicamente e com permissões privadas no Linux. Faç
 .venv/bin/ruff check .
 ~~~
 
-A suíte cobre contratos, seleção, persistência, protocolo Ollama simulado, análise cognitiva, ferramentas determinísticas, rotas do planejador e projeção de dados do Cognitive Inspector. A apresentação visual do novo painel e o fluxo integrado ainda precisam ser validados no Arch Linux.
+A suíte cobre contratos, seleção, persistência, protocolo Ollama simulado, análise cognitiva, ferramentas determinísticas, execução sequencial, dependências, falhas, cancelamento, validação estrutural e projeção do Cognitive Inspector. A integração da Validation Layer com Ollama real ainda deve ser exercitada no Arch Linux.
 
 ## Roadmap
 

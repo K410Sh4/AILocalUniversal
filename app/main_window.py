@@ -15,6 +15,7 @@ from app.views.models_view import ModelsView
 from core.cognitive_pipeline import analyze_request
 from core.cognitive_task import CognitiveTask, TaskStatus
 from core.input_processing import InputValidationError
+from core.validation_layer import ValidationLayer
 from engines.base import EngineAdapter, EngineRequest, ModelInfo
 from engines.model_selector import ModelSelectionError, choose_model
 from engines.ollama_engine import OllamaEngine
@@ -323,6 +324,39 @@ class MainWindow(QMainWindow):
             else "llm_assisted"
         )
         if route == "deterministic_only" and cognitive_task.result is not None:
+            validation_report = ValidationLayer().validate_deterministic_response(
+                cognitive_task
+            )
+            cognitive_task.validation_report = validation_report
+            cognitive_task.result["validation_status"] = validation_report["status"]
+            cognitive_task.result["verification_status"] = validation_report[
+                "factual_status"
+            ]
+            self.cognitive_view.set_task(cognitive_task)
+            if validation_report["status"] == "failed":
+                cognitive_task.status = TaskStatus.FAILED
+                self.cognitive_view.set_task(cognitive_task)
+                self._record_cognitive_event(
+                    "validation_layer",
+                    "failed",
+                    {"scope": "deterministic_response"},
+                )
+                detail = "; ".join(
+                    issue["message"] for issue in validation_report["issues"]
+                )
+                QMessageBox.warning(
+                    self,
+                    "Validação do resultado",
+                    "A resposta determinística foi bloqueada porque não passou "
+                    f"na validação local.\n\n{detail}",
+                )
+                self.statusBar().showMessage("Validação determinística falhou", 8000)
+                return
+            self._record_cognitive_event(
+                "validation_layer",
+                validation_report["status"],
+                {"scope": "deterministic_response"},
+            )
             conversation = self.current_conversation
             original_text = cognitive_task.original_text.strip()
             conversation.messages.append(
@@ -595,6 +629,13 @@ class MainWindow(QMainWindow):
                     }
                 )
                 self.last_cognitive_task.result = result
+                if isinstance(self.last_cognitive_task.validation_report, dict):
+                    result["validation_status"] = self.last_cognitive_task.validation_report.get(
+                        "status"
+                    )
+                    result["verification_status"] = self.last_cognitive_task.validation_report.get(
+                        "factual_status"
+                    )
                 self.last_cognitive_task.status = TaskStatus.COMPLETED
         self._record_cognitive_event(
             "ollama_chat",

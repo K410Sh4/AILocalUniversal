@@ -51,3 +51,22 @@ def test_inspector_snapshot_includes_selected_model_and_runtime_trace() -> None:
 
     assert snapshot["selected_model"] == "qwen3:4b"
     assert snapshot["trace"][-1]["stage"] == "ollama_chat"
+
+
+def test_inspector_snapshot_includes_validation_report() -> None:
+    from core.cognitive_task import CognitiveTask
+
+    task = CognitiveTask(
+        original_text="Calcule 2 + 2",
+        validation_report={
+            "status": "passed",
+            "structural_status": "passed",
+            "factual_status": "verified_deterministic",
+            "checks": [],
+            "issues": [],
+        },
+    )
+
+    snapshot = build_inspector_snapshot(task)
+
+    assert snapshot["validation_report"]["status"] == "passed"
