@@ -18,7 +18,7 @@ Este arquivo diferencia código existente de funcionalidades futuras.
 | Workers | Operações HTTP fora da thread da interface e cancelamento cooperativo implementados |
 | Testes | Testes unitários para protocolo simulado, seleção e persistência adicionados |
 | RAG | Planejado para Fase 3 |
-| Resource Manager | Planejado para Fase 4 |
+| Resource Manager | Planejado para Fase 4; planejador inicial NeuralInjector implementado (RAM/CPU, perfis, orçamento e relatório; integração GPU/backend pendente) |
 | Swarm P2P | Planejado para Fase 5 |
 | BitNet e RPC | Laboratório futuro |
 
