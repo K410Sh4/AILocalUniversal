@@ -62,7 +62,7 @@ A branch `feature/rag-v1` inclui uma biblioteca de conhecimento local e integra�
 - Seleção persistente do modelo de embeddings e ação explícita para reindexar vetores após troca de modelo.
 - Indexação em worker Qt; os arquivos originais não são movidos nem apagados.
 
-**Validação:** o smoke test real foi aprovado no Arch com Ollama `embeddinggemma` (768 dimensões). CI da biblioteca/UI: Ruff aprovado e 142 testes Pytest aprovados. O usuário também havia aprovado 132 testes e o smoke test no ambiente Python 3.14 antes da implementação da interface.
+**Validação:** o smoke test real foi aprovado no Arch com Ollama `embeddinggemma` (768 dimensões). CI da integração RAG ao Chat e do benchmark sintético: Ruff aprovado e 155 testes Pytest aprovados (Python 3.11). O usuário também validou no Arch a recuperação vetorial/híbrida com EmbeddingGemma e Qwen3 Embedding; a integração Chat-RAG aguarda teste operacional após pull.
 
 **Limites:** a integração inicial ao Chat é opt-in, usa documentos como dados não confiáveis e valida a integridade estrutural das citações, sem provar verdade/entailment. A validação operacional da integração após pull no Arch, reranker concreto, benchmark de qualidade em corpus representativo, OCR e orçamento de contexto por tokenizer permanecem pendentes. Consulte [docs/RAG.md](docs/RAG.md).
  
