@@ -96,6 +96,21 @@ As fases são entregas progressivas. Uma funcionalidade só é considerada concl
 
 **Saída da Fase 3:** respostas com evidências recuperadas, proveniência verificável e validação explícita dos vínculos. A validação de links/hash não deve ser confundida com prova factual ou verificação de entailment.
 
+### 3.3 — Biblioteca documental e interface Conhecimento
+
+- [x] Serviço KnowledgeLibrary com persistência lexical/vetorial em diretório XDG local.
+- [x] Ingestão explícita de arquivos selecionados pelo usuário; sem cópia ou movimentação do original.
+- [x] Listagem de documentos, tipo, tamanho e contagem de chunks.
+- [x] Remoção do índice com preservação do arquivo original.
+- [x] Prévia de recuperação lexical/vetorial dentro da aba Conhecimento.
+- [x] Seleção persistente de modelo de embeddings, independente do modelo de chat.
+- [x] Reindexação explícita após troca de modelo de embeddings.
+- [x] Workers Qt para não bloquear a thread da interface.
+- [x] Fallback lexical e aviso explícito quando a consulta vetorial falhar.
+- [x] Testes automatizados do serviço, configuração e componentes básicos da UI; CI atual com 142 testes aprovados.
+- [ ] Validar visualmente a aba Conhecimento no Arch Linux.
+- [ ] Ingerir, buscar e remover um documento de teste no ambiente do usuário e conferir persistência após reinício.
+
 ## Fase 4 — Gerenciamento adaptativo de recursos
 
 1. Telemetria de RAM, VRAM, CPU, GPU e disco, distinguindo valores disponíveis e estimados.

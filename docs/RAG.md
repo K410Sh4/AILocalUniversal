@@ -66,6 +66,27 @@ O Context Composer gera marcadores `[E1]`, `[E2]` etc., adiciona origem e locali
 
 EvidenceValidator confere se as citações remetem a chunks existentes e se hash, conteúdo e offsets coincidem com o índice. Seu factual_status continua `not_independently_verified`: integridade do link não demonstra entailment, ausência de contradição nem verdade factual da resposta.
 
+## Biblioteca documental e aba Conhecimento
+
+`KnowledgeLibrary` fornece persistência e gestão da biblioteca no diretório:
+
+`$XDG_DATA_HOME/ailocal-universal/knowledge`
+
+Na ausência de `XDG_DATA_HOME`, utiliza `~/.local/share/ailocal-universal/knowledge`. No Linux, o diretório e os bancos são criados com permissões privadas (0700 para diretórios e 0600 para arquivos SQLite).
+
+A aba PySide6 **Conhecimento** oferece:
+- seleção explícita de arquivos TXT, Markdown, PDF e formatos técnicos suportados;
+- ingestão lexical e, quando há um modelo selecionado, indexação vetorial;
+- listagem de documentos, tipo, tamanho e contagem de trechos;
+- remoção do documento do índice lexical/vetorial, sem apagar ou mover o original;
+- prévia da recuperação e das fontes antes de qualquer uso no Chat;
+- seleção persistente de modelo de embeddings, separada do modelo de chat;
+- ação explícita para reindexar vetores após a troca do modelo.
+
+As operações de armazenamento e inferência são executadas em workers Qt. Se a geração de embeddings falhar durante a ingestão, a versão lexical permanece e a UI informa que a indexação foi parcial. Se a busca vetorial falhar na consulta, a biblioteca tenta a busca lexical e mostra um aviso. A reindexação é necessária para que documentos existentes tenham vetores no novo modelo escolhido.
+
+A UI não aciona automaticamente o RAG no Chat, não injeta trechos no prompt e não muda o comportamento do botão Enviar. Ela permite administrar e testar a biblioteca isoladamente.
+
 ## Ponte para o CognitiveTask
 
 `KnowledgeRuntime` é a camada de ligação explícita entre recuperação e tarefa cognitiva:
@@ -80,10 +101,10 @@ Esta ponte é testável e reutilizável, mas ainda não é chamada pelo `MainWin
 
 ## Limites desta entrega
 
-- Nenhuma integração ao Cognitive Pipeline, CognitiveTask, prompt do Chat, ChatView ou Cognitive Inspector.
+- Nenhuma integração automática ao fluxo do Chat: a aba Conhecimento gerencia/testa a biblioteca, mas não injeta trechos no prompt nem altera o botão Enviar.
 - Não há reranker concreto, OCR ou tratamento de PDF escaneado.
 - O usuário deve instalar e selecionar um modelo de embeddings; a aplicação não baixa modelos automaticamente.
-- A avaliação atual inclui 132 testes automatizados no Python 3.14 e smoke test operacional aprovado no Arch com Ollama real. Ainda faltam benchmarks de qualidade em corpus representativo e avaliação factual/entailment.
+- O CI atual inclui 142 testes automatizados aprovados. O usuário também executou 132 testes no Python 3.14 e aprovou o smoke test operacional no Arch com Ollama real antes da nova UI. A aba Conhecimento aguarda validação visual/operacional no Arch. Ainda faltam benchmarks de qualidade em corpus representativo e avaliação factual/entailment.
 - Embeddings de texto não são equivalentes a um verificador factual: recuperação e integridade de citações não garantem que uma alegação seja suportada pela fonte.
 
 ## Próximas entregas da Fase 3
@@ -92,7 +113,7 @@ Esta ponte é testável e reutilizável, mas ainda não é chamada pelo `MainWin
 2. Reranker concreto, opcional e avaliado por qualidade/latência.
 3. Política de deduplicação, busca híbrida, filtros e orçamento por tokenizer/backend.
 4. Integração ao Cognitive Pipeline, CognitiveTask e Validation Layer.
-5. UI de ingestão, gestão documental, fontes e citações.
+5. Integração de fontes/citações ao Chat e ao Cognitive Inspector; a biblioteca e a aba de gestão/prévia já existem, mas seguem independentes da conversa.
 6. Corpus de avaliação RAG com precision@k, recall@k, MRR, cobertura, fidelidade, conflitos e resistência a prompt injection.
 
 Nenhuma dessas capacidades pendentes deve ser anunciada como concluída.

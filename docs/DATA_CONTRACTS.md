@@ -137,3 +137,23 @@ A busca FTS5 remove palavras funcionais comuns da consulta antes de combinar os 
 ## Registro de validação do provider Ollama
 
 Execução real no Arch Linux em 2026-11-20: modelo `embeddinggemma`, 768 dimensões, dois chunks sintéticos, duas correspondências vetoriais e duas híbridas. Consulta idêntica ao primeiro chunk resultou em similaridade cosseno 1.0. O SQLite de teste era temporário e foi removido. Essa execução valida o protocolo e o caminho vetorial básico, não a relevância semântica em corpus documental representativo.
+
+
+## KnowledgeLibrary e interface Conhecimento — Fase 3.3
+
+### KnowledgeLibrary
+
+- `data_directory`: diretório persistente da biblioteca local, padrão XDG `$XDG_DATA_HOME/ailocal-universal/knowledge`.
+- `list_documents()`: retorna metadados documentais com contagem de chunks.
+- `ingest_files(paths)`: ingere somente os caminhos explicitamente fornecidos; devolve resultado por arquivo, contagem lexical/vetorial e aviso de falha vetorial parcial.
+- `delete_documents(document_ids)`: remove os registros do índice e os vetores; não altera o arquivo original.
+- `reindex_vectors()`: recria os vetores para todos os chunks existentes usando o modelo de embeddings atual.
+- `search(query)`: devolve ContextBundle; quando o backend vetorial falha, tenta busca lexical e registra `last_search_warning`.
+
+### KnowledgeLibraryWorker
+
+Operações suportadas: `list`, `ingest`, `delete`, `search` e `reindex`. O worker abre e fecha a biblioteca em sua própria thread e emite resultados serializáveis; não compartilha conexões SQLite com a interface.
+
+### Configuração
+
+`AppConfig.embedding_model` é opcional e independente de `preferred_model` e `manual_model`. Configurações legadas sem essa chave continuam válidas. A troca do modelo é persistida, mas exige reindexação explícita para preencher o novo espaço vetorial.

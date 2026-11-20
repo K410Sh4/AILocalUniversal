@@ -57,3 +57,14 @@ Considerar peers desconhecidos, dispositivos comprometidos, prompt injection, ar
 - As instruções textuais pedem que o modelo não obedeça comandos encontrados em documentos; isso é mitigação, não garantia contra prompt injection.
 - Os logs da recuperação guardam contagens e estado, não o texto integral dos documentos.
 - Antes de ativar RAG no Chat, a integração deverá limitar contexto, respeitar seleção/escopo dos documentos e permitir desativação explícita.
+
+
+## Biblioteca documental na interface (Fase 3.3)
+
+- A ingestão parte apenas dos caminhos explicitamente selecionados pelo usuário no diálogo de arquivos.
+- O aplicativo não move, renomeia ou apaga os arquivos originais. A ação Remover apaga somente os registros extraídos e seus vetores do índice local.
+- A biblioteca usa `$XDG_DATA_HOME/ailocal-universal/knowledge` (fallback `~/.local/share/ailocal-universal/knowledge`). Diretórios são criados com modo 0700 e bancos SQLite com modo 0600 no Linux.
+- Ingestão, remoção, reindexação e busca são executadas em worker Qt, fora da thread da interface.
+- A troca de modelo de embeddings não reindexa silenciosamente. A interface exige a ação explícita Reindexar vetores.
+- A prévia de busca na aba Conhecimento não insere resultados no histórico da conversa, não os injeta no system prompt e não ativa RAG automaticamente.
+- A UI bloqueia o encerramento enquanto um worker documental está ocupado, para evitar fechar a aplicação durante uma gravação do índice.

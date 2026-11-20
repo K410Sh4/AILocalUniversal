@@ -46,23 +46,25 @@ O envio de mensagens passa por um pipeline local antes de decidir a execução. 
 
 Os scores são afinidades heurísticas entre 0 e 1, não probabilidades calibradas. Não há embeddings semânticos, classificador treinado, decomposição semântica livre, execução paralela ou seleção automática de especialistas por domínio. A decomposição atual depende de estrutura explícita. Cada parte é executada separadamente e depois sintetizada pelo mesmo modelo, aumentando o número de chamadas Ollama em pedidos compostos. As conversões de dados usam fatores decimais (base 1000). O conjunto de ferramentas é intencionalmente pequeno e será ampliado com testes específicos.
 
-## Fase 3 — Conhecimento local e RAG inicial
+## Fase 3 — Conhecimento local e RAG verificável
 
-A branch `feature/rag-v1` inicia a camada de conhecimento sem acoplá-la ainda à interface do Chat:
+A branch `feature/rag-v1` inclui uma biblioteca de conhecimento independente do fluxo de mensagens do Chat:
 
 - Loaders explícitos para TXT, Markdown e PDF com extração local; PDF usa dependência opcional.
-- SHA-256 do arquivo, URI de origem, localização por página, seção e offsets Unicode.
-- Chunking com limites e sobreposição configuráveis, sem cruzar páginas ou seções Markdown.
-- Índice lexical SQLite FTS5, persistente e filtrável por documento.
-- Embeddings via Ollama `/api/embed`, com modelo explicitamente escolhido e separado do modelo de chat.
-- Armazenamento vetorial local SQLite, busca por similaridade cosseno, filtros e reindexação.
-- Busca lexical e vetorial combinadas por RRF; reranker concreto ainda pendente.
-- Context Composer com citações estáveis e orçamento explícito em caracteres.
-- KnowledgeRuntime que anexa Evidence ao CognitiveTask e prepara contexto documental como dado não confiável.
-- Evidence Validator que verifica integridade/proveniência das citações, sem afirmar que a alegação foi provada pela fonte.
+- Proveniência por SHA-256, URI, página, seção e offsets Unicode.
+- Chunking com limites e sobreposição, sem cruzar páginas ou seções Markdown.
+- Índice lexical SQLite FTS5 e armazenamento vetorial SQLite.
+- Embeddings via Ollama `/api/embed`, usando um modelo explicitamente selecionado e separado do modelo de chat.
+- Busca lexical e vetorial combinadas por RRF, Context Composer, citações e Evidence Validator.
+- KnowledgeRuntime como ponte testada para associar Evidence ao CognitiveTask.
+- Aba **Conhecimento** para adicionar documentos, listar/remover entradas do índice e testar a recuperação local.
+- Seleção persistente do modelo de embeddings e ação explícita para reindexar vetores após troca de modelo.
+- Indexação em worker Qt; os arquivos originais não são movidos nem apagados.
 
-**Validação operacional:** smoke test real aprovado no Arch com Ollama `embeddinggemma` (768 dimensões); 2 chunks sintéticos indexados, recuperação vetorial/híbrida aprovada e SQLite temporário removido. A suíte local do usuário aprovou 132 testes em Python 3.14. **Limites:** o KnowledgeRuntime ainda não é chamado pelo MainWindow/CognitiveTaskExecutor; não há reranker concreto, OCR ou interface de gestão documental. O orçamento do Context Composer é em caracteres, não tokens. Consulte [docs/RAG.md](docs/RAG.md).
+**Validação:** o smoke test real foi aprovado no Arch com Ollama `embeddinggemma` (768 dimensões). CI da biblioteca/UI: Ruff aprovado e 142 testes Pytest aprovados. O usuário também havia aprovado 132 testes e o smoke test no ambiente Python 3.14 antes da implementação da interface.
 
+**Limites:** a aba Conhecimento ainda não injeta documentos no Chat. A chamada do KnowledgeRuntime pelo MainWindow/CognitiveTaskExecutor, a apresentação de citações no Chat, o reranker concreto, OCR, benchmark de qualidade e orçamento de contexto por tokenizer permanecem pendentes. Consulte [docs/RAG.md](docs/RAG.md).
+ 
 ## Arquitetura
 
 ~~~mermaid
