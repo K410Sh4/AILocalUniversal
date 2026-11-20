@@ -61,16 +61,34 @@ As fases são entregas progressivas. Uma funcionalidade só é considerada concl
 
 ## Fase 3 — Conhecimento local e RAG verificável
 
-1. Loaders para PDF, Markdown, texto e formatos técnicos.
-2. Extração com proveniência: arquivo, hash, página, seção e offsets.
-3. Chunking respeitando títulos, tabelas, código e limites semânticos.
-4. Embeddings locais e índice vetorial substituível.
-5. Busca lexical + vetorial (híbrida), filtros e reranking.
-6. Context Composer com citações e limites de contexto.
-7. Validation Layer de evidências: alegações ligadas a fontes, citações verificáveis, conflitos e ausência de suporte.
-8. Conjunto de avaliação RAG: precisão de recuperação, cobertura e fidelidade às fontes.
+### 3.1 — Ingestão e recuperação lexical (base inicial na branch `feature/rag-v1`)
 
-**Saída:** respostas com conhecimento local rastreável e evidências auditáveis.
+- [x] Loader UTF-8 para texto e formatos técnicos declarados.
+- [x] Loader Markdown com preservação de títulos e blocos.
+- [x] Loader PDF opcional por pypdf, com limite de bytes/páginas/caracteres; sem OCR.
+- [x] Proveniência com URI, SHA-256, página, seção e offsets Unicode.
+- [x] Chunking determinístico com limites, sobreposição e separação por página/seção.
+- [x] Índice lexical local SQLite FTS5, filtros por documento e reingestão sem resultados obsoletos.
+- [x] Contratos substituíveis para busca vetorial e reranking.
+- [x] Fusão de rankings por Reciprocal Rank Fusion quando o backend vetorial existe.
+- [x] Context Composer com citações e orçamento em caracteres.
+- [x] Validação estrutural de referências, hash e trecho original.
+- [x] Testes unitários de loaders, chunking, indexação, recuperação, contexto e proveniência.
+
+### 3.2 — Recuperação semântica e integração (pendente)
+
+- [ ] Implementar provedor de embeddings local com suporte a embeddings via Ollama.
+- [ ] Implementar armazenamento vetorial substituível e persistente.
+- [ ] Implementar reranker concreto, opcional e mensurável.
+- [ ] Definir política de deduplicação, filtros e fusão híbrida com benchmarks.
+- [ ] Integrar loaders/ingestor/retriever ao CognitiveTask e ao Cognitive Pipeline.
+- [ ] Integrar Context Composer ao prompt do modelo e transportar Evidence para a Validation Layer.
+- [ ] Exibir fontes, páginas e citações no Chat e no Cognitive Inspector.
+- [ ] Criar corpus de avaliação RAG: precisão@k, recall@k, MRR, cobertura, fidelidade e conflitos.
+- [ ] Avaliar resistência a prompt injection em documentos e a conteúdo adversarial.
+- [ ] Definir orçamento de tokens por tokenizer/backend; a primeira versão usa limite em caracteres.
+
+**Saída da Fase 3:** respostas com evidências recuperadas, proveniência verificável e validação explícita dos vínculos. A validação de links/hash não deve ser confundida com prova factual ou verificação de entailment.
 
 ## Fase 4 — Gerenciamento adaptativo de recursos
 

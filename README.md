@@ -4,7 +4,7 @@
 
 O AILocal Universal coordena modelos de linguagem, ferramentas determinísticas, conhecimento local e recursos computacionais. Seu princípio central é usar o mecanismo mais adequado para cada parte da tarefa — não acionar um LLM para tudo.
 
-**Estado:** Fase 1 em validação operacional; núcleo cognitivo inicial da Fase 2 implementado em branch de desenvolvimento.  
+**Estado:** Chat com Ollama visualmente confirmado no Arch Linux; aceitação completa da Fase 2 ainda em validação. A base inicial de RAG está em `feature/rag-v1`, separada da `main`.  
 **Plataforma prioritária:** Linux / Arch Linux.  
 **Interface:** Python + PySide6.  
 **Backend inicial:** Ollama.
@@ -46,6 +46,20 @@ O envio de mensagens passa por um pipeline local antes de decidir a execução. 
 
 Os scores são afinidades heurísticas entre 0 e 1, não probabilidades calibradas. Não há embeddings semânticos, classificador treinado, decomposição semântica livre, execução paralela ou seleção automática de especialistas por domínio. A decomposição atual depende de estrutura explícita. Cada parte é executada separadamente e depois sintetizada pelo mesmo modelo, aumentando o número de chamadas Ollama em pedidos compostos. As conversões de dados usam fatores decimais (base 1000). O conjunto de ferramentas é intencionalmente pequeno e será ampliado com testes específicos.
 
+## Fase 3 — Conhecimento local e RAG inicial
+
+A branch `feature/rag-v1` inicia a camada de conhecimento sem acoplá-la ainda à interface do Chat:
+
+- Loaders explícitos para TXT, Markdown e PDF com extração local; PDF usa dependência opcional.
+- SHA-256 do arquivo, URI de origem, localização por página, seção e offsets Unicode.
+- Chunking com limites e sobreposição configuráveis, sem cruzar páginas ou seções Markdown.
+- Índice lexical SQLite FTS5, persistente e filtrável por documento.
+- Contratos para backend vetorial e reranker, com fusão RRF quando um backend vetorial é fornecido.
+- Context Composer com citações estáveis e orçamento explícito em caracteres.
+- Evidence Validator que verifica integridade/proveniência das citações, sem afirmar que a alegação foi provada pela fonte.
+
+**Limites desta entrega:** ainda não há provedor de embeddings local, índice vetorial real, reranker concreto, OCR, recuperação conectada ao Cognitive Pipeline ou interface de gestão documental. O orçamento do Context Composer é em caracteres, não tokens. Consulte [docs/RAG.md](docs/RAG.md).
+
 ## Arquitetura
 
 ~~~mermaid
@@ -77,7 +91,7 @@ A Validation Layer atual é estrutural e determinística: reproduz cálculos/con
 - workers/: operações de rede fora da thread da UI.
 - storage/: configurações e histórico local.
 - pipeline/: futuras etapas cognitivas.
-- knowledge/: futura ingestão e recuperação RAG.
+- knowledge/: loaders, chunking, índice lexical SQLite FTS5, recuperação híbrida extensível, composição de contexto e validação estrutural de evidências (branch `feature/rag-v1`).
 - resources/: futuro gerenciamento de recursos.
 - swarm/: futura comunicação cooperativa P2P.
 - docs/: arquitetura, contratos, roadmap, segurança e status.
@@ -87,6 +101,7 @@ A Validation Layer atual é estrutural e determinística: reproduz cálculos/con
 - Python 3.11 ou superior.
 - PySide6 6.7 ou superior.
 - httpx 0.27 ou superior.
+- Opcional para PDFs: pypdf 7.1.1 ou superior, instalado pelo extra `documents`.
 - Ollama instalado e executando localmente.
 - Pelo menos um modelo de chat baixado no Ollama.
 
@@ -117,6 +132,16 @@ ollama pull qwen2.5:7b
 ~~~
 
 O modelo acima é apenas um exemplo; escolha um modelo compatível com a memória do seu computador.
+
+## Suporte opcional a PDF
+
+Para habilitar extração local de texto selecionável em PDFs:
+
+~~~bash
+.venv/bin/pip install -e ".[documents]"
+~~~
+
+PDFs digitalizados sem camada de texto não são processados por OCR nesta etapa.
 
 ## Utilização
 
@@ -170,6 +195,7 @@ Consulte docs/SECURITY.md.
 - Roadmap: docs/ROADMAP.md
 - Estado da implementação: docs/IMPLEMENTATION_STATUS.md
 - Contratos de dados: docs/DATA_CONTRACTS.md
+- RAG e proveniência: docs/RAG.md
 - Contribuição: CONTRIBUTING.md
 
 ---

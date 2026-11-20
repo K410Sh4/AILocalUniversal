@@ -60,3 +60,35 @@ O contrato de engine fornece identificação, health check, inventário de model
 ## Versionamento
 
 A adição opcional de validation_report mantém a leitura de payloads anteriores. Mudanças incompatíveis futuras exigem incremento de schema_version e migração explícita.
+
+
+## Conhecimento local — contratos iniciais da Fase 3
+
+### LoadedDocument
+
+Representa um arquivo explicitamente selecionado para ingestão:
+- source_uri, title, sha256, media_type, size_bytes, metadata;
+- pages: sequência de DocumentPage; PDFs usam page_number 1-based;
+- document_id é estável por source_uri; nova versão da mesma origem substitui o índice anterior.
+
+### DocumentChunk
+
+Trecho extraído com:
+- chunk_id determinístico, document_id, source_uri e source_sha256;
+- content e offsets start_offset/end_offset em code points Unicode do texto extraído da página;
+- page_number opcional e section_path Markdown;
+- media_type e metadados de chunking.
+
+Offsets de PDF são relativos ao texto extraído daquela página, não a posições de bytes do arquivo original. Extração de texto não garante reconstrução da disposição visual do PDF.
+
+### SearchHit e HybridRetriever
+
+SearchHit associa um DocumentChunk a score, rank e retrieval_sources. Scores são sinais de ordenação, não probabilidades. A busca lexical usa SQLite FTS5. A busca vetorial e o reranker são protocolos opcionais; nenhum backend vetorial concreto integra esta entrega. Quando há múltiplos rankings, a fusão inicial utiliza Reciprocal Rank Fusion.
+
+### ContextBundle e CitationRecord
+
+ContextBundle contém texto de contexto, Evidence do contrato CognitiveTask, registros de citação e IDs de chunks que não couberam no orçamento. O limite inicial é medido em caracteres Unicode, não em tokens. Cada Evidence mantém citation_id, chunk_id, document_id, hash, offsets e localização na origem.
+
+### Evidence validation
+
+EvidenceValidator verifica se a citação aponta para o chunk indexado e se conteúdo, hash e offsets permanecem consistentes. O relatório mantém factual_status como not_independently_verified: a integridade da referência não prova que uma afirmação é consequência lógica ou factual da fonte.

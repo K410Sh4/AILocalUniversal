@@ -19,11 +19,24 @@ Este documento diferencia código integrado, cobertura automatizada e validaçã
 | Cognitive Task Executor | Execução sequencial em worker, dependências, ferramenta local, subtarefas LLM e síntese | Sem paralelismo ou roteamento multi-modelo |
 | Validation Layer | Estrutura, dependências, replay determinístico, completude e relatório | Sem verificação factual geral de texto LLM |
 | Cognitive Inspector | Mostra resultados, estados, trace e relatório de validação | Mostra apenas a última tarefa da sessão |
-| RAG / Context Composer | Planejado | Fase 3 |
+| RAG / Context Composer | Parcial na branch `feature/rag-v1`: loaders TXT/Markdown/PDF, proveniência SHA-256, chunking, SQLite FTS5, RRF extensível, Context Composer e validação estrutural de citações | Sem embeddings locais, índice vetorial real, reranker concreto, OCR ou integração ao Cognitive Pipeline/UI |
 | Adaptive Resource Manager | Planejado | Fase 4 |
 | Roteamento especialista | Planejado | Fase 5 |
 | Swarm P2P | Planejado | Fase 6 |
 | BitNet / RPC | Experimental futuro | Fase 7 |
+
+## Fase 3 — escopo inicial em desenvolvimento
+
+A branch `feature/rag-v1` contém uma primeira base executável de conhecimento local:
+- loaders explícitos para TXT, Markdown e PDF; pypdf é opcional;
+- proveniência por URI, SHA-256, página, seção e offsets;
+- chunking determinístico com limites e sobreposição;
+- índice lexical SQLite FTS5, com filtros e substituição de versões do mesmo arquivo;
+- protocolo para backend vetorial e reranker, além de fusão RRF;
+- composição de contexto com citações estáveis e orçamento em caracteres;
+- validação estrutural de vínculos, hashes e trechos citados.
+
+Não há geração de embeddings, índice vetorial concreto, OCR ou integração com o Chat. A verificação de citações não garante que alegações do modelo sejam consequência lógica das fontes.
 
 ## Validation Layer: escopo atual
 
@@ -51,7 +64,7 @@ verified_deterministic significa que a mesma ferramenta local reproduziu a opera
 - A Validation Layer atual não prova teoremas, não verifica fatos gerais e não substitui validação de domínio.
 - O conjunto de ferramentas determinísticas é pequeno e cobre somente expressões/unidades suportadas.
 - O Cognitive Inspector mostra apenas a última tarefa da sessão; o relatório de validação não é persistido como histórico de execuções.
-- RAG, embeddings, Context Composer, gerenciamento de recursos, roteamento multi-modelo e Swarm ainda não foram implementados.
+- Embeddings locais, índice vetorial real, reranker concreto, integração do RAG ao Cognitive Pipeline/UI, gerenciamento adaptativo de recursos, roteamento multi-modelo e Swarm ainda não foram implementados.
 - O renderizador matemático cobre um subconjunto de LaTeX, não um motor TeX completo.
 - O orçamento de tokens atual é indicativo e ainda não é aplicado como limite efetivo da engine.
 
