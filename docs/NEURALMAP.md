@@ -145,6 +145,9 @@ A aba **NeuralMap** fornece:
 - Undo/redo por snapshots.
 - Abas de resultado e trace.
 - Worker QThread e solicitação de cancelamento cooperativo.
+- Remoção de nós/conexões selecionados via Delete/Backspace.
+- Realce visual de nós em execução, concluídos e com falha.
+- Smoke test PySide6 offscreen cobrindo abertura do editor, template, canvas, conexões e undo/redo.
 
 A v1 prioriza clareza do grafo e contratos explícitos; ainda não implementa subgrafos, colaboração multiusuário ou layout automático.
 
@@ -189,6 +192,7 @@ O pacote de exemplo declara os modelos e engines do template em `examples/neural
 - Integrar anexos à UI e ao contexto dos especialistas.
 - Expandir execução paralela de nós independentes com orçamento/limites e sem quebrar determinismo.
 - Adicionar validação automática JSON Schema no runtime/loader.
-- Adicionar ações de apagar nó/aresta individual e realce do nó ativo/erros no canvas.
 - Renderizar o objeto final na aba Chat com blocos de código, Markdown e imagem.
-- Testar UI Qt em Linux/Arch e o fluxo com Ollama real; benchmarks e CI ainda devem ser confirmados.
+- Validar manualmente a interface em sessão gráfica Linux/Arch e executar o fluxo com Ollama real; benchmarks e latência em hardware-alvo permanecem pendentes.
+
+**Validação automatizada:** GitHub Actions no commit `d56e37e` — Ruff aprovado e 113 testes passaram, incluindo o smoke test PySide6 offscreen.
