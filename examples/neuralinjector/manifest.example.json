@@ -50,6 +50,7 @@
     "adapters": [],
     "transformations": [],
     "hardware_profiles": [
+      "hardware/profiles/ultra_light.json",
       "hardware/profiles/minimal.json",
       "hardware/profiles/balanced.json",
       "hardware/profiles/performance.json",
