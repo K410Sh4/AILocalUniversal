@@ -50,7 +50,10 @@
     "adapters": [],
     "transformations": [],
     "hardware_profiles": [
-      "hardware/profiles/balanced.json"
+      "hardware/profiles/minimal.json",
+      "hardware/profiles/balanced.json",
+      "hardware/profiles/performance.json",
+      "hardware/profiles/max_quality.json"
     ],
     "pipelines": [],
     "grammars": [],
@@ -62,5 +65,29 @@
   "integrity": {
     "algorithm": "sha256",
     "checksums_file": "security/checksums.sha256"
+  },
+  "hardware_requirements": {
+    "minimum": {
+      "ram_mb": 2048,
+      "vram_mb": 0,
+      "disk_free_mb": 256
+    },
+    "recommended": {
+      "ram_mb": 4096,
+      "vram_mb": 0,
+      "disk_free_mb": 1024
+    },
+    "runtime": {
+      "supported_execution": [
+        "cpu",
+        "gpu"
+      ],
+      "context_min": 2048,
+      "context_recommended": 4096,
+      "required_features": [
+        "chat",
+        "system_message"
+      ]
+    }
   }
 }
