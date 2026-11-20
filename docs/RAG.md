@@ -134,3 +134,18 @@ Nenhuma dessas capacidades pendentes deve ser anunciada como concluída. A integ
 ## Limites de conclusão da Fase 3
 
 O núcleo lexical/vetorial, a biblioteca, a recuperação no Chat com ativação explícita e a exibição/validação estrutural das fontes compõem a entrega da Fase 3. Reranker concreto, benchmark de qualidade em corpus representativo, orçamento por tokenizer real, OCR e verificação semântica independente são evoluções posteriores; não são anunciados como concluídos nesta entrega.
+
+
+
+## Benchmark sintético de recuperação
+
+O script `scripts/evaluate_rag.py` cria quatro documentos sintéticos temporários e quatro consultas com documentos relevantes conhecidos. Mede precision@k, recall@k, MRR e cobertura em nível de documento, removendo IDs duplicados para que vários chunks do mesmo arquivo não contem como vários documentos.
+
+Compare os modelos com as mesmas consultas:
+
+~~~bash
+.venv/bin/python scripts/evaluate_rag.py --model embeddinggemma:latest
+.venv/bin/python scripts/evaluate_rag.py --model qwen3-embedding:0.6b
+~~~
+
+O script também pode executar o baseline lexical sem `--model`. Os resultados servem como microbenchmark reproduzível, não como evidência de qualidade em corpus real ou de veracidade factual. Os números dos modelos devem ser comparados pelas métricas de ranking, não pelos scores cosseno brutos entre espaços vetoriais diferentes.
