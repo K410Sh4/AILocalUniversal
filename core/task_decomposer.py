@@ -4,6 +4,8 @@ Só decompõe quando a estrutura é explícita (listas ou conectores sequenciais
 Não executa subtarefas nem cria agentes; produz um plano para orientar a síntese.
 """
 
+# ruff: noqa: I001
+
 from __future__ import annotations
 
 import re
