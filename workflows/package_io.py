@@ -128,6 +128,53 @@ def _manifest(files: dict[str, bytes]) -> dict[str, Any]:
     return manifest
 
 
+def _validate_graph_manifest_references(
+    graph: WorkflowGraph,
+    manifest: dict[str, Any],
+) -> None:
+    compatibility = manifest.get("compatibility", {})
+    declared_models = {
+        item.get("model_id")
+        for item in compatibility.get("models", [])
+        if isinstance(item, dict) and isinstance(item.get("model_id"), str)
+    }
+    declared_engines = {
+        item.get("id")
+        for item in compatibility.get("engines", [])
+        if isinstance(item, dict) and isinstance(item.get("id"), str)
+    }
+    declared_plugins = {
+        item.get("id")
+        for item in manifest.get("components", {}).get("plugins", [])
+        if isinstance(item, dict) and isinstance(item.get("id"), str)
+    }
+
+    for node in graph.nodes:
+        if not node.enabled or not node.node_type.startswith("specialist."):
+            continue
+        model_id = node.config.get("model_id")
+        engine_id = node.config.get("engine")
+        if model_id not in declared_models:
+            raise PackageGraphError(
+                "MODEL_REFERENCE_NOT_DECLARED",
+                f"O modelo '{model_id}' do nó '{node.label}' não está declarado em compatibility.models.",
+                ("Adicione o model_id ao manifesto antes de salvar o NeuralMap no pacote.",),
+            )
+        if engine_id not in declared_engines:
+            raise PackageGraphError(
+                "ENGINE_REFERENCE_NOT_DECLARED",
+                f"O engine '{engine_id}' do nó '{node.label}' não está declarado em compatibility.engines.",
+                ("Declare o backend requerido no manifesto do pacote.",),
+            )
+        plugin_ref = node.config.get("plugin_ref")
+        if plugin_ref and plugin_ref not in declared_plugins:
+            raise PackageGraphError(
+                "PLUGIN_REFERENCE_NOT_DECLARED",
+                f"O NeuralPlugin '{plugin_ref}' do nó '{node.label}' não está declarado em components.plugins.",
+                ("Instale/declare o plugin no manifesto ou remova a referência do nó.",),
+            )
+
+
 def _checksum_content(files: dict[str, bytes], checksum_path: str) -> bytes:
     lines = []
     for name in sorted(files):
@@ -224,7 +271,7 @@ def save_graph_to_package(
 ) -> Path:
     """Atomically add/update a graph and manifest reference in an unsigned package."""
     graph_data = graph.to_dict()
-    WorkflowGraph.from_dict(graph_data)
+    validated_graph = WorkflowGraph.from_dict(graph_data)
     _safe_archive_path(graph_path)
     if graph_path in {MANIFEST_PATH, "security/checksums.sha256"} or graph_path.startswith("security/"):
         raise PackageGraphError(
@@ -236,7 +283,13 @@ def save_graph_to_package(
     manifest = _manifest(files)
     checksum_path = manifest["integrity"]["checksums_file"]
     _verify_checksums(files, checksum_path)
+    _validate_graph_manifest_references(validated_graph, manifest)
 
+    if graph_path == checksum_path:
+        raise PackageGraphError(
+            "RESERVED_PACKAGE_PATH",
+            "O caminho do grafo não pode sobrescrever o arquivo de checksums.",
+        )
     pipelines = manifest["components"]["pipelines"]
     if graph_path not in pipelines:
         pipelines.append(graph_path)
@@ -278,4 +331,6 @@ def load_graph_from_package(
         data = json.loads(raw.decode("utf-8"))
     except (UnicodeDecodeError, json.JSONDecodeError) as exc:
         raise PackageGraphError("GRAPH_JSON_INVALID", "O pipeline.graph.json é inválido.") from exc
-    return WorkflowGraph.from_dict(data)
+    graph = WorkflowGraph.from_dict(data)
+    _validate_graph_manifest_references(graph, manifest)
+    return graph
