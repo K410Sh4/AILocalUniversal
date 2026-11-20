@@ -65,8 +65,12 @@ class OllamaSpecialistHandler:
         if engine_id != self.engine.name:
             raise GraphError(
                 "ENGINE_UNAVAILABLE",
-                f"O nó '{node.label}' requer '{engine_id}', mas o adaptador registrado é '{self.engine.name}'.",
-                ("Registre um adaptador para esse engine ou selecione Ollama nas propriedades do nó.",),
+                f"O nó '{node.label}' requer '{engine_id}', mas o adaptador "
+                f"registrado é '{self.engine.name}'.",
+                (
+                    "Registre um adaptador para esse engine ou selecione "
+                    "Ollama nas propriedades do nó.",
+                ),
             )
 
         system_prompt = str(node.config.get("system_prompt", "")).strip()
@@ -287,7 +291,10 @@ class ImageSpecialistHandler:
             raise GraphError(
                 "INLINE_IMAGE_DATA_REJECTED",
                 "O runtime não armazena pixels/base64 dentro do resultado do grafo.",
-                ("Grave a imagem no armazenamento de artefatos e retorne artifact_id/relative_path.",),
+                (
+                    "Grave a imagem no armazenamento de artefatos e retorne "
+                    "artifact_id/relative_path.",
+                ),
             )
         relative_path = result.get("relative_path")
         if relative_path is not None:
@@ -299,7 +306,8 @@ class ImageSpecialistHandler:
             ):
                 raise GraphError(
                     "UNSAFE_IMAGE_ARTIFACT_PATH",
-                    "O caminho do artefato precisa ser relativo e não pode sair do armazenamento do app.",
+                    "O caminho do artefato precisa ser relativo e não pode sair "
+                    "do armazenamento do app.",
                 )
         if not result.get("artifact_id") and not relative_path:
             raise GraphError(
