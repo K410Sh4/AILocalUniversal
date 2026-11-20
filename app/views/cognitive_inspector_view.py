@@ -126,7 +126,16 @@ class CognitiveInspectorView(QWidget):
         capabilities_layout.addWidget(self.capabilities_table)
 
         self.subtasks_table = self._create_table(
-            ["#", "Subtarefa", "Intenção", "Dependências", "Estado", "Execução", "Verificação", "Resultado"]
+            [
+                "#",
+                "Subtarefa",
+                "Intenção",
+                "Dependências",
+                "Estado",
+                "Execução",
+                "Verificação",
+                "Resultado",
+            ]
         )
         self.plan_table = self._create_table(
             ["Etapa", "Componente", "Estratégia / detalhe"]

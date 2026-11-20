@@ -1,5 +1,7 @@
 """Execução sequencial de subtarefas com dependências e síntese final."""
 
+# ruff: noqa: I001
+
 from __future__ import annotations
 
 import asyncio
