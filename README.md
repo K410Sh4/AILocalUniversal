@@ -61,7 +61,7 @@ A branch `feature/rag-v1` inicia a camada de conhecimento sem acoplá-la ainda �
 - KnowledgeRuntime que anexa Evidence ao CognitiveTask e prepara contexto documental como dado não confiável.
 - Evidence Validator que verifica integridade/proveniência das citações, sem afirmar que a alegação foi provada pela fonte.
 
-**Limites desta entrega:** embeddings e recuperação vetorial têm testes simulados, mas ainda precisam de validação com Ollama real no Arch. O KnowledgeRuntime existe, mas ainda não é chamado pelo MainWindow/CognitiveTaskExecutor. Não há reranker concreto, OCR ou interface de gestão documental. O orçamento do Context Composer é em caracteres, não tokens. Consulte [docs/RAG.md](docs/RAG.md).
+**Validação operacional:** smoke test real aprovado no Arch com Ollama `embeddinggemma` (768 dimensões); 2 chunks sintéticos indexados, recuperação vetorial/híbrida aprovada e SQLite temporário removido. A suíte local do usuário aprovou 132 testes em Python 3.14. **Limites:** o KnowledgeRuntime ainda não é chamado pelo MainWindow/CognitiveTaskExecutor; não há reranker concreto, OCR ou interface de gestão documental. O orçamento do Context Composer é em caracteres, não tokens. Consulte [docs/RAG.md](docs/RAG.md).
 
 ## Arquitetura
 
@@ -155,7 +155,7 @@ ollama pull embeddinggemma
 .venv/bin/python scripts/smoke_test_embeddings.py --model embeddinggemma
 ~~~
 
-O script usa SQLite temporário, removido ao terminar. Um resultado aprovado confirma conectividade e busca vetorial básica; não mede qualidade RAG em documentos reais.
+O smoke test foi executado com sucesso no Arch: `embeddinggemma`, 768 dimensões, 2 chunks, 2 resultados vetoriais, 2 híbridos e similaridade 1.0 para consulta idêntica. O script usa SQLite temporário, removido ao terminar. Um resultado aprovado confirma conectividade e busca vetorial básica; não mede qualidade RAG em documentos reais.
  O endpoint de embeddings usa por padrão o Ollama local em `127.0.0.1:11434`.
 
 ## Suporte opcional a PDF

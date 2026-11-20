@@ -132,3 +132,8 @@ O runtime ainda não é chamado pelo MainWindow nem pelo CognitiveTaskExecutor. 
 
 
 A busca FTS5 remove palavras funcionais comuns da consulta antes de combinar os termos remanescentes por AND. Palavras de negação, incluindo “não” e “sem”, são preservadas para não alterar o sentido da consulta.
+
+
+## Registro de validação do provider Ollama
+
+Execução real no Arch Linux em 2026-11-20: modelo `embeddinggemma`, 768 dimensões, dois chunks sintéticos, duas correspondências vetoriais e duas híbridas. Consulta idêntica ao primeiro chunk resultou em similaridade cosseno 1.0. O SQLite de teste era temporário e foi removido. Essa execução valida o protocolo e o caminho vetorial básico, não a relevância semântica em corpus documental representativo.

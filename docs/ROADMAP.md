@@ -82,13 +82,12 @@ As fases são entregas progressivas. Uma funcionalidade só é considerada concl
 - [x] LocalVectorIndexer e backend vetorial que confere chunk_id, document_id e source_sha256 antes de devolver evidências.
 - [x] Fusão lexical/vetorial por RRF quando o backend vetorial é fornecido.
 - [x] Testes simulados do provider, persistência, filtros, reindexação e integração lexical/vetorial.
-- [x] KnowledgeRuntime para anexar Evidence ao CognitiveTask, rastrear a recuperação e preparar mensagem documental não confiável.- [x] Smoke test do endpoint `/api/embed` e da recuperação vetorial com Ollama real, usando documentos sintéticos e banco temporário; execução manual no Arch ainda pendente.
+- [x] KnowledgeRuntime para anexar Evidence ao CognitiveTask e preparar mensagem documental não confiável.
+- [x] Smoke test real no Arch Linux com Ollama `embeddinggemma`: 768 dimensões, 2 chunks sintéticos indexados, busca vetorial/híbrida aprovada e SQLite temporário removido.
 - [ ] Escolher e comparar modelos de embeddings locais em hardware leve, intermediário e potente.
 - [ ] Implementar reranker concreto, opcional e mensurável.
 - [ ] Definir política de deduplicação e orçamento de tokens com benchmarks.
-- [ ] Validar ingestão e busca vetorial com Ollama real no Arch Linux.
-- [x] Criar ponte KnowledgeRuntime entre retriever, Context Composer, CognitiveTask.evidence e validação estrutural.
-- [ ] Chamar o KnowledgeRuntime no fluxo do MainWindow/CognitiveTaskExecutor com ativação explícita.
+- [ ] Integrar o KnowledgeRuntime ao MainWindow/CognitiveTaskExecutor com ativação explícita.
 - [ ] Integrar Context Composer ao prompt do modelo de forma controlada e transportar Evidence para a Validation Layer.
 - [ ] Exibir fontes, páginas e citações no Chat e no Cognitive Inspector.
 - [ ] Criar corpus de avaliação RAG: precisão@k, recall@k, MRR, cobertura, fidelidade e conflitos.
