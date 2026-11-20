@@ -56,7 +56,7 @@ O planejador fornece `activation_allowed`, mas o carregador/gerenciador precisa 
 - `critical`: pausar novas cargas e recomendar contexto/concorrência menores.
 - `emergency`: recusar novas cargas e suspender trabalho opcional ainda não iniciado.
 
-A recuperação usa histerese: a memória precisa ultrapassar um limite de recuperação antes de abandonar um estado de pressão. Isso reduz oscilações rápidas. O avaliador retorna ações sugeridas; não encerra gerações em curso, não descarrega modelos e não controla threads ou serviços por conta própria. Ainda falta um monitor periódico e um executor de ações integrado à aplicação.
+A recuperação usa histerese: a memória precisa ultrapassar um limite de recuperação antes de abandonar um estado de pressão. Isso reduz oscilações rápidas. A classe `ResourceMonitor` pode fazer amostragem periódica (padrão de 5 segundos), mas só começa após `start()`; por padrão lê RAM/CPU e pode receber um provedor de snapshot e callback próprios. O callback roda na thread do monitor e deve encaminhar atualizações de UI para a thread principal. O avaliador/monitor retorna ações sugeridas; não encerra gerações em curso, não descarrega modelos nem controla filas por conta própria. Ainda falta ligar o monitor ao ciclo de vida da aplicação e implementar um executor de ações seguro.
 
 ## Integração inicial com Ollama
 
