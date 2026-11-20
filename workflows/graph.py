@@ -408,12 +408,27 @@ def _validate_node_config(node: GraphNode) -> None:
                     )
         if config.get("plugin_ref") is not None and not isinstance(config["plugin_ref"], str):
             raise GraphError("INVALID_PLUGIN_REF", "plugin_ref deve ser um identificador textual.")
+        for key in ("use_resource_budget", "optional"):
+            if key in config and not isinstance(config[key], bool):
+                raise GraphError(
+                    "INVALID_SPECIALIST_FLAG",
+                    f"{key} precisa ser booleano no nó '{node.label}'.",
+                )
         generation = config.get("generation", {})
         if not isinstance(generation, dict):
             raise GraphError(
                 "INVALID_GENERATION_CONFIG",
                 f"Os parâmetros de geração de '{node.label}' devem ser um objeto.",
             )
+        for key, value in generation.items():
+            if not isinstance(key, str) or not (
+                value is None
+                or isinstance(value, (str, int, float, bool))
+            ):
+                raise GraphError(
+                    "INVALID_GENERATION_VALUE",
+                    f"O parâmetro '{key}' do nó '{node.label}' precisa ser escalar JSON.",
+                )
     if node.node_type == "control.loop":
         maximum = config.get("max_iterations", 3)
         if isinstance(maximum, bool) or not isinstance(maximum, int) or not 1 <= maximum <= 20:
@@ -421,10 +436,36 @@ def _validate_node_config(node: GraphNode) -> None:
                 "INVALID_LOOP_LIMIT",
                 "max_iterations deve ser um inteiro entre 1 e 20.",
             )
+        review_node_id = config.get("review_node_id", "review")
+        retry_targets = config.get("default_retry_targets", [])
+        if not isinstance(review_node_id, str) or not review_node_id:
+            raise GraphError(
+                "INVALID_LOOP_REVIEW_NODE",
+                "review_node_id precisa identificar o nó de revisão.",
+            )
+        if not isinstance(retry_targets, list) or any(
+            not isinstance(target, str) for target in retry_targets
+        ):
+            raise GraphError(
+                "INVALID_LOOP_RETRY_TARGETS",
+                "default_retry_targets precisa ser uma lista de IDs de nós.",
+            )
         if config.get("stop_condition", "approved") != "approved":
             raise GraphError(
                 "UNSUPPORTED_LOOP_CONDITION",
                 "A versão 1 aceita somente a condição de parada 'approved'.",
+            )
+    if node.node_type == "filter.context":
+        maximum = config.get("max_characters", 24000)
+        if isinstance(maximum, bool) or not isinstance(maximum, int) or maximum < 256:
+            raise GraphError(
+                "INVALID_CONTEXT_LIMIT",
+                "max_characters precisa ser um inteiro de pelo menos 256.",
+            )
+        if not isinstance(config.get("preserve_attachments", True), bool):
+            raise GraphError(
+                "INVALID_ATTACHMENT_POLICY",
+                "preserve_attachments precisa ser booleano.",
             )
     if node.node_type == "hardware.profile":
         if config.get("profile", "auto") not in {
