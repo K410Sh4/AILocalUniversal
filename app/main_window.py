@@ -417,7 +417,8 @@ class MainWindow(QMainWindow):
             system_parts.append(
                 "O sistema executará as partes desta solicitação individualmente, em sequência. "
                 "Quando receber uma instrução de subtarefa, responda somente àquela parte, "
-                "sem tentar resolver as demais. Depois haverá uma etapa separada de síntese."
+                "sem tentar resolver as demais. Quando receber a instrução SÍNTESE FINAL, "
+                "integre todos os resultados intermediários enviados."
             )
         if system_parts:
             messages.append({"role": "system", "content": "\n\n".join(system_parts)})
@@ -548,21 +549,6 @@ class MainWindow(QMainWindow):
             return
         self.last_cognitive_task = updated_task
         self.cognitive_view.set_task(updated_task)
-        self._record_cognitive_event(
-            "task_executor",
-            "completed",
-            {
-                "subtask_count": len(updated_task.subtask_plan),
-                "model": next(
-                    (
-                        step.get("model")
-                        for step in updated_task.execution_plan
-                        if step.get("component") == "cognitive_task_executor"
-                    ),
-                    None,
-                ),
-            },
-        )
         self._on_chat_completed(payload.get("metadata", {}))
 
     def _assistant_message(self) -> dict[str, str] | None:
