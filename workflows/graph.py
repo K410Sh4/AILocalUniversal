@@ -599,6 +599,30 @@ def validate_graph(graph: WorkflowGraph) -> None:
                     "control.loop.repeat só pode retornar a uma porta feedback de especialista.",
                 )
 
+    for node in graph.nodes:
+        if not node.enabled:
+            continue
+        required_ports = set(NODE_SPECS[node.node_type].required_inputs)
+        if (
+            node.node_type.startswith("specialist.")
+            and node.config.get("use_resource_budget", True)
+        ):
+            required_ports.add("budget")
+        connected_ports = {
+            edge.target_port
+            for edge in graph.edges
+            if edge.target == node.node_id
+            and node_map[edge.source].enabled
+        }
+        missing_ports = required_ports - connected_ports
+        if missing_ports:
+            raise GraphError(
+                "REQUIRED_INPUT_CONNECTION_MISSING",
+                f"O nó '{node.label}' não está conectado às portas obrigatórias: "
+                + ", ".join(sorted(missing_ports)),
+                ("Conecte cada porta obrigatória a uma saída compatível ou desabilite o nó.",),
+            )
+
     if loop_nodes:
         loop = loop_nodes[0]
         incoming_review = [
