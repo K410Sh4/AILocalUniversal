@@ -495,10 +495,9 @@ class MainWindow(QMainWindow):
         task = self._pending_knowledge_task
         text = self._pending_knowledge_text
         if task is None or text is None or not isinstance(payload, dict):
-            self.chat_view.set_busy(False)
-            self.chat_view.set_status("Recuperação local não retornou um resultado válido.")
-            self._pending_knowledge_task = None
-            self._pending_knowledge_text = None
+            self._on_knowledge_retrieval_failed(
+                "A recuperação local não retornou um resultado válido."
+            )
             return
 
         bundle = payload.get("bundle")
