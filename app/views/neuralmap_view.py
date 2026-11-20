@@ -22,6 +22,7 @@ from PySide6.QtWidgets import (
     QFileDialog,
     QFormLayout,
     QGraphicsEllipseItem,
+    QGraphicsItem,
     QGraphicsObject,
     QGraphicsPathItem,
     QGraphicsScene,
@@ -161,12 +162,13 @@ class NodeGraphicsItem(QGraphicsObject):
         self.input_ports: dict[str, PortItem] = {}
         self.output_ports: dict[str, PortItem] = {}
         self._press_position = QPointF()
+        self.active_state = "idle"
         self.setFlags(
-            QGraphicsObject.GraphicsItemFlag.ItemIsMovable
-            | QGraphicsObject.GraphicsItemFlag.ItemIsSelectable
-            | QGraphicsObject.GraphicsItemFlag.ItemSendsGeometryChanges
+            QGraphicsItem.GraphicsItemFlag.ItemIsMovable
+            | QGraphicsItem.GraphicsItemFlag.ItemIsSelectable
+            | QGraphicsItem.GraphicsItemFlag.ItemSendsGeometryChanges
         )
-        self.setCacheMode(QGraphicsObject.CacheMode.DeviceCoordinateCache)
+        self.setCacheMode(QGraphicsItem.CacheMode.DeviceCoordinateCache)
 
         for index, port in enumerate(self.inputs):
             y = 58 + index * 22
@@ -204,8 +206,18 @@ class NodeGraphicsItem(QGraphicsObject):
         if not self.node.enabled:
             color = QColor("#4b5563")
         outline = QColor("#8be0c5") if self.isSelected() else QColor("#1d2935")
+        outline_width = 2 if self.isSelected() else 1
+        if self.active_state == "running":
+            outline = QColor("#38bdf8")
+            outline_width = 3
+        elif self.active_state == "failed":
+            outline = QColor("#ef4444")
+            outline_width = 3
+        elif self.active_state == "completed":
+            outline = QColor("#4ade80")
+            outline_width = 2
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-        painter.setPen(QPen(outline, 2 if self.isSelected() else 1))
+        painter.setPen(QPen(outline, outline_width))
         painter.setBrush(QBrush(color))
         painter.drawRoundedRect(QRectF(0, 0, self.WIDTH, self.height), 10, 10)
         painter.setPen(QPen(QColor("#ffffff")))
@@ -262,6 +274,8 @@ class ConnectionGraphicsItem(QGraphicsPathItem):
         self.setZValue(-2)
         self.update_path()
 
+        self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable, True)
+
     def update_path(self, target_position: QPointF | None = None) -> None:
         start = self.source_port.scenePos()
         end = target_position or self.target_port.scenePos()
@@ -305,6 +319,7 @@ class GraphCanvas(QGraphicsView):
     node_moved = Signal(str, QPointF, QPointF)
     connection_requested = Signal(str, str, str, str)
     node_dropped = Signal(str, QPointF)
+    delete_requested = Signal(list, list)
 
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
@@ -494,6 +509,31 @@ class GraphCanvas(QGraphicsView):
             self.update_pending_connection(self.mapToScene(event.position().toPoint()))
         super().mouseMoveEvent(event)
 
+    def set_node_state(self, node_id: str, state: str) -> None:
+        item = self.node_items.get(node_id)
+        if item is not None:
+            item.active_state = state
+            item.update()
+
+    def keyPressEvent(self, event) -> None:
+        if event.key() in {Qt.Key.Key_Delete, Qt.Key.Key_Backspace}:
+            selected = self.graph_scene.selectedItems()
+            node_ids = [
+                item.node.node_id
+                for item in selected
+                if isinstance(item, NodeGraphicsItem)
+            ]
+            edge_ids = [
+                item.edge.edge_id
+                for item in selected
+                if isinstance(item, ConnectionGraphicsItem)
+            ]
+            if node_ids or edge_ids:
+                self.delete_requested.emit(node_ids, edge_ids)
+                event.accept()
+                return
+        super().keyPressEvent(event)
+
     def _selection_changed(self) -> None:
         selected = next(
             (
@@ -653,6 +693,7 @@ class NeuralMapView(QWidget):
         self.canvas.node_dropped.connect(self._drop_node)
         self.canvas.connection_requested.connect(self._connect_nodes)
         self.canvas.node_moved.connect(self._node_moved)
+        self.canvas.delete_requested.connect(self._delete_selected)
         self.apply_properties_button.clicked.connect(self.apply_node_properties)
 
     def set_hardware_status(self, profile: str, protection_mode: str) -> None:
@@ -675,9 +716,15 @@ class NeuralMapView(QWidget):
         )
 
     def set_execution_event(self, stage: str, status: str, details: object) -> None:
-        self.validation_details.setText(
-            f"Executando · {stage} · {status}"
-        )
+        for node_id in self.canvas.node_items:
+            if self.canvas.node_items[node_id].active_state == "running":
+                self.canvas.set_node_state(node_id, "idle")
+        if status in {"started", "completed", "failed", "optional_failed", "repeat"}:
+            state = "running" if status in {"started", "repeat"} else (
+                "failed" if status in {"failed", "optional_failed"} else "completed"
+            )
+            self.canvas.set_node_state(stage, state)
+        self.validation_details.setText(f"Execução · {stage} · {status}")
 
 
     def _snapshot(self) -> str:
@@ -793,6 +840,27 @@ class NeuralMapView(QWidget):
             )
         )
         self.graph_changed.emit()
+
+    def _delete_selected(self, node_ids: list[str], edge_ids: list[str]) -> None:
+        before = self._snapshot()
+        removed_nodes = set(node_ids)
+        removed_edges = set(edge_ids)
+        self.graph.nodes = [
+            node for node in self.graph.nodes
+            if node.node_id not in removed_nodes
+        ]
+        self.graph.edges = [
+            edge for edge in self.graph.edges
+            if edge.edge_id not in removed_edges
+            and edge.source not in removed_nodes
+            and edge.target not in removed_nodes
+        ]
+        after = self._snapshot()
+        if before != after:
+            self.undo_stack.push(
+                GraphSnapshotCommand(self, before, after, "Remover nós/conexões")
+            )
+            self.graph_changed.emit()
 
     def _node_moved(self, node_id: str, old_position: QPointF, new_position: QPointF) -> None:
         node = next((item for item in self.graph.nodes if item.node_id == node_id), None)
