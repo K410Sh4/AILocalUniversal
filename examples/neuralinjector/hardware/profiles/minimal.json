@@ -19,7 +19,8 @@
   "budget": {
     "max_ram_fraction": 0.55,
     "target_context_tokens": 2048,
-    "max_parallelism": 1
+    "max_parallelism": 1,
+    "max_cpu_threads": 4
   },
   "execution": {
     "preferred_backends": [
@@ -57,9 +58,5 @@
     ],
     "low_memory_threshold_mb": 8192,
     "allow_lower_precision_fallback": true
-  },
-  "notes": [
-    "Preset declarativo; validar limites e suporte do backend.",
-    "Não quantiza nem altera pesos por si só."
-  ]
+  }
 }
