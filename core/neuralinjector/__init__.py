@@ -1,3 +1,39 @@
-from .resources import (BenchmarkMode, CANONICAL_PROFILES, CompatibilityReport, HardwareProfile, HardwareSnapshot, ResourceBudget, ResourceRequirements, build_compatibility_report, detect_hardware, select_profile)
+from .resources import (
+    AdaptiveResourceManager,
+    BenchmarkMode,
+    CANONICAL_PROFILES,
+    CompatibilityReport,
+    DynamicResourceDecision,
+    GPUDevice,
+    HardwareProfile,
+    HardwareSnapshot,
+    ProtectionMode,
+    QuantizationPolicy,
+    ResourceBudget,
+    ResourcePressure,
+    ResourceRequirements,
+    build_compatibility_report,
+    detect_gpu_devices,
+    detect_hardware,
+    select_profile,
+)
 
-__all__ = ["BenchmarkMode", "CANONICAL_PROFILES", "CompatibilityReport", "HardwareProfile", "HardwareSnapshot", "ResourceBudget", "ResourceRequirements", "build_compatibility_report", "detect_hardware", "select_profile"]
+__all__ = [
+    "AdaptiveResourceManager",
+    "BenchmarkMode",
+    "CANONICAL_PROFILES",
+    "CompatibilityReport",
+    "DynamicResourceDecision",
+    "GPUDevice",
+    "HardwareProfile",
+    "HardwareSnapshot",
+    "ProtectionMode",
+    "QuantizationPolicy",
+    "ResourceBudget",
+    "ResourcePressure",
+    "ResourceRequirements",
+    "build_compatibility_report",
+    "detect_gpu_devices",
+    "detect_hardware",
+    "select_profile",
+]
