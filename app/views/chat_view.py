@@ -375,10 +375,10 @@ def build_transcript_html(messages: list[dict[str, str]]) -> str:
     pieces = [
         "<html><head><meta charset=\"utf-8\"><style>"
         "body{font-family:'Noto Sans',sans-serif;font-size:10pt;color:#e8edf4;}"
-        "p{margin-top:3px;margin-bottom:9px;}"
+        "p{margin-top:5px;margin-bottom:11px;}"
         "p:last-child{margin-bottom:0;}"
-        "ul,ol{margin-top:4px;margin-bottom:9px;}"
-        "li{margin-bottom:4px;}"
+        "ul,ol{margin-top:6px;margin-bottom:11px;}"
+        "li{margin-bottom:6px;}"
         "h1{font-size:17pt;margin-top:8px;margin-bottom:10px;}"
         "h2{font-size:14pt;margin-top:8px;margin-bottom:8px;}"
         "h3{font-size:12pt;margin-top:7px;margin-bottom:7px;}"

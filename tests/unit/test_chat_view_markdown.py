@@ -30,7 +30,7 @@ def test_transcript_uses_spaced_chat_bubbles_and_no_underlined_text() -> None:
 
     assert '<table width="86%" align="right"' in rendered
     assert '<table width="96%" align="left"' in rendered
-    assert 'bgcolor="#2b323b"' in rendered
+    assert 'bgcolor="#203b53"' in rendered
     assert 'bgcolor="#252b33"' in rendered
     assert "*{text-decoration:none;}" in rendered
     assert "Resposta" in rendered
@@ -91,7 +91,7 @@ def test_display_equation_is_centered_and_highlighted_as_own_block() -> None:
         "\n\nTexto depois."
     )
 
-    assert 'td align="center" bgcolor="#203b53"' in rendered
+    assert 'td align="center" bgcolor="#2b323b"' in rendered
     assert 'class="math-display"' in rendered
     assert 'padding:20px 16px' in rendered
     assert 'border:1px solid #46515e' in rendered
@@ -108,7 +108,7 @@ def test_display_equation_is_centered_and_highlighted_as_own_block() -> None:
 def test_display_dollar_delimiter_uses_highlighted_block() -> None:
     rendered = markdown_to_html(r"$$E = mc^2$$")
 
-    assert 'td align="center" bgcolor="#203b53"' in rendered
+    assert 'td align="center" bgcolor="#2b323b"' in rendered
     assert "E = mc" in rendered
     assert "<sup>2</sup>" in rendered
 
@@ -126,3 +126,15 @@ def test_unknown_latex_command_remains_visible_instead_of_being_guessed() -> Non
     rendered = markdown_to_html(r"$\unknownmacro{x}$")
 
     assert r"\unknownmacro" in rendered
+
+
+
+def test_transcript_styles_additional_paragraph_and_list_spacing() -> None:
+    rendered = build_transcript_html(
+        [{"role": "assistant", "content": "Parágrafo um.\\n\\nParágrafo dois.\\n\\n- item"}]
+    )
+
+    assert "p{margin-top:5px;margin-bottom:11px;}" in rendered
+    assert "ul,ol{margin-top:6px;margin-bottom:11px;}" in rendered
+    assert "li{margin-bottom:6px;}" in rendered
+
