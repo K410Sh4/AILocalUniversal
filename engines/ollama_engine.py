@@ -295,6 +295,11 @@ class OllamaEngine(EngineAdapter):
             payload["options"] = options
         if "keep_alive" in request.options:
             payload["keep_alive"] = request.options["keep_alive"]
+        if "format" in request.options:
+            output_format = request.options["format"]
+            if output_format != "json" and not isinstance(output_format, dict):
+                raise ValueError("request.options['format'] must be 'json' or a JSON schema object")
+            payload["format"] = output_format
 
         completed = False
         try:
