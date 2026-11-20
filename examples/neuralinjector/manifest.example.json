@@ -15,9 +15,21 @@
   "compatibility": {
     "models": [
       {
-        "family": "qwen3",
-        "architecture": "qwen3",
-        "model_id": "qwen3:4b",
+        "family": "qwen2.5",
+        "architecture": "qwen2",
+        "model_id": "qwen2.5:7b",
+        "match_policy": "architecture_compatible"
+      },
+      {
+        "family": "deepseek-r1",
+        "architecture": "deepseek",
+        "model_id": "deepseek-r1:7b",
+        "match_policy": "architecture_compatible"
+      },
+      {
+        "family": "flux.1",
+        "architecture": "flux",
+        "model_id": "flux.1",
         "match_policy": "architecture_compatible"
       }
     ],
@@ -26,7 +38,15 @@
         "id": "ollama",
         "required_features": [
           "chat",
-          "system_message"
+          "system_message",
+          "structured_json"
+        ]
+      },
+      {
+        "id": "image",
+        "required_features": [
+          "text_to_image",
+          "artifact_output"
         ]
       }
     ],
@@ -56,7 +76,9 @@
       "hardware/profiles/performance.json",
       "hardware/profiles/max_quality.json"
     ],
-    "pipelines": [],
+    "pipelines": [
+      "graph/pipeline.graph.json"
+    ],
     "grammars": [],
     "evaluations": [
       "evaluations/smoke.jsonl"
