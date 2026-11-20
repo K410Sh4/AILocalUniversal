@@ -374,6 +374,22 @@
       "target": "response",
       "target_port": "result",
       "edge_type": "always"
+    },
+    {
+      "id": "e22",
+      "source": "code",
+      "source_port": "code",
+      "target": "merge",
+      "target_port": "code",
+      "edge_type": "always"
+    },
+    {
+      "id": "e23",
+      "source": "chat",
+      "source_port": "explanation",
+      "target": "merge",
+      "target_port": "explanation",
+      "edge_type": "always"
     }
   ]
 }
