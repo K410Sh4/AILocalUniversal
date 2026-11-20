@@ -64,7 +64,7 @@ NODE_SPECS: dict[str, NodeTypeSpec] = {
     ),
     "specialist.review": NodeTypeSpec(
         frozenset({"code", "explanation", "image", "context", "budget"}),
-        frozenset({"decision", "feedback", "retry_targets", "score", "notes"}),
+        frozenset({"decision", "approved", "feedback", "retry_targets", "score", "notes"}),
         "specialist",
     ),
     "control.loop": NodeTypeSpec(
