@@ -308,7 +308,8 @@ def _display_math_block(expression: str) -> str:
     """Constrói um bloco destacado usando elementos HTML suportados pelo Qt."""
     return (
         '<table width="100%" border="0" cellspacing="0" cellpadding="0">'
-        '<tr><td align="center" bgcolor="#1b222b" style="padding:12px;">'
+        '<tr><td align="center" bgcolor="#203b53" '
+        'style="padding:18px 14px; border:1px solid #477da8; border-radius:8px;">'
         '<span class="math-display">'
         + expression
         + "</span></td></tr></table>"
@@ -390,8 +391,8 @@ def build_transcript_html(messages: list[dict[str, str]]) -> str:
         "blockquote{color:#cbd5e1;}"
         ".math-inline{font-family:'Noto Serif',serif;font-size:1.08em;color:#f1f5f9;"
         "white-space:nowrap;}"
-        ".math-display{font-family:'Noto Serif',serif;font-size:1.16em;"
-        "font-weight:500;color:#f1f5f9;}"
+        ".math-display{font-family:'Noto Serif',serif;font-size:1.5em;"
+        "font-weight:600;color:#ffffff;}"
         ".math-overbar{text-decoration:overline;}"
         ".math-underline{text-decoration:underline;}"
         ".math-vector{font-style:italic;}"
