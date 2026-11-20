@@ -38,3 +38,6 @@ target-version = "py311"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B"]
+
+[tool.setuptools.package-data]
+model_hub = ["catalog_default.json"]
