@@ -82,7 +82,7 @@ As fases são entregas progressivas. Uma funcionalidade só é considerada concl
 - [x] LocalVectorIndexer e backend vetorial que confere chunk_id, document_id e source_sha256 antes de devolver evidências.
 - [x] Fusão lexical/vetorial por RRF quando o backend vetorial é fornecido.
 - [x] Testes simulados do provider, persistência, filtros, reindexação e integração lexical/vetorial.
-- [x] KnowledgeRuntime para anexar Evidence ao CognitiveTask, rastrear a recuperação e preparar mensagem documental não confiável.
+- [x] KnowledgeRuntime para anexar Evidence ao CognitiveTask, rastrear a recuperação e preparar mensagem documental não confiável.- [x] Smoke test do endpoint `/api/embed` e da recuperação vetorial com Ollama real, usando documentos sintéticos e banco temporário; execução manual no Arch ainda pendente.
 - [ ] Escolher e comparar modelos de embeddings locais em hardware leve, intermediário e potente.
 - [ ] Implementar reranker concreto, opcional e mensurável.
 - [ ] Definir política de deduplicação e orçamento de tokens com benchmarks.

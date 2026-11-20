@@ -38,7 +38,8 @@ A branch `feature/rag-v1` contém uma primeira base executável de conhecimento 
 - fusão RRF de rankings lexical/vetorial; reranker permanece apenas como contrato;
 - KnowledgeRuntime para anexar Evidence ao CognitiveTask e preparar mensagem de contexto delimitada como dado documental não confiável;
 - composição de contexto com citações estáveis e orçamento em caracteres;
-- validação estrutural de vínculos, hashes e trechos citados.
+- validação estrutural de vínculos, hashes e trechos citados.- validação estrutural de vínculos, hashes e trechos citados;
+- script de smoke test para `/api/embed` e recuperação vetorial no Ollama real com dados sintéticos e SQLite temporário.
 
 Há código e testes para embeddings Ollama, índice vetorial SQLite e ponte KnowledgeRuntime, mas ainda não houve validação com um servidor Ollama real no Arch. O MainWindow/CognitiveTaskExecutor ainda não chama o runtime; não há reranker concreto, OCR ou UI de documentos. A verificação de citações não garante que alegações do modelo sejam consequência lógica das fontes.
 

@@ -146,7 +146,17 @@ Substitua `NOME_DO_MODELO` pelo identificador publicado do modelo escolhido:
 ollama pull NOME_DO_MODELO
 ~~~
 
-Use a mesma família/modelo e dimensões ao indexar documentos e ao consultar; vetores de modelos ou dimensões diferentes não são comparáveis. O endpoint de embeddings usa por padrão o Ollama local em `127.0.0.1:11434`.
+Use a mesma família/modelo e dimensões ao indexar documentos e ao consultar; vetores de modelos ou dimensões diferentes não são comparáveis.
+
+Para confirmar o endpoint real no Arch, com dados sintéticos e sem alterar seu histórico ou índice:
+
+~~~bash
+ollama pull embeddinggemma
+.venv/bin/python scripts/smoke_test_embeddings.py --model embeddinggemma
+~~~
+
+O script usa SQLite temporário, removido ao terminar. Um resultado aprovado confirma conectividade e busca vetorial básica; não mede qualidade RAG em documentos reais.
+ O endpoint de embeddings usa por padrão o Ollama local em `127.0.0.1:11434`.
 
 ## Suporte opcional a PDF
 

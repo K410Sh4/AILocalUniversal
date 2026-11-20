@@ -48,6 +48,18 @@ SQLite FTS5 fornece busca lexical local e filtros por document_id. O tokenizador
 
 \`HybridRetriever\` combina ranking lexical e vetorial usando Reciprocal Rank Fusion. A fusão só usa a busca vetorial quando um backend vetorial é fornecido. O contrato para reranking existe, mas ainda não há reranker concreto. Scores são sinais de ordenação, não probabilidades.
 
+## Smoke test com Ollama real
+
+Depois de instalar um modelo de embeddings, execute:
+
+~~~bash
+ollama pull embeddinggemma
+.venv/bin/python scripts/smoke_test_embeddings.py --model embeddinggemma
+~~~
+
+O script usa dois textos sintéticos, SQLite temporário e uma consulta idêntica a um dos trechos. Ele confirma que o endpoint responde, as dimensões são coerentes e a busca vetorial encontra o vetor esperado. Não lê nem envia documentos pessoais. Não é benchmark de qualidade, nem substitui testes com documentos reais. O nome do modelo é exemplo e pode ser trocado por outro modelo de embeddings compatível.
+
+
 ## Context Composer e validação
 
 O Context Composer gera marcadores \`[E1]\`, \`[E2]\` etc., adiciona origem e localizador e preserva Evidence compatível com \`core.cognitive_task.Evidence\`. O orçamento é explicitamente em caracteres Unicode, não tokens. Trechos que não cabem são omitidos integralmente e seus IDs aparecem em skipped_chunk_ids; evidências não são truncadas silenciosamente.
