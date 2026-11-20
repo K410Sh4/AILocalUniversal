@@ -4,12 +4,14 @@ from __future__ import annotations
 
 import asyncio
 import json
+import re
 from collections.abc import AsyncIterator
 from typing import Any
 
 import httpx
 
 from engines.base import EngineAdapter, EngineCapabilities, EngineEvent, EngineRequest, ModelInfo
+from model_hub.catalog import validate_model_reference
 
 
 class OllamaError(RuntimeError):
@@ -48,10 +50,10 @@ class OllamaEngine(EngineAdapter):
         )
         self._transport = transport
 
-    def _client(self) -> httpx.AsyncClient:
+    def _client(self, *, timeout: httpx.Timeout | None = None) -> httpx.AsyncClient:
         return httpx.AsyncClient(
             base_url=self.base_url,
-            timeout=self.timeout,
+            timeout=timeout or self.timeout,
             transport=self._transport,
             follow_redirects=False,
         )
@@ -150,6 +152,83 @@ class OllamaEngine(EngineAdapter):
             raise OllamaConnectionError(f"Falha HTTP ao consultar Ollama: {exc}") from exc
         except ValueError as exc:
             raise OllamaProtocolError("Ollama retornou JSON inválido em /api/tags.") from exc
+
+    async def pull_model(self, model_name: str) -> AsyncIterator[dict[str, Any]]:
+        """Baixa uma referência validada do catálogo e transmite progresso NDJSON.
+
+        O timeout de leitura é ilimitado porque downloads grandes podem durar
+        muitos minutos. Cancelar o worker fecha a resposta HTTP; o Ollama
+        permite retomar pulls interrompidos numa chamada posterior.
+        """
+        model_ref = validate_model_reference(model_name)
+        completed = False
+        timeout = httpx.Timeout(None, connect=5.0)
+        try:
+            async with self._client(timeout=timeout) as client:
+                async with client.stream(
+                    "POST",
+                    "/api/pull",
+                    json={"model": model_ref, "stream": True},
+                ) as response:
+                    if not response.is_success:
+                        await response.aread()
+                        raise OllamaError(self._error_message(response))
+
+                    async for line in response.aiter_lines():
+                        if not line.strip():
+                            continue
+                        try:
+                            item = json.loads(line)
+                        except json.JSONDecodeError as exc:
+                            raise OllamaProtocolError(
+                                "Ollama enviou um evento NDJSON inválido durante o download."
+                            ) from exc
+                        if not isinstance(item, dict):
+                            raise OllamaProtocolError("Evento de download inválido.")
+                        if item.get("error"):
+                            raise OllamaError(str(item["error"]))
+                        status = item.get("status")
+                        if not isinstance(status, str) or not status.strip():
+                            raise OllamaProtocolError(
+                                "Evento de download sem um campo status válido."
+                            )
+                        if status.casefold() == "success":
+                            completed = True
+                        yield item
+
+            if not completed:
+                raise OllamaProtocolError(
+                    "O download terminou sem confirmação de status success."
+                )
+        except httpx.ConnectError as exc:
+            raise OllamaConnectionError(
+                f"Não foi possível conectar ao Ollama em {self.base_url}."
+            ) from exc
+        except httpx.TimeoutException as exc:
+            raise OllamaConnectionError("Tempo limite ao iniciar o download no Ollama.") from exc
+        except httpx.HTTPError as exc:
+            raise OllamaConnectionError(f"Falha HTTP durante o download: {exc}") from exc
+
+    async def delete_model(self, model_name: str) -> None:
+        """Remove somente o modelo local explicitamente selecionado."""
+        model_ref = validate_model_reference(model_name)
+        try:
+            async with self._client() as client:
+                response = await client.request(
+                    "DELETE",
+                    "/api/delete",
+                    json={"model": model_ref},
+                )
+                if not response.is_success:
+                    raise OllamaError(self._error_message(response))
+        except httpx.ConnectError as exc:
+            raise OllamaConnectionError(
+                f"Não foi possível conectar ao Ollama em {self.base_url}."
+            ) from exc
+        except httpx.TimeoutException as exc:
+            raise OllamaConnectionError("Tempo limite ao remover o modelo no Ollama.") from exc
+        except httpx.HTTPError as exc:
+            raise OllamaConnectionError(f"Falha HTTP ao remover o modelo: {exc}") from exc
 
     async def stream_chat(self, request: EngineRequest) -> AsyncIterator[EngineEvent]:
         if not request.model.strip():
