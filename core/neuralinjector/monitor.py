@@ -18,7 +18,8 @@ class ResourceMonitor:
 
     The monitor is inert until start() is called. Its default provider reads host
     RAM/CPU only; callers may inject a provider that also probes GPU telemetry.
-    Callbacks run on the monitor thread and should dispatch UI work to the UI thread.
+    When started, callbacks run on the monitor thread; poll_once() runs on the caller thread.
+    UI callbacks from the background monitor must dispatch work to the UI thread.
     """
 
     def __init__(
@@ -45,6 +46,7 @@ class ResourceMonitor:
         self._stop_event = threading.Event()
         self._thread: threading.Thread | None = None
         self._lock = threading.Lock()
+        self._lifecycle_lock = threading.Lock()
         self._last_snapshot: HardwareSnapshot | None = None
         self._last_decision: DynamicResourceDecision | None = None
         self._last_error: Exception | None = None
@@ -87,15 +89,17 @@ class ResourceMonitor:
 
     def start(self) -> None:
         """Start periodic sampling. Repeated calls while running are harmless."""
-        if self.is_running:
-            return
-        self._stop_event.clear()
-        self._thread = threading.Thread(
-            target=self._run,
-            name="AILocalResourceMonitor",
-            daemon=True,
-        )
-        self._thread.start()
+        with self._lifecycle_lock:
+            if self._thread is not None and self._thread.is_alive():
+                return
+            self._stop_event.clear()
+            thread = threading.Thread(
+                target=self._run,
+                name="AILocalResourceMonitor",
+                daemon=True,
+            )
+            self._thread = thread
+            thread.start()
 
     def _run(self) -> None:
         while not self._stop_event.is_set():
@@ -110,8 +114,9 @@ class ResourceMonitor:
         """Request shutdown and return whether the monitor thread has stopped."""
         if timeout_seconds < 0:
             raise ValueError("timeout_seconds cannot be negative")
-        self._stop_event.set()
-        thread = self._thread
+        with self._lifecycle_lock:
+            self._stop_event.set()
+            thread = self._thread
         if thread is None:
             return True
         if thread is threading.current_thread():
@@ -119,5 +124,7 @@ class ResourceMonitor:
         thread.join(timeout_seconds)
         stopped = not thread.is_alive()
         if stopped:
-            self._thread = None
+            with self._lifecycle_lock:
+                if self._thread is thread:
+                    self._thread = None
         return stopped
