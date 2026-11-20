@@ -384,3 +384,17 @@ def test_host_below_absolute_floor_cannot_be_permitted():
     assert not report.activation_allowed
     assert "piso absoluto" in " ".join(report.reasons)
     assert len(report.recommendations) >= 3
+
+
+
+def test_permissive_mode_reports_risk_when_it_allows_a_non_floor_override():
+    report = build_compatibility_report(
+        hw(8192, 5000),
+        ResourceRequirements(min_ram_mb=8192),
+        protection_mode=ProtectionMode.PERMISSIVE,
+    )
+
+    assert not report.compatible
+    assert report.activation_allowed
+    assert "modo permissivo autorizou" in report.user_message
+    assert report.recommendations
