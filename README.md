@@ -19,6 +19,7 @@ O AILocal Universal coordena modelos de linguagem, ferramentas determinísticas,
 - Identificação de capacidades via API `/api/show`, distinguindo chat, embeddings, visão e tools.
 - Modelo preferido para o modo automático.
 - Renderização de respostas em Markdown (negrito, listas, links, tabelas e blocos de código).
+- Renderização local de notação matemática LaTeX comum: integrais, frações, raízes, potências, índices e símbolos gregos. Não é um motor LaTeX completo.
 - Histórico de conversas em JSON local.
 - Configurações persistentes de URL, keep-alive e system prompt.
 - Cancelamento de geração por worker em thread separada.
