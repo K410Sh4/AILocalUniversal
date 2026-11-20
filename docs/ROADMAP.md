@@ -20,7 +20,8 @@ As fases representam entregas e validações progressivas. Um componente só ser
 - [x] Configurações e histórico em JSON local com escrita atômica.
 - [x] Tratamento inicial de falhas e timeouts.
 - [x] Testes com transporte HTTP simulado.
-- [ ] Validar visualmente e executar a suíte em Linux/Arch Linux.
+- [ ] Validar visualmente em sessão gráfica Linux/Arch Linux.
+- [x] Executar suíte unitária e smoke test Qt offscreen no GitHub Actions (Ruff + 113 testes).
 - [ ] Validar geração e cancelamento contra um serviço Ollama real.
 
 **Saída:** aplicação desktop local funcional após validação no ambiente-alvo.
@@ -113,8 +114,9 @@ Cada entrega inclui testes, documentação, tratamento de erros e métricas. Ben
 - [ ] Integrar e validar backend real de imagem (Flux ou equivalente) e armazenamento de artefatos.
 - [ ] Adicionar anexos à UI e ao fluxo de especialistas.
 - [ ] Renderizar resultado estruturado no ChatView (código, Markdown e imagem).
-- [ ] Finalizar UX de exclusão/realce e validar visualmente no Linux/Arch.
-- [ ] Executar pytest/Ruff e validar fluxo com Ollama real antes de considerar a entrega aceita.
+- [x] Implementar exclusão de nós/conexões e realce de estados de execução; smoke test PySide6 offscreen adicionado.
+- [x] Executar Ruff e pytest em CI (113 testes aprovados).
+- [ ] Validar interface em sessão gráfica Linux/Arch e o fluxo com Ollama real antes de considerar a entrega aceita.
 
 Documentação: [NeuralMap](NEURALMAP.md), [schema de pipeline](../schemas/pipeline-graph.schema.json) e [template](../examples/workflows/multi_specialist.pipeline.graph.json).
 
