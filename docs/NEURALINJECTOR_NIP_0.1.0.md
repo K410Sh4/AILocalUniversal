@@ -291,56 +291,67 @@ O manifesto de exemplo é ilustrativo. Ele não é, isoladamente, um arquivo `.n
 Até que esses critérios sejam atendidos, a NIP 0.1.0 permanece uma proposta de especificação, não uma tecnologia já implementada.
 
 
-## 6A. Perfis canônicos, orçamento e proteção adaptativa
+## 6A. Perfis, orçamento e integração adaptativa
 
-A implementação inicial do planejador fornece cinco perfis canônicos:
+Os perfis canônicos são definidos em Python por `CANONICAL_PROFILES`. Os arquivos JSON em `examples/neuralinjector/hardware/profiles/` são serializações dessa definição e devem permanecer idênticos em valores e estrutura. O teste unitário compara cada JSON com `serialize_hardware_profile(profile)`; o utilitário `scripts/sync_neuralinjector_profiles.py` regenera os exemplos ou verifica divergências com `--check`.
 
-| Perfil | RAM mínima do host | Fração máxima da RAM disponível | Contexto-alvo | Concorrência-alvo |
-|---|---:|---:|---:|---:|
-| ultra_light | 1.536 MiB | 35% | 1.024 tokens | 1 |
-| minimal | 2.048 MiB | 55% | 2.048 tokens | 1 |
-| balanced | 4.096 MiB | 65% | 4.096 tokens | 1 |
-| performance | 8.192 MiB | 75% | 8.192 tokens | 2 |
-| max_quality | 16.384 MiB | 80% | 16.384 tokens | 4 |
+| Perfil | RAM mínima total/disponível | Fração da RAM disponível | Contexto mínimo/alvo | Threads CPU máx. | Concorrência-alvo |
+|---|---:|---:|---:|---:|---:|
+| ultra_light | 1.536 MiB | 35% | 512 / 1.024 | 2 | 1 |
+| minimal | 2.048 MiB | 55% | 1.024 / 2.048 | 4 | 1 |
+| balanced | 4.096 MiB | 65% | 2.048 / 4.096 | 8 | 1 |
+| performance | 8.192 MiB | 75% | 4.096 / 8.192 | 16 | 2 |
+| max_quality | 16.384 MiB | 80% | 8.192 / 16.384 | 16 | 4 |
 
-Os valores são presets declarativos e critérios iniciais de elegibilidade, não garantias de execução. O tamanho dos pesos, KV cache, batch, multimodalidade, runtime e processos do sistema podem exigir mais memória. O perfil ultra_light não torna modelos grandes automaticamente viáveis.
+Os valores são limites de planejamento, não garantias de execução. A memória real depende de pesos, KV cache, lote, arquitetura, contexto, runtime, multimodalidade e processos do sistema. O orçamento distingue `parallelism` (solicitações simultâneas) de `cpu_threads` (threads de inferência).
 
-### 6A.1 Requisitos e seleção
+### 6A.1 Piso absoluto
 
-O manifesto pode declarar requisitos mínimos/recomendados de RAM, VRAM e disco, além de contexto, backends e features necessárias. RAM total e RAM disponível são medidas distintas. Um requisito obrigatório de VRAM ou disco não é considerado atendido quando a medição correspondente está ausente.
+A implementação atual exige ao menos 1.536 MiB de RAM total e disponível. Abaixo desse piso, nenhum perfil é compatível e nem o modo permissivo pode autorizar a carga. O relatório explica o bloqueio e recomenda fechar aplicativos pesados, descarregar modelos residentes, medir novamente e considerar um modelo menor ou mais RAM física. Swap não é contado como RAM nem garante desempenho adequado para inferência.
 
-A detecção de GPU é opcional e separada da disponibilidade de um backend executável. A presença física de uma GPU não prova que CUDA, ROCm, Vulkan ou outro backend esteja inicializado. Para múltiplas GPUs, o planejador inicial considera a maior VRAM livre de um único dispositivo; não soma placas independentes como se compartilhassem um único espaço de endereçamento.
+### 6A.2 Modos de proteção
 
-### 6A.2 Quantização declarativa
+- **protected:** bloqueia quando o perfil explicitamente solicitado não é elegível ou quando requisitos obrigatórios falham.
+- **adaptive:** seleciona um perfil inferior elegível quando o preferido não cabe; requisitos mínimos do pacote nunca são ignorados.
+- **permissive:** permite tentativa explícita diante de incompatibilidades não absolutas, preservando os avisos. Não ultrapassa o piso absoluto.
 
-Perfis podem ordenar candidatos de quantização para condições normais e de pouca memória. O planejador só seleciona um candidato presente na lista de formatos que o backend declarar suportar. Sem capacidades explícitas, o candidato permanece indefinido.
+O relatório contém `activation_allowed`, `reasons`, `fallbacks`, `user_message` e `recommendations`. A aplicação verifica `activation_allowed` antes de adicionar a mensagem ao histórico ou enviar uma requisição ao backend. A janela de recusa apresenta a explicação principal e detalhes com motivos e alternativas.
 
-A política não converte pesos, não baixa variantes e não altera modelos existentes. O runtime deve localizar um artefato compatível, verificar formato e identidade do modelo-base e só então solicitar sua carga. Preferir Q4 ou Q2 em um perfil não prova que tal variante exista nem que seja compatível com o modelo.
+As preferências `hardware_profile` e `protection_mode` são persistidas em `AppConfig`. Novas instalações e configurações antigas usam `auto` e `protected` como padrões.
 
-### 6A.3 Modos de proteção
+### 6A.3 Quantização
 
-O relatório suporta três modos:
+Perfis declaram candidatos de quantização para regimes de memória normal e restrita. Um candidato só é selecionado quando o backend fornece uma lista explícita de formatos suportados. Isso é recomendação/resolução de artefato, não conversão.
 
-- **permissive:** permite tentativa explícita mesmo quando há incompatibilidades, mantendo todos os motivos visíveis.
-- **adaptive:** seleciona um perfil elegível inferior quando o perfil preferido não cabe; requisitos mínimos do pacote continuam obrigatórios.
-- **protected:** além dos requisitos mínimos, bloqueia um perfil explicitamente solicitado quando ele não é elegível.
-
-O relatório fornece `activation_allowed`; qualquer instalador ou gerenciador deve verificar esse valor antes da ativação. A NIP 0.1.0 ainda não inclui um NeuralPlugin Manager completo, portanto esse bloqueio ainda não está conectado a um fluxo transacional de instalação.
+Quantização pertence ao artefato do modelo. No Ollama, a variante precisa existir como modelo/tag instalada ou ser obtida separadamente. Em llama.cpp, a quantização pertence ao arquivo GGUF selecionado. O planejador não altera pesos, não converte modelos, não baixa variantes nem presume que uma quantização indicada exista.
 
 ### 6A.4 Orçamento dinâmico
 
-O Adaptive Resource Manager aceita novos snapshots e classifica a pressão de memória como normal, constrained, critical ou emergency. Os estados mais severos recomendam limitar concorrência futura, pausar novas cargas, suspender trabalho opcional ainda não iniciado ou recusar novas cargas. Uma histerese exige recuperação suficiente antes de voltar a um estado menos restritivo.
+`AdaptiveResourceManager` recebe snapshots e calcula estados de pressão `normal`, `constrained`, `critical` e `emergency`, usando histerese na recuperação. Ele recomenda limitar concorrência futura, pausar novas cargas ou recusar novas cargas em emergência, sem interromper geração em andamento.
 
-O componente `ResourceMonitor` oferece amostragem periódica opt-in, iniciada explicitamente por `start()`, com intervalo padrão de cinco segundos e provedor de snapshot substituível. Seu callback recebe a decisão na thread do monitor. A implementação não inicia esse monitor automaticamente na aplicação, não executa as ações retornadas, não termina gerações em andamento e não descarrega modelos. A integração ao ciclo de vida da aplicação e o executor seguro de ações permanecem trabalho futuro.
+`ResourceMonitor` oferece amostragem periódica opt-in. Ele só inicia após `start()`, tem intervalo padrão de cinco segundos e chama seu callback na thread do monitor. A aplicação ainda não inicia esse monitor automaticamente nem possui executor para aplicar descarregamento, pausar filas ou alterar concorrência global.
 
-### 6A.5 Integração inicial com Ollama
+### 6A.5 Ollama — aplicação por requisição
 
-O adaptador inicial consulta `GET /api/ps` para obter modelos carregados e métricas fornecidas pelo servidor, incluindo tamanho residente, uso de VRAM, contexto e quantização quando disponíveis. Ele também fornece um helper explícito que traduz o limite de contexto para `options.num_ctx` e preserva um limite menor definido pelo usuário.
+O adaptador `engines/ollama_engine.py` implementa `prepare_resource_aware_request()`. Ele gera o relatório e, se a política autorizar, aplica o orçamento ao payload de chat:
 
-A integração não configura paralelismo global, não força a escolha CPU/GPU, não executa offloading manual e não converte quantização. Os helpers ainda precisam ser ligados automaticamente ao fluxo principal da aplicação. O backend continua responsável pelas operações que realmente suporta.
+- `options.num_ctx` recebe o contexto do orçamento.
+- `options.num_thread` recebe o limite de threads CPU.
 
-### 6A.6 Benchmark e resultados
+Limites menores previamente definidos pelo usuário são preservados. A aplicação usa essa ponte no fluxo real de envio de chat e bloqueia antes do envio quando a política recusa.
 
-O benchmark padrão é `none`. Os modos quick/full exigem solicitação explícita e executor do backend. Sem executor, nenhuma métrica é inventada. Nenhum ganho de velocidade deve ser declarado sem benchmark reproduzível, versão do modelo/backend, quantização, contexto, condição fria/quente, pico de RAM/VRAM e avaliação de qualidade.
+O adaptador também consulta `GET /api/ps` por meio de `list_running_models()`, lendo tamanho residente, VRAM reportada, contexto e quantização quando disponíveis.
 
-A implementação atual é um planejador e uma integração inicial de telemetria/contexto, não um mecanismo completo de quantização, offloading, poda, restauração ou gerenciamento automático de memória.
+A integração não força posicionamento CPU/GPU, não configura paralelismo global do servidor, não executa offloading manual e não descarrega modelos. O Ollama continua responsável pela alocação real de camadas e dispositivos. A detecção física de GPU não é prova de que o backend esteja inicializado.
+
+### 6A.6 llama.cpp — tradução de opções
+
+`engines/llama_cpp_options.py` traduz orçamento para argumentos do construtor llama-cpp-python: `context_tokens` → `n_ctx`, `cpu_threads` → `n_threads`. `n_gpu_layers` é omitido, a menos que o chamador forneça uma contagem já validada pelo backend.
+
+Essa ponte é testável, mas ainda não constitui um `EngineAdapter` llama.cpp completo nem está conectada à interface. As opções devem ser aplicadas ao construir/recriar a instância do modelo. Quantização continua definida pelo arquivo GGUF selecionado.
+
+### 6A.7 Validação e limitações
+
+Testes unitários cobrem sincronização Python/JSON, proteção, piso absoluto, aplicação dos parâmetros Ollama ao payload HTTP simulado e tradução de opções llama.cpp. Esses testes não substituem integração com Ollama real ou benchmarks em hardware físico.
+
+O módulo de planejamento não implementa por si só quantização, conversão, poda, restauração de pesos, offloading ou controle de memória do kernel. O ResourceMonitor ainda não está ligado ao ciclo de vida da aplicação. Um adaptador llama.cpp completo, a resolução automática de artefatos quantizados e a validação em PCs leves/intermediários/potentes permanecem etapas futuras.
