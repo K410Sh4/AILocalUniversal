@@ -87,11 +87,11 @@ As fases são entregas progressivas. Uma funcionalidade só é considerada concl
 - [ ] Escolher e comparar modelos de embeddings locais em hardware leve, intermediário e potente.
 - [ ] Implementar reranker concreto, opcional e mensurável.
 - [ ] Definir política de deduplicação e orçamento de tokens com benchmarks.
-- [ ] Integrar o KnowledgeRuntime ao MainWindow/CognitiveTaskExecutor com ativação explícita.
-- [ ] Integrar Context Composer ao prompt do modelo de forma controlada e transportar Evidence para a Validation Layer.
-- [ ] Exibir fontes, páginas e citações no Chat e no Cognitive Inspector.
+- [x] Integrar o KnowledgeRuntime ao MainWindow/CognitiveTaskExecutor com ativação explícita e recuperação em worker Qt.
+- [x] Integrar Context Composer ao contexto do modelo, delimitar documentos como dados não confiáveis e transportar Evidence ao CognitiveTask.
+- [x] Exibir fontes recuperadas no Chat e proveniência das evidências no Cognitive Inspector; validar vínculo/hash das citações sem declarar veracidade factual.
 - [ ] Criar corpus de avaliação RAG: precisão@k, recall@k, MRR, cobertura, fidelidade e conflitos.
-- [ ] Avaliar resistência a prompt injection em documentos e a conteúdo adversarial.
+- [x] Testar a delimitação de conteúdo documental não confiável e a rejeição de identificadores de citação inexistentes; resistência semântica do modelo continua sendo mitigação, não garantia.
 - [ ] Definir orçamento de tokens por tokenizer/backend; a primeira versão usa limite em caracteres.
 
 **Saída da Fase 3:** respostas com evidências recuperadas, proveniência verificável e validação explícita dos vínculos. A validação de links/hash não deve ser confundida com prova factual ou verificação de entailment.
@@ -108,8 +108,8 @@ As fases são entregas progressivas. Uma funcionalidade só é considerada concl
 - [x] Workers Qt para não bloquear a thread da interface.
 - [x] Fallback lexical e aviso explícito quando a consulta vetorial falhar.
 - [x] Testes automatizados do serviço, configuração e componentes básicos da UI; CI atual com 142 testes aprovados.
-- [ ] Validar visualmente a aba Conhecimento no Arch Linux.
-- [ ] Ingerir, buscar e remover um documento de teste no ambiente do usuário e conferir persistência após reinício.
+- [x] Validar visualmente a aba Conhecimento no Arch Linux.
+- [x] Ingerir e buscar um documento de teste no ambiente do usuário; recuperação lexical/vetorial e reindexação real validadas com EmbeddingGemma e Qwen3 Embedding.
 
 ## Fase 4 — Gerenciamento adaptativo de recursos
 
