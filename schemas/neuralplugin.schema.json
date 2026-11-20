@@ -12,7 +12,9 @@
     "kind",
     "priority",
     "enabled_by_default",
-    "targets"
+    "targets",
+    "authors",
+    "license"
   ],
   "properties": {
     "plugin_format_version": {
@@ -127,6 +129,21 @@
         ]
       },
       "uniqueItems": true
+    },
+    "authors": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 200
+      },
+      "uniqueItems": true
+    },
+    "license": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 120
     }
   }
 }
