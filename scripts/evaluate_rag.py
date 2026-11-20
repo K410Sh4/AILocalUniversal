@@ -160,11 +160,17 @@ def main() -> int:
 
             metrics = evaluate_rankings(rankings, relevant, k=args.k)
             vector_count = library.vector_store.count(args.model) if args.model else 0
+            vector_warnings = [
+                str(item["vector_warning"])
+                for item in ingestion["items"]
+                if item.get("vector_warning")
+            ]
             result = {
-                "status": "completed",
+                "status": "partial" if vector_warnings else "completed",
                 "mode": "hybrid" if vector_count else "lexical",
                 "embedding_model": args.model,
                 "vectors_for_model": vector_count,
+                "vector_warnings": vector_warnings,
                 "retrieval_sources": sorted(retrieval_sources),
                 "metrics": metrics,
                 "cases": per_query,
