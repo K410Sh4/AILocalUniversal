@@ -1,8 +1,7 @@
-from .monitor import ResourceMonitor
 from .resources import (
+    CANONICAL_PROFILES,
     AdaptiveResourceManager,
     BenchmarkMode,
-    CANONICAL_PROFILES,
     CompatibilityReport,
     DynamicResourceDecision,
     GPUDevice,
@@ -19,6 +18,7 @@ from .resources import (
     select_profile,
     serialize_hardware_profile,
 )
+from .monitor import ResourceMonitor
 
 __all__ = [
     "AdaptiveResourceManager",
