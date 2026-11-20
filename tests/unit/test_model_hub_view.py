@@ -59,6 +59,7 @@ def test_model_hub_view_displays_models_and_unknown_metadata() -> None:
     assert view.table.item(0, 0).text() == "qwen3:4b"
     assert view.table.item(0, 5).text() == "Não avaliado"
     details = view.details.toPlainText().casefold()
+    assert "id: ollama:qwen3:4b" in details
     assert "não verificada" in details
     assert "não há requisitos" in details
     assert "radeon test gpu" in view.hardware_label.text().casefold()
