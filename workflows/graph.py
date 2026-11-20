@@ -98,8 +98,7 @@ NODE_SPECS: dict[str, NodeTypeSpec] = {
         frozenset({"result"}),
     ),
     "output.trace": NodeTypeSpec(
-        frozenset({"trace"}), frozenset({"trace"}), "output",
-        frozenset({"trace"}),
+        frozenset({"trace"}), frozenset({"trace"}), "output"
     ),
 }
 
