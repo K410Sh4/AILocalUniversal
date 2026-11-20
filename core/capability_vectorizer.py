@@ -1,5 +1,7 @@
 """Taxonomia inicial de capacidades; embeddings/classificação ainda não implementados."""
 
+# ruff: noqa: I001
+
 from __future__ import annotations
 
 import dataclasses
