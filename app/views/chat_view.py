@@ -8,6 +8,7 @@ from html import escape
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QTextDocument
 from PySide6.QtWidgets import (
+    QCheckBox,
     QComboBox,
     QHBoxLayout,
     QLabel,
@@ -444,6 +445,7 @@ class ChatView(QWidget):
     mode_changed = Signal(str)
     model_changed = Signal(str)
     preferred_requested = Signal()
+    knowledge_enabled_changed = Signal(bool)
 
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
@@ -454,6 +456,7 @@ class ChatView(QWidget):
         self.cancel_button.clicked.connect(self.cancel_requested.emit)
         self.refresh_button.clicked.connect(self.refresh_models_requested.emit)
         self.settings_button.clicked.connect(self.settings_requested.emit)
+        self.knowledge_checkbox.toggled.connect(self.knowledge_enabled_changed.emit)
         self.new_button.clicked.connect(self.new_conversation_requested.emit)
         self.preferred_button.clicked.connect(self.preferred_requested.emit)
         self.history_list.currentItemChanged.connect(self._conversation_changed)
@@ -467,6 +470,11 @@ class ChatView(QWidget):
         self.preferred_button = QPushButton("Definir preferido")
         self.refresh_button = QPushButton("Atualizar modelos")
         self.settings_button = QPushButton("Configurações")
+        self.knowledge_checkbox = QCheckBox("Usar conhecimento local")
+        self.knowledge_checkbox.setToolTip(
+            "Quando ativado, recupera trechos da biblioteca local antes de consultar o modelo. "
+            "O conteúdo documental é tratado como dado não confiável."
+        )
 
         top = QHBoxLayout()
         top.addWidget(QLabel("Seleção:"))
@@ -475,6 +483,7 @@ class ChatView(QWidget):
         top.addWidget(self.model_combo, 1)
         top.addWidget(self.preferred_button)
         top.addWidget(self.refresh_button)
+        top.addWidget(self.knowledge_checkbox)
         top.addWidget(self.settings_button)
 
         self.history_list = QListWidget()
@@ -581,6 +590,11 @@ class ChatView(QWidget):
         scrollbar = self.transcript.verticalScrollBar()
         scrollbar.setValue(scrollbar.maximum())
 
+    def set_knowledge_enabled(self, enabled: bool) -> None:
+        self.knowledge_checkbox.blockSignals(True)
+        self.knowledge_checkbox.setChecked(bool(enabled))
+        self.knowledge_checkbox.blockSignals(False)
+
     def set_status(self, message: str) -> None:
         self.status_label.setText(message)
 
@@ -591,6 +605,7 @@ class ChatView(QWidget):
         self.history_list.setEnabled(not busy)
         self.refresh_button.setEnabled(not busy)
         self.settings_button.setEnabled(not busy)
+        self.knowledge_checkbox.setEnabled(not busy)
         self.new_button.setEnabled(not busy)
         self.mode_combo.setEnabled(not busy)
         self.model_combo.setEnabled(not busy)
