@@ -1,0 +1,23 @@
+{
+  "profile_id": "balanced",
+  "profile_version": "1.0.0",
+  "description": "Perfil declarativo equilibrado; os valores efetivos devem ser negociados com o backend.",
+  "objectives": {
+    "priority": [
+      "quality",
+      "latency",
+      "memory"
+    ],
+    "interactive": true
+  },
+  "constraints": {
+    "max_ram_gb": null,
+    "max_vram_gb": null,
+    "target_context_tokens": 4096
+  },
+  "backend_overrides": {},
+  "notes": [
+    "Este perfil não promete uma velocidade específica.",
+    "O runtime deve validar e traduzir apenas opções que realmente suporta."
+  ]
+}
