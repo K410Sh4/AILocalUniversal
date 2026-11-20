@@ -30,6 +30,6 @@ Este arquivo diferencia código existente de funcionalidades futuras.
 - O monitor periódico existe, mas só inicia quando o chamador executa start(); a aplicação ainda não o inicia nem possui executor automático para descarregar modelos, pausar filas ou alterar concorrência.
 - A detecção GPU atual é opcional e limitada a nvidia-smi e Linux DRM/sysfs; dispositivos identificados não significam que um backend acelerado esteja pronto.
 - Quantização é somente uma política de seleção de candidatos. O código ainda não converte pesos, baixa variantes ou faz offloading manual.
-- `engines/llama_cpp_options.py` traduz contexto/threads para parâmetros do construtor llama-cpp-python, mas ainda não existe EngineAdapter llama.cpp completo nem integração na interface.
+- `engines/llama_cpp_options.py` constrói instância llama-cpp-python com contexto/threads do orçamento e GPU layers explicitamente validados; ainda não existe EngineAdapter llama.cpp completo nem integração na interface.
 - A interface foi construída, mas precisa ser validada em sessão gráfica Linux/Qt.
 - Os testes foram escritos; a execução da suíte depende de ambiente com as dependências instaladas.
