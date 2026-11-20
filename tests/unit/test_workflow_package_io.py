@@ -21,7 +21,12 @@ def make_package(path: Path, *, signed=False) -> Path:
     manifest = {
         "format": "ailocal.neuralinjector",
         "format_version": "0.1.0",
-        "package": {"id": "org.ailocal.test", "name": "Test", "version": "1.0.0", "kind": "workflow"},
+        "package": {
+            "id": "org.ailocal.test",
+            "name": "Test",
+            "version": "1.0.0",
+            "kind": "workflow",
+        },
         "compatibility": {
             "models": [
                 {
