@@ -6,7 +6,7 @@ import threading
 from collections.abc import Callable
 
 from .resources import (
-    AdaptiveResourceManager,
+    AdaptiveHardwarePolicy,
     DynamicResourceDecision,
     HardwareSnapshot,
     detect_hardware,
@@ -25,7 +25,7 @@ class ResourceMonitor:
     def __init__(
         self,
         *,
-        manager: AdaptiveResourceManager | None = None,
+        manager: AdaptiveHardwarePolicy | None = None,
         snapshot_provider: Callable[[], HardwareSnapshot] = detect_hardware,
         on_decision: Callable[[DynamicResourceDecision], None] | None = None,
         interval_seconds: float = 5.0,
@@ -37,7 +37,7 @@ class ResourceMonitor:
         if active_parallelism < 1 or active_context_tokens < 1:
             raise ValueError("active resource values must be positive")
 
-        self.manager = manager or AdaptiveResourceManager()
+        self.manager = manager or AdaptiveHardwarePolicy()
         self.snapshot_provider = snapshot_provider
         self.on_decision = on_decision
         self.interval_seconds = interval_seconds
