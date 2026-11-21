@@ -244,6 +244,9 @@ def simulate_trial(
         history_state = max(
             range(STATE_COUNT), key=lambda state: (forecast[state], -state)
         )
+        if development_latency == 0:
+            cue_calibration.observe(cues[step] == environment[step])
+            history_calibration.observe(history_state == environment[step])
         forecast_uncertainty = transition.normalized_entropy(forecast)
         history_predictions.append(history_state)
         cue_skill = cue_calibration.skill
