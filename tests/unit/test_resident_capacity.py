@@ -33,6 +33,9 @@ def _snapshot(
     size: int | None = 5 * 1024**3,
     vram: int | None = 3 * 1024**3,
     context: int | None = 8192,
+    observed_at: str | None = None,
+    expires_at: str | None = None,
+    include_expiry: bool = True,
 ):
     observed = datetime.now(UTC)
     return RunningModelSnapshot(
@@ -42,8 +45,14 @@ def _snapshot(
         size_bytes=size,
         size_vram_bytes=vram,
         context_length=context,
-        expires_at=(observed + timedelta(minutes=5)).isoformat(),
-        observed_at=observed.isoformat(),
+        expires_at=(
+            expires_at
+            if expires_at is not None
+            else (observed + timedelta(minutes=5)).isoformat()
+            if include_expiry
+            else None
+        ),
+        observed_at=observed_at or observed.isoformat(),
     )
 
 
@@ -191,7 +200,7 @@ def test_resident_capacity_rejects_expired_or_near_expiry_snapshot() -> None:
 def test_resident_capacity_requires_observation_and_expiry_timestamps() -> None:
     result = assess_resident_capacity(
         _record(),
-        [_snapshot(expires_at=None)],
+        [_snapshot(include_expiry=False)],
         context_tokens=4096,
     )
 
