@@ -37,8 +37,6 @@ class AdaptiveModelSelector:
 
     @staticmethod
     def _unknown_estimate(model_name: str, context_tokens: int) -> ModelResourceEstimate:
-        from resources.contracts import EstimateConfidence
-
         return ModelResourceEstimate(
             model_id=f"ollama:{model_name.casefold()}",
             context_tokens=context_tokens,
@@ -113,13 +111,13 @@ class AdaptiveModelSelector:
                         and record.category == task_category
                     )
                     return (
-                        category_match,
-                        placement_rank[estimate.placement],
-                        -(estimate.total_required_bytes or 0),
+                        -category_match,
+                        -placement_rank[estimate.placement],
+                        estimate.total_required_bytes or 0,
                         model.name.casefold(),
                     )
 
-                chosen = sorted(viable, key=rank, reverse=True)[0]
+                chosen = sorted(viable, key=rank)[0]
                 reason = (
                     "Selecionado pela categoria da tarefa quando informada, "
                     "viabilidade estimada e preferência por execução em GPU."
