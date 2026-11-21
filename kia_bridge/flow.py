@@ -104,41 +104,76 @@ def _classification_from_task(
     registry: CognitiveAreaRegistry,
 ) -> NapaClassification:
     payload = task.cognitive_areas
+    if not isinstance(payload, dict):
+        raise KiaFlowError("A classificação NAPA da tarefa precisa ser um objeto.")
+
     active_ids = payload.get("active_areas", [])
     activations = payload.get("activations", [])
-    if not isinstance(active_ids, list) or not isinstance(activations, list):
+    if (
+        not isinstance(active_ids, list)
+        or not isinstance(activations, list)
+        or any(not isinstance(area_id, str) or not area_id for area_id in active_ids)
+        or len(active_ids) != len(set(active_ids))
+    ):
         raise KiaFlowError("A classificação NAPA da tarefa está malformada.")
 
-    by_id = {
-        str(item.get("area_id")): item
-        for item in activations
-        if isinstance(item, dict) and item.get("area_id")
-    }
+    by_id: dict[str, dict[str, Any]] = {}
+    for item in activations:
+        if not isinstance(item, dict):
+            raise KiaFlowError("A classificação NAPA contém uma ativação inválida.")
+        area_id = item.get("area_id")
+        if not isinstance(area_id, str) or not area_id or area_id in by_id:
+            raise KiaFlowError("A classificação NAPA contém IDs de ativação inválidos ou duplicados.")
+        by_id[area_id] = item
+
+    if set(by_id) != set(active_ids):
+        raise KiaFlowError("Áreas ativas e ativações NAPA não correspondem.")
+
     resolved: list[AreaActivation] = []
-    for raw_id in active_ids:
-        area_id = str(raw_id)
+    for area_id in active_ids:
         area = registry.find(area_id)
-        activation = by_id.get(area_id)
-        if area is None or activation is None:
+        activation = by_id[area_id]
+        if area is None:
             raise KiaFlowError(f"A área NAPA '{area_id}' não possui contrato válido.")
+
+        affinity = activation.get("affinity")
+        signals = activation.get("signals")
+        if (
+            isinstance(affinity, bool)
+            or not isinstance(affinity, (int, float))
+            or not isinstance(signals, list)
+            or not signals
+            or any(not isinstance(signal, str) or not signal for signal in signals)
+        ):
+            raise KiaFlowError(f"A ativação NAPA '{area_id}' possui campos inválidos.")
         try:
             resolved.append(
                 AreaActivation(
                     area_id=area_id,
                     kind=area.kind,
-                    affinity=float(activation["affinity"]),
-                    signals=tuple(str(item) for item in activation["signals"]),
+                    affinity=affinity,
+                    signals=tuple(signals),
                 )
             )
-        except (KeyError, TypeError, ValueError) as exc:
+        except (TypeError, ValueError) as exc:
             raise KiaFlowError(
-                f"A ativação NAPA '{area_id}' não pode ser convertida."
+                f"A ativação NAPA '{area_id}' não respeita o contrato."
             ) from exc
+
+    classifier_version = payload.get("classifier_version", "napa-1.0")
+    method = payload.get("method", "lexical_capability_intent_heuristics")
+    if (
+        not isinstance(classifier_version, str)
+        or not classifier_version.strip()
+        or not isinstance(method, str)
+        or not method.strip()
+    ):
+        raise KiaFlowError("Metadados da versão NAPA estão malformados.")
 
     return NapaClassification(
         activations=tuple(resolved),
-        classifier_version=str(payload.get("classifier_version", "napa-1.0")),
-        method=str(payload.get("method", "lexical_capability_intent_heuristics")),
+        classifier_version=classifier_version,
+        method=method,
     )
 
 
