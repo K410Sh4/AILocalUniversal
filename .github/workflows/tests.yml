@@ -20,6 +20,7 @@ on:
       - integration/unified-architecture-v1
   pull_request:
     branches:
+      - feature/ba-developmental-substrate-contracts-v0.1
       - integration/unified-architecture-v1
       - main
       - bootstrap/project-structure
