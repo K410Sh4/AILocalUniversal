@@ -150,3 +150,15 @@ A integração aguarda CI e validação operacional no Arch. Não altera a main.
 - Testes unitários para manifesto, fallback remoto, filtragem por categoria, restrições de plataforma, pull, progresso, falhas e remoção.
 
 A validação real de baixar um modelo, cancelar uma operação e remover um modelo no Arch Linux ainda precisa ser executada no ambiente-alvo. Tamanho publicado de download não representa requisito de memória de inferência ou espaço no volume configurado no Ollama.
+
+
+## Registro de validação operacional do NeuralModel Hub — 2026-11-21
+
+Resultado informado pelo usuário no Arch Linux:
+- Um modelo foi selecionado e instalado diretamente pela aba Catálogo online do NeuralModel Hub.
+- Após a instalação, o modelo foi utilizado para uma conversa real pela interface Chat do AILocal Universal.
+- O teste comprova o caminho funcional catálogo → pull/instalação no Ollama → descoberta pelo inventário → seleção/uso no Chat.
+- O prompt usado como smoke test foi uma pergunta técnica sobre como lidar com o gargalo de modelos de aproximadamente 35B em PCs modestos.
+- A resposta gerada chegou ao usuário, mas não foi considerada validada em qualidade: continha recomendações repetidas e imprecisas sobre modificar dimensões de embedding, heads e layers de modelos pré-treinados, além de confusão entre famílias/tamanhos de parâmetros.
+
+Este é um smoke test operacional ponta a ponta reportado pelo usuário, não um benchmark de qualidade, velocidade ou consumo. O nome/tag exato do modelo, o tempo de download e o perfil de recursos não foram registrados nesta evidência. Testes de cancelamento, retomada e remoção continuam pendentes.
