@@ -59,8 +59,8 @@ def test_close_event_refuses_to_close_while_worker_is_still_running(
         _chat_worker=None,
         _neuralmap_worker=None,
         _status_worker=None,
-        _kia_runtime_client=None,
-        _kia_memory_store=None,
+        _kba_runtime_client=None,
+        _kba_memory_store=None,
     )
     setattr(window, worker_attribute, worker)
     event = FakeCloseEvent()
@@ -84,8 +84,8 @@ def test_close_event_accepts_after_chat_worker_stops(monkeypatch) -> None:
         _chat_worker=worker,
         _neuralmap_worker=None,
         _status_worker=None,
-        _kia_runtime_client=None,
-        _kia_memory_store=None,
+        _kba_runtime_client=None,
+        _kba_memory_store=None,
     )
     event = FakeCloseEvent()
 
