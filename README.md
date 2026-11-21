@@ -30,7 +30,7 @@ flowchart TB
     HOST --> KIA[K.IA - Rust Cognitive Runtime]
 
     KIA --> NAPA[NAPA - Áreas e capacidades]
-    KIA --> BA[BA - Rede cognitiva adaptativa]
+    KIA --> BA[BA - Sistema artificial de desenvolvimento e adaptação]
     KIA --> ACCA[ACCA - Planejamento e seleção]
 
     KIA --> EXEC[Camada de execução]
@@ -63,7 +63,7 @@ O diagrama representa a arquitetura de referência. Nem todas as conexões e cap
 | Interface e aplicação | Chat, configurações, modelos, conhecimento, inspeção e workflows |
 | Cognitive Core | Normalização, análise de intenção, decomposição e ferramentas determinísticas |
 | K.IA Runtime | Planejamento cognitivo, seleção de componentes, contratos e feedback |
-| BA | Modelo de rede cognitiva hierárquica, conexões e ativação seletiva; em desenvolvimento conceitual/experimental |
+| BA | Sistema artificial distinto de IA convencional: desenvolvimento estrutural, especialização regional, adaptação ambiental e evolução controlada; em pesquisa conceitual/experimental |
 | ACCA | Formalização da seleção adaptativa, custos, orçamento e estratégia de execução |
 | NAPA | Registro e classificação multilabel de áreas cognitivas |
 | Knowledge Runtime | Coordenação de recuperação documental e evidências |
@@ -117,11 +117,20 @@ Documentação: [K.IA Architecture](docs/KIA_ARCHITECTURE.md), [Runtime Host Pro
 
 ---
 
-## 3. BA — Brain Architecture
+## 3. BA — Brain Artificial
 
-A **BA** é a proposta de arquitetura de rede cognitiva hierárquica que deverá organizar capacidades, regiões, sub-regiões, unidades, conexões e mecanismos de ativação.
+A **Brain Artificial (BA)** é uma linha de desenvolvimento própria e conceitualmente distinta de Inteligência Artificial convencional. Não deve ser definida como LLM, Transformer, modelo generativo, roteador de modelos ou simples rede neural treinada por gradiente.
 
-A intenção é permitir que a K.IA não precise tratar todas as capacidades como um conjunto plano. A rede poderá organizar especializações por domínio e ativar somente as regiões e conexões pertinentes a uma tarefa.
+A BA é pesquisada como um **sistema artificial de organização, desenvolvimento, adaptação e evolução**, inspirado em princípios estruturais dos organismos vivos: diferenciação regional, nichos ambientais, homeostase, comunicação local, especialização, plasticidade, diversidade, seleção e desenvolvimento ao longo do tempo.
+
+A distinção arquitetural é obrigatória:
+- **BA:** sistema em desenvolvimento, com organização e adaptação próprias.
+- **K.IA:** runtime de coordenação e execução do AILU.
+- **Modelos de IA externos:** ferramentas opcionais que podem auxiliar tarefas específicas, sem definir a natureza ou a estrutura interna da BA.
+
+A BA não será reduzida a um conjunto de modelos de IA conectados. Sua arquitetura deverá ser validada por mecanismos próprios, estados próprios, ciclos de desenvolvimento e experimentos ambientais controlados. O uso futuro de modelos externos não altera essa separação.
+
+A intenção é desenvolver uma estrutura hierárquica de regiões, sub-regiões e unidades, com conexões locais e de longa distância, na qual especializações surjam e se modifiquem em resposta aos ambientes e às interações. A K.IA poderá hospedar ou coordenar componentes da BA, mas não é sinônimo dela.
 
 ### 3.1. Modelo conceitual
 
@@ -151,13 +160,23 @@ BA/
 
 Esta é uma organização lógica proposta, não a afirmação de que cada unidade já seja um neurônio artificial treinável ou que exista uma implementação física completa da BA.
 
-### 3.2. Ativação seletiva e armazenamento hierárquico
+### 3.2. Desenvolvimento ambiental e comunicação regional
+
+A pesquisa NeuralDNA/NeuralStem investiga hereditariedade artificial, desenvolvimento, diferenciação regional, avaliação ambiental e linhagens. Os benchmarks 0.5–0.7 avaliam antecipação, nichos regionais e comunicação espacial. Esses experimentos são isolados e não equivalem ainda à BA operacional.
+
+A hipótese estrutural é que regiões devem manter autonomia quando seus nichos divergem e compartilhar sinais quando há benefício preditivo demonstrável. Topologia, distância, atraso, perda e custo de comunicação devem influenciar a especialização, em vez de impor conectividade global uniforme.
+
+Documentação experimental: [NeuralDNA 0.7 — Spatial Communication](docs/NEURALDNA_SPATIAL_COMMUNICATION_V0.7.md).
+
+### 3.3. Organização conceitual proposta
+
+### 3.4. Ativação seletiva e armazenamento hierárquico
 
 A direção de pesquisa é manter dados persistentes em SSD/HDD, estruturas frequentes em RAM e componentes necessários à execução em VRAM, com cache e prefetch controlados pelo runtime.
 
 Armazenamento em disco não equivale a memória de GPU: latência, largura de banda, PCIe, RAM e VRAM impõem limites físicos. A arquitetura deverá ser validada com medições reais de I/O, carregamento, cache e execução.
 
-### 3.3. Plasticidade
+### 3.5. Plasticidade
 
 A evolução deverá distinguir:
 - Plasticidade de prioridades de roteamento.
