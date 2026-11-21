@@ -74,6 +74,10 @@ class ModelHubView(QWidget):
         self.details.setReadOnly(True)
         self.details.setMaximumHeight(125)
         self.details.setPlaceholderText("Selecione um modelo para consultar seus metadados.")
+        self.resource_label = QLabel(
+            "Seletor adaptativo aguardando uma avaliação de recursos."
+        )
+        self.resource_label.setWordWrap(True)
 
         self.remove_button = QPushButton("Remover modelo selecionado")
         self.remove_button.setEnabled(False)
@@ -81,6 +85,7 @@ class ModelHubView(QWidget):
 
         self.local_tab = QWidget()
         local_layout = QVBoxLayout(self.local_tab)
+        local_layout.addWidget(self.resource_label)
         local_layout.addWidget(self.table, 1)
         local_layout.addWidget(self.details)
         local_layout.addWidget(self.remove_button)
@@ -182,6 +187,10 @@ class ModelHubView(QWidget):
     @staticmethod
     def _format_bytes(value: int | None) -> str:
         return format_size(value)
+
+    def set_resource_recommendation(self, message: str) -> None:
+        """Exibe a justificativa da última decisão do seletor adaptativo."""
+        self.resource_label.setText(message.strip() or "Nenhuma recomendação disponível.")
 
     def set_data(
         self,
