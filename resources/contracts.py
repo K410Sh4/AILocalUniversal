@@ -12,6 +12,7 @@ class ResourcePlacement(StrEnum):
     GPU = "gpu"
     CPU = "cpu"
     HYBRID = "hybrid"
+    RESIDENT = "resident"
     DOES_NOT_FIT = "does_not_fit"
     UNKNOWN = "unknown"
 
@@ -19,6 +20,7 @@ class ResourcePlacement(StrEnum):
 class EstimateConfidence(StrEnum):
     """Completude dos metadados usados na estimativa."""
 
+    OBSERVED = "observed"
     MEDIUM = "medium"
     PARTIAL = "partial"
     UNKNOWN = "unknown"
