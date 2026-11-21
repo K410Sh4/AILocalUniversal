@@ -6,7 +6,7 @@ import pytest
 from core.neuralinjector.monitor import ResourceMonitor
 from core.neuralinjector.resources import (
     CANONICAL_PROFILES,
-    AdaptiveResourceManager,
+    AdaptiveHardwarePolicy,
     BenchmarkMode,
     GPUDevice,
     HardwareSnapshot,
@@ -193,7 +193,7 @@ def test_host_below_ultra_light_floor_is_incompatible():
 
 
 def test_dynamic_manager_enters_critical_and_emergency_states():
-    manager = AdaptiveResourceManager()
+    manager = AdaptiveHardwarePolicy()
     critical = manager.evaluate(hw(10000, 1000), active_parallelism=3)
     assert critical.pressure is ResourcePressure.CRITICAL
     assert critical.pause_new_loads
@@ -206,7 +206,7 @@ def test_dynamic_manager_enters_critical_and_emergency_states():
 
 
 def test_dynamic_manager_uses_hysteresis_before_recovering():
-    manager = AdaptiveResourceManager()
+    manager = AdaptiveHardwarePolicy()
     manager.evaluate(hw(10000, 500))
     still_emergency = manager.evaluate(hw(10000, 2000))
     assert still_emergency.pressure is ResourcePressure.EMERGENCY
@@ -216,7 +216,7 @@ def test_dynamic_manager_uses_hysteresis_before_recovering():
 
 
 def test_dynamic_manager_does_not_kill_active_generation():
-    manager = AdaptiveResourceManager()
+    manager = AdaptiveHardwarePolicy()
     decision = manager.evaluate(
         hw(10000, 500),
         active_parallelism=1,
@@ -229,7 +229,7 @@ def test_dynamic_manager_does_not_kill_active_generation():
 
 def test_dynamic_manager_rejects_invalid_thresholds():
     with pytest.raises(ValueError):
-        AdaptiveResourceManager(
+        AdaptiveHardwarePolicy(
             emergency_threshold=0.2,
             critical_threshold=0.1,
         )
