@@ -17,6 +17,7 @@ on:
       - feature/kia-acca-vertical-flow-v0.3
       - feature/kia-persistent-semantic-memory-v0.4
       - feature/kia-execution-safety-v0.5
+      - integration/unified-architecture-v1
   pull_request:
     branches:
       - main
