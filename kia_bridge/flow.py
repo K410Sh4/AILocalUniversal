@@ -7,7 +7,7 @@ from typing import Any
 
 from core.cognitive_task import CognitiveTask
 from core.deterministic_tools import DeterministicToolRegistry, ToolResult
-from kia_bridge.adapters import (
+from .adapters import (
     build_network_payload,
     cognitive_request_from_napa,
     executor_ids_for_registered_engines,
@@ -15,7 +15,7 @@ from kia_bridge.adapters import (
     resource_budget_from_profile,
     resource_snapshot_from_hardware,
 )
-from kia_bridge.client import KiaRuntimeClient
+from .client import KiaRuntimeClient
 from model_hub.contracts import ModelRecord
 from model_hub.hardware import HardwareProfile
 from model_hub.registry import ModelRegistry
