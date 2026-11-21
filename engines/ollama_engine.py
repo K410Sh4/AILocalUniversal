@@ -172,17 +172,27 @@ class OllamaEngine(EngineAdapter):
                 semaphore = asyncio.Semaphore(4)
 
                 async def build_model(item: object) -> ModelInfo | None:
-                    if not isinstance(item, dict) or not item.get("name"):
+                    if (
+                        not isinstance(item, dict)
+                        or not isinstance(item.get("name"), str)
+                        or not item["name"].strip()
+                    ):
                         return None
-                    name = str(item["name"])
+                    name = item["name"]
                     size = item.get("size")
+                    size_bytes = (
+                        size
+                        if isinstance(size, int) and not isinstance(size, bool) and size >= 0
+                        else None
+                    )
+                    digest = item.get("digest")
                     capabilities, runtime_metadata = await self._read_model_metadata(
                         client, name, semaphore
                     )
                     return ModelInfo(
                         name=name,
-                        size_bytes=int(size) if isinstance(size, (int, float)) else None,
-                        digest=str(item["digest"]) if item.get("digest") else None,
+                        size_bytes=size_bytes,
+                        digest=digest if isinstance(digest, str) and digest else None,
                         capabilities=capabilities,
                         parameter_count=runtime_metadata.get("parameter_count"),
                         architecture=runtime_metadata.get("architecture"),
