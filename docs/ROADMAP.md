@@ -124,7 +124,7 @@ As fases são entregas progressivas. Uma funcionalidade só é considerada concl
 - [ ] Calibrar latência/largura de banda do armazenamento e validar o simulador contra medições físicas.
 - [ ] Comparar predição neural somente após construir um corpus de traces reais representativo.
 
-**Limite:** a Fase 5.0 simula substituição de cache, não inferência completa. Bytes lidos são misses simulados, não I/O físico; traces sintéticos não demonstram aceleração, qualidade ou viabilidade em hardware de 4 GB. Consulte \`docs/NEURAL_ELASTIC_EXECUTION.md\`.
+**Limite:** a Fase 5.0 simula substituição de cache, não inferência completa. Bytes lidos são misses simulados, não I/O físico; traces sintéticos não demonstram aceleração, qualidade ou viabilidade em hardware de 4 GB. Consulte `docs/NEURAL_ELASTIC_EXECUTION.md`.
 
 ## Fase 5 — Agentes especialistas e autoengenharia
 
