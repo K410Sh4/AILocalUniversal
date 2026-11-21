@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from PySide6.QtCore import Signal, QUrl
+from PySide6.QtCore import QUrl, Signal
 from PySide6.QtGui import QDesktopServices
 from PySide6.QtWidgets import (
     QComboBox,
@@ -86,7 +86,9 @@ class ModelHubView(QWidget):
         local_layout.addWidget(self.remove_button)
 
         self.catalog_search = QLineEdit()
-        self.catalog_search.setPlaceholderText("Pesquisar modelos, família, desenvolvedor ou capacidade…")
+        self.catalog_search.setPlaceholderText(
+            "Pesquisar modelos, família, desenvolvedor ou capacidade…"
+        )
         self.catalog_search.textChanged.connect(self._render_catalog)
         self.category_filter = QComboBox()
         self.category_filter.addItem("Todas as categorias", "")
