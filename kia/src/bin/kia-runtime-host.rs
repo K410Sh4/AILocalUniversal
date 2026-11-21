@@ -39,7 +39,7 @@ fn read_bounded_line(reader: &mut impl BufRead) -> io::Result<Option<String>> {
         return Ok(Some("x".repeat(MAX_REQUEST_BYTES + 1)));
     }
 
-    if bytes.last() == Some(&b'\\r') {
+    if bytes.last() == Some(&b'\r') {
         bytes.pop();
     }
     String::from_utf8(bytes)
