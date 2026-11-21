@@ -204,7 +204,7 @@ fn bounded_wait_queue_rejects_new_work_when_full() {
             },
             &worker_control,
         );
-        let _ = tx.send(result.map(|lease| drop(lease)));
+        let _ = tx.send(result.map(drop));
     });
 
     wait_for_waiter(&manager);
