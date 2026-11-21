@@ -161,10 +161,10 @@ Cada decisão deve registrar a evidência, a política aplicada e a razão do fa
 ## 6. Fases de implementação
 
 - **Fase A — identidade residente:** concluída; referência exata + digest.
-- **Fase B — capacidade residente:** implementada como avaliação pura e testável; ainda não conectada ao seletor principal nem ao ciclo de vida da UI.
+- **Fase B — capacidade residente:** concluída; avaliação pura com digest, footprint, contexto, frescor e expiração.
 - **Fase C — integração do seletor:** concluída; snapshots do Engine Adapter alimentam a seleção Automática e o planner ACCA/K.IA, com fallback frio e modo Manual preservado.
 - **Fase D — leases e concorrência:** leases locais de uso/mutação implementadas na aplicação; Chat bloqueia pull/remoção enquanto usa o modelo. Ainda faltam slots reais, leases compartilhadas Rust/Ollama, cancelamento coordenado e confirmação de unload externo. Snapshots só podem habilitar reutilização se a observação tiver até 30 segundos e a expiração estiver a mais de 2 segundos.
-- **Fase E — calibração empírica:** coletar medições frias/quentes no Arch Linux e comparar previsões com RAM/VRAM e logs do runner.
+- **Fase E — calibração empírica:** probe PSS/RSS Linux implementado para a árvore Ollama; falta conectar sessões controladas de load/inferência/unload, medir VRAM e calibrar por hardware.
 - **Fase F — homeostase adaptativa:** calibrar prioridade, retenção, descarregamento e consolidação com traces reproduzíveis e rollback.
 
 Nenhuma fase posterior deve ser marcada como concluída apenas por analogia biológica ou teste sintético.
