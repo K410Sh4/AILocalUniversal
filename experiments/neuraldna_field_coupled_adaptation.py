@@ -206,9 +206,6 @@ def simulate_field_adaptation_trial(
     field_calibrations = [PredictorCalibration() for _ in environments]
     history_predictions: list[list[int]] = [[] for _ in environments]
     field_predictions: list[list[int | None]] = [[] for _ in environments]
-    field_predictions_by_region: list[list[int | None]] = [
-        [] for _ in environments
-    ]
 
     log_fitness = 0.0
     local_hits = history_hits = global_hits = neighbor_hits = 0
@@ -360,7 +357,6 @@ def simulate_field_adaptation_trial(
             log_fitness += math.log(max(1e-12, portfolio * cost))
 
             field_predictions[region].append(field_state)
-            field_predictions_by_region[region].append(field_state)
 
     recovery_lags = []
     for region, environment in enumerate(environments):
@@ -369,7 +365,7 @@ def simulate_field_adaptation_trial(
             new_state = environment[len(environment) // 2]
             recovery_lags.append(
                 _recovery_lag(
-                    tuple(field_predictions_by_region[region]),
+                    tuple(field_predictions[region]),
                     shift_index,
                     new_state,
                     steps,
