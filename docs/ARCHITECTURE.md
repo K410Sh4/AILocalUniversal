@@ -77,3 +77,14 @@ O Neural Semantic Atlas (NeSA) organiza o conhecimento documental em fichas por 
 As fichas são persistidas na mesma base SQLite e transação dos documentos/chunks, com FTS5 próprio para localizar páginas. O catálogo complementa — não substitui — a recuperação lexical/vetorial híbrida de chunks. A NeSA 0.1 não implementa grafo semântico, embeddings de página, relações factuais ou navegação hierárquica.
 
 A NAPA coordena quando consultar o Atlas; o NeuralModel Hub e o Adaptive Resource Manager continuam responsáveis pelos modelos e recursos; EvidenceValidator permanece responsável pela integridade das evidências recuperadas.
+
+
+## K.IA — Rust Cognitive Runtime
+
+O runtime próprio começa como crate Rust independente em kia/. Ele possui contratos serializáveis para capacidades, componentes, conexões, solicitações e feedback avaliado. A rede de capacidades é fonte de verdade para a seleção dentro do runtime; subsistemas existentes serão sincronizados por contratos versionados, em vez de serem reescritos imediatamente.
+
+O planner escolhe provedores por capacidade, afinidade heurística de intenção/contexto, prioridade operacional e disponibilidade de executor. Um orçamento lógico impede que a soma dos custos estimados ultrapasse os limites configurados. A execução inicial é sequencial por ComponentExecutor, sem acoplamento ao motor de inferência.
+
+O feedback só altera a prioridade de uma conexão quando contém uma referência de validação independente. Esta proteção não substitui a qualidade do avaliador: ela exige que a origem da avaliação seja rastreável. A telemetria registra IDs, estado e duração, mas não serializa o payload do usuário.
+
+O snapshot de hardware é fornecido pela aplicação. O orçamento não impõe limites ao kernel nem garante percentuais de uso físico. Providers de hardware, controle real de processo, concorrência, cancelamento e adaptadores Ollama/llama.cpp são etapas posteriores.

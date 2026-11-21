@@ -66,6 +66,12 @@ A branch `feature/rag-v1` inclui uma biblioteca de conhecimento local e integra�
 
 **Limites:** a integração inicial ao Chat é opt-in, usa documentos como dados não confiáveis e valida a integridade estrutural das citações, sem provar verdade/entailment. A validação operacional da integração após pull no Arch, reranker concreto, benchmark de qualidade em corpus representativo, OCR e orçamento de contexto por tokenizer permanecem pendentes. Consulte [docs/RAG.md](docs/RAG.md).
  
+## K.IA — Artificial Brain / Rust Cognitive Runtime
+
+A branch feature/kia-rust-cognitive-runtime-v0.1 inicia a construção da K.IA como uma arquitetura cognitiva modular, e não como um único modelo. A crate Rust kia-cognitive-runtime introduz contratos tipados, rede de capacidades, seleção por intenção/contexto, orçamento lógico de hardware, registro de executores e plasticidade operacional por feedback avaliado.
+
+O runtime não substitui os motores existentes: os conecta por adaptadores. A integração real de Ollama/llama.cpp, persistência, concorrência, telemetria física e treinamento paramétrico serão implementados nas próximas etapas. Consulte docs/KIA_ARCHITECTURE.md.
+
 ## NeSA 0.1 — Neural Semantic Atlas
 
 A branch `feature/nesa-semantic-page-indexer-v0.1` acrescenta um catálogo persistente de páginas documentais ao Knowledge/RAG. A ingestão produz fichas com resumo extrativo local, palavras-chave, candidatos lexicais a conceitos, seções, hash/URI e localização original. O catálogo é pesquisável por FTS5 e compartilha a transação e a política de exclusão do índice documental.
@@ -112,6 +118,7 @@ A Validation Layer atual é estrutural e determinística: reproduz cálculos/con
 - storage/: configurações e histórico local.
 - pipeline/: futuras etapas cognitivas.
 - knowledge/: loaders, chunking, índice lexical/vetorial, recuperação híbrida, catálogo de páginas NeSA, composição de contexto e validação de evidências.
+- kia/: crate Rust com o Cognitive Runtime inicial e contratos da Adaptive Cognitive Network.
 - resources/: estimativa de recursos e seleção adaptativa de modelos.
 - neural_elastic/: simulador offline de políticas de cache de especialistas MoE (Fase 5.0).
 - napa/: registro e classificador multilabel de áreas cognitivas (NAPA 1.0).

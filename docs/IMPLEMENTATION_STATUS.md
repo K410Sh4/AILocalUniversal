@@ -25,6 +25,7 @@ Este documento diferencia código integrado, cobertura automatizada e validaçã
 | Neural Elastic Execution Simulator | Simulador offline de traces MoE com LRU, LFU, política estatística e Belady MIN (somente tamanhos uniformes); CLI e testes | Ainda sem traces reais de roteamento; sem modelagem de latência de SSD, prefetch ou integração com runtime |
 | NAPA 1.0 | Registro de áreas cognitivas, classificação multilabel, afinidades explicáveis e integração com SemanticAnalysisStage/CognitiveTask | Heurístico; sem roteamento, predictor de custos, plasticidade, busca progressiva ou reorganização |
 | NeSA 0.1 | Catálogo persistente de páginas com resumo extrativo, candidatos lexicais, palavras-chave, referências e busca FTS5 de páginas; integrado à ingestão RAG | Sem sumário abstrativo, NER padrão, embeddings por página, grafo ou recuperação hierárquica; validar no Arch |
+| K.IA 0.1 | Rust Cognitive Runtime com contratos tipados, grafo de capacidades, planner seletivo, orçamento lógico, executores plugáveis e plasticidade operacional supervisionada | Sem adaptadores de inferência reais, persistência, coleta de hardware, concorrência ou treinamento neural; validar no Arch |
 | Roteamento especialista | Planejado | Fase 5 |
 | Swarm P2P | Planejado | Fase 6 |
 | BitNet / RPC | Experimental futuro | Fase 7 |
@@ -241,3 +242,20 @@ Implementado na branch `feature/nesa-semantic-page-indexer-v0.1`:
 - oferece listagem e busca lexical do catálogo sem alterar o HybridRetriever de chunks.
 
 **Limites:** isso é um catálogo compacto de páginas, não um grafo semântico ou busca vetorial de páginas. Os conceitos são candidatos lexicais, não ontologia validada; FTS5 não compreende sinônimos. Os resumos são extrativos, não paráfrases semanticamente abstrativas. NER, sumários gerativos, associações tipadas e recuperação progressiva ficam para etapas posteriores. A validação operacional no Arch Linux permanece pendente.
+
+
+## K.IA 0.1 — Rust Cognitive Runtime
+
+Implementado na branch feature/kia-rust-cognitive-runtime-v0.1:
+- crate Rust independente kia-cognitive-runtime em kia/;
+- contratos serializáveis e IDs tipados para capacidades e componentes; CognitiveRequest identifica schema_version;
+- grafo versionado em memória com relações tipadas;
+- planner que seleciona componentes por capacidade, intenção, contexto, executor habilitado e orçamento;
+- componentes com custo estimado explicitamente disponível; custo desconhecido não é tratado como custo zero;
+- reserva lógica de CPU/RAM/GPU/VRAM/NPU e perfis 33/66/95 para CPU;
+- trait de adaptador ComponentExecutor e registry de executores;
+- execução sequencial com relatório, falhas e trace sem payload de usuário;
+- atualização da prioridade operacional somente via feedback avaliado com referência independente;
+- CI Rust: fmt, clippy e cargo test.
+
+**Limites:** nenhum provider Ollama/llama.cpp, persistência, coleta física de hardware, execução concorrente, cancelamento, treinamento paramétrico ou mudanças estruturais de modelos. A reserva é lógica, não quota efetiva do sistema operacional. Validação manual no Arch Linux permanece pendente.
