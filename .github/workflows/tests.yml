@@ -20,6 +20,7 @@ on:
       - integration/unified-architecture-v1
   pull_request:
     branches:
+      - integration/unified-architecture-v1
       - main
       - bootstrap/project-structure
       - feature/rag-v1
