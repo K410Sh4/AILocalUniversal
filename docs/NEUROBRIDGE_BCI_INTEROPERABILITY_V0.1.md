@@ -9,7 +9,7 @@ SPDX-License-Identifier: LicenseRef-AILocal-Universal-Proprietary
 
 Prepare AILocal Universal and the BA to interoperate with brain-computer interfaces (BCIs) without making the BA dependent on a single manufacturer.
 
-The BA remains an independently developed cognitive system. A BCI is an optional human-computer input/output channel, not the BA's brain, training substrate, or source of authority.
+The Brain Artificial (BA) is a distinct artificial developmental and adaptive system, not conventional Artificial Intelligence, an LLM, or a Transformer. K.IA is a separate coordination runtime. A BCI is an optional human-computer input/output channel; it is not the BA's brain, training substrate, or source of authority.
 
 The long-term goal is **safe co-adaptation**:
 - the person learns to express intentions through the interface;
@@ -18,7 +18,7 @@ The long-term goal is **safe co-adaptation**:
 - feedback lets the person correct the BA and lets the interface calibration improve;
 - the person retains control, consent, and the ability to stop or reset the adaptation.
 
-This can support learning to use a BCI and personalization of the BA. It does not mean the BA can rewrite, stimulate, or train a human brain directly.
+This can support a person's learning to operate an approved BCI and the BA's adaptation to user-confirmed intent mappings. It does **not** mean the BA can directly train, rewrite, stimulate, or modify human neural tissue. Any closed-loop neural stimulation or therapeutic training would be a separate medical-device/clinical system requiring provider authorization, clinical oversight, ethics review, and regulatory approval; it is outside this project scope.
 
 ## 2. What is publicly documented about Neuralink
 
@@ -70,7 +70,7 @@ Human intent
 2. **Intent Normalizer:** maps only documented decoded outputs into stable AILU events; preserves source confidence and timestamps.
 3. **Consent and Privacy Gateway:** binds each session to explicit scopes, retention, export, and revocation.
 4. **Safety Gateway:** rejects stale, malformed, ambiguous, low-confidence, unauthorized, or out-of-scope events.
-5. **BA/NAPA Input:** treats intent events as uncertain observations, not commands with unconditional authority.
+5. **BA Input:** treats decoded intent events as uncertain environmental/user observations, not commands with unconditional authority. NAPA/K.IA may assist with routing and task planning but do not define the BA's developmental architecture.
 6. **K.IA Planner:** proposes tasks and checks capability, risk, and permissions before execution.
 7. **Action Adapter:** initially supports reversible digital UI actions only, subject to the vendor's permitted interface.
 8. **Co-adaptation Evaluator:** measures calibration drift, false activations, correction rate, latency, and user-confirmed success.
@@ -99,7 +99,7 @@ Raw neural recordings are excluded from the default BA memory path. They must ne
 The biological inspiration is reciprocal adaptation, not unilateral control.
 
 - **Human-side learning:** the participant learns a stable mapping between intended actions and the BCI's decoded control vocabulary, following the device provider's approved calibration process.
-- **BA-side learning:** the BA adapts only its local interpretation and task preferences from explicit corrections and confirmed outcomes.
+- **BA-side adaptation:** the BA adapts only its local interpretation and task preferences from explicit corrections and confirmed outcomes; this is adaptation of the artificial system, not neural stimulation or direct alteration of the person's brain.
 - **Shared calibration:** both sides can improve task performance over time, but each update has independent provenance and rollback.
 - **Uncertainty:** confidence is calibrated per user, task, and session. A confident cursor signal must not be treated as a confident instruction to perform an unrelated high-impact task.
 - **No forced learning:** no hidden reinforcement, manipulative feedback, or stimulation-based training is part of this architecture.
