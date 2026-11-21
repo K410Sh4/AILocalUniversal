@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import UTC, datetime, timedelta
 from types import SimpleNamespace
 
 import pytest
@@ -98,6 +99,7 @@ class FakeResourceManager:
     def __init__(self, placement=ResourcePlacement.CPU, resident_status=None):
         self.placement = placement
         self.resident_status = resident_status
+        self.estimate_calls = 0
 
     def cpu_thread_limit(self, *, resource_profile, hardware):
         return 4
@@ -110,6 +112,7 @@ class FakeResourceManager:
         return SimpleNamespace(status=self.resident_status)
 
     def estimate_model(self, model_id, registry, *, context_tokens, hardware):
+        self.estimate_calls += 1
         return SimpleNamespace(
             placement=self.placement,
             total_required_bytes=512 * 1024 * 1024
@@ -130,7 +133,7 @@ def hardware_profile():
     )
 
 
-def model_registry(tmp_path):
+def model_registry(tmp_path, *, digest=None):
     registry = ModelRegistry(tmp_path / "model-registry.json")
     registry.upsert(
         ModelRecord(
@@ -144,6 +147,7 @@ def model_registry(tmp_path):
                     runtime="ollama",
                     reference="qwen3:4b",
                     installed=True,
+                    digest=digest,
                 ),
             ),
         )
@@ -401,3 +405,52 @@ def test_napa_task_boundary_accepts_valid_activation_payload() -> None:
 
     assert result.active_area_ids == ("programming",)
     assert result.activations[0].affinity == 0.81
+
+
+
+@pytest.mark.asyncio
+async def test_kia_plan_reuses_confirmed_resident_model_without_cold_ram_reservation(
+    tmp_path,
+) -> None:
+    task = await analyze_request(
+        "Explique como funcionam as integrais definidas.",
+        execute_deterministic=False,
+    )
+    client = FakeRuntimeClient()
+    coordinator = KiaExecutionCoordinator(client)
+    registry = model_registry(tmp_path, digest="sha256:resident")
+    manager = FakeResourceManager(
+        placement=ResourcePlacement.DOES_NOT_FIT,
+        resident_status=ResidentCapacityStatus.REUSE_READY,
+    )
+    observed = datetime.now(UTC)
+    snapshot = RunningModelSnapshot(
+        name="qwen3:4b",
+        model="qwen3:4b",
+        digest="sha256:resident",
+        size_bytes=5 * 1024**3,
+        size_vram_bytes=0,
+        context_length=8192,
+        expires_at=(observed + timedelta(minutes=5)).isoformat(),
+        observed_at=observed.isoformat(),
+    )
+
+    decision = coordinator.plan_task(
+        task,
+        model_registry=registry,
+        resource_manager=manager,
+        hardware=hardware_profile(),
+        engine_names=("ollama",),
+        resource_profile="medium",
+        preferred_model="qwen3:4b",
+        model_references=("qwen3:4b",),
+        running_models=[snapshot],
+        concurrent_requests=1,
+    )
+
+    selected = decision.model_selections()
+    assert len(selected) == 1
+    cost = selected[0]["selection"]["estimated_cost"]
+    assert cost["ram_bytes"] == 0
+    assert cost["cpu_millis"] == 4000
+    assert manager.estimate_calls == 0
