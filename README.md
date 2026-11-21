@@ -1,267 +1,564 @@
 # AILocal Universal
 
-> **Plataforma cognitiva local, adaptativa e distribuída.**  
-> Uma arquitetura que coordena modelos de linguagem, ferramentas determinísticas, conhecimento local e recursos computacionais para resolver tarefas com eficiência, rastreabilidade e controle.
+> **Plataforma cognitiva local, adaptativa, modular e extensível.**
 
-**Status:** em fundação — arquitetura e contratos iniciais em construção  
-**Plataforma prioritária:** Linux (com foco inicial em Arch Linux)  
-**Interface prevista:** Python + PySide6  
-**Primeiro backend de inferência:** Ollama
+O **AILocal Universal (AILU)** é uma plataforma para coordenar modelos de IA locais, ferramentas determinísticas, conhecimento privado, workflows e recursos computacionais. Seu princípio central é selecionar o mecanismo adequado para cada parte de uma tarefa — em vez de encaminhar tudo obrigatoriamente a um único modelo de linguagem.
+
+O projeto combina uma aplicação desktop em Python/PySide6, runtimes e componentes de alto desempenho em Rust, engines de inferência intercambiáveis e uma arquitetura cognitiva adaptativa em evolução.
+
+> **Estado desta linha de integração:** consolidação em andamento na branch `integration/unified-architecture-v1`. Esta documentação descreve a arquitetura pretendida e diferencia recursos implementados, experimentais e planejados. A PR de integração permanece em Draft; a `main` não deve ser considerada atualizada até a revisão e o merge.
+
+- **Plataforma prioritária:** Linux, especialmente Arch Linux.
+- **Interface:** Python + PySide6.
+- **Runtime cognitivo:** Rust.
+- **Engine inicial:** Ollama, por adaptador.
+- **Armazenamento local:** JSON e SQLite, conforme o subsistema.
+- **Princípios:** local-first, modularidade, contratos explícitos, segurança por padrão, rastreabilidade e validação empírica.
 
 ---
 
-## Visão
+## 1. Visão geral da arquitetura
 
-O AILocal Universal pretende ir além de um chat conectado a um modelo local. Será uma plataforma modular que recebe uma tarefa, identifica o que é necessário para resolvê-la, escolhe ferramentas e modelos compatíveis, recupera conhecimento quando pertinente, acompanha a execução e verifica o resultado.
+O AILU não é um único modelo nem pretende substituir todos os modelos existentes. É uma plataforma de coordenação que combina capacidades cognitivas, ferramentas, conhecimento, workflows e especialistas externos.
 
-O princípio central é **usar o mecanismo mais adequado para cada parte da tarefa — e não usar um LLM para tudo**.
-
-Cálculos, parsing, conversões, consultas estruturadas e testes devem ser executados por ferramentas determinísticas sempre que possível. Modelos de linguagem entram quando interpretação semântica, planejamento, geração ou síntese agregam valor.
-
-A execução será local por padrão. Em uma etapa posterior, computadores autorizados poderão cooperar em tarefas distribuíveis, compartilhamento de arquivos e sincronização de conhecimento.
-
-## Objetivos
-
-- **Orquestração cognitiva:** decompor solicitações em etapas e selecionar estratégias de execução.
-- **Independência de backend:** manter o núcleo desacoplado do Ollama e permitir outros motores.
-- **Eficiência de recursos:** considerar RAM, VRAM, CPU, GPU, carregamento, filas e latência.
-- **Conhecimento verificável:** recuperar documentos e preservar a origem das evidências.
-- **Execução adaptativa:** escolher ferramentas, modelos e nós conforme a tarefa e os recursos.
-- **Distribuição segura:** permitir cooperação entre máquinas sem presumir memória ou GPU compartilhada.
-- **Rastreabilidade:** registrar decisões, tempos, recursos e resultados para diagnóstico.
-
-## Arquitetura em uma visão
+### 1.1. Arquitetura em camadas
 
 ```mermaid
-flowchart TD
-    A[Entrada: texto, imagem, documento] --> B[Input Processing]
-    B --> C[Semantic Analysis]
-    C --> D{Processamento determinístico resolve?}
-    D -->|Sim| E[Deterministic Tools]
-    D -->|Não| F[Knowledge Retrieval]
-    E --> J[Validation]
-    F --> G[Context Composer]
-    G --> H[Cognitive Planner]
-    H --> I[Adaptive Execution Engine]
-    I --> J
-    J --> K[Synthesis]
-    K --> L[Resposta + Execution Trace]
-    L --> M[Memória e métricas]
-    R[Adaptive Resource Manager] -. recursos e filas .-> I
-    S[Swarm Manager] -. nós autorizados .-> I
+flowchart TB
+    U[Usuário / Aplicação Desktop] --> UI[Python + PySide6]
+    UI --> HOST[Orquestração e Runtime Host]
+    HOST --> KBA[K.BA - Rust Cognitive Runtime]
+
+    KBA --> NAPA[NAPA - Áreas e capacidades]
+    KBA --> BA[BA - Rede cognitiva adaptativa]
+    KBA --> ACCA[ACCA - Planejamento e seleção]
+
+    KBA --> EXEC[Camada de execução]
+    EXEC --> TOOLS[Ferramentas determinísticas]
+    EXEC --> MODELS[NeuralModel Hub e Engine Adapters]
+    EXEC --> MAP[NeuralMap Workflows]
+    EXEC --> KNOW[Knowledge Runtime]
+
+    KNOW --> NESA[NeSA - Atlas semântico]
+    KNOW --> RAG[RAG - Recuperação e evidências]
+
+    MODELS --> OLLAMA[Ollama]
+    MODELS --> OTHER[Outras engines e especialistas]
+
+    EXEC --> RESOURCE[Adaptive Resource Manager]
+    EXEC --> PLUGINS[NeuralPlugin / NeuralInjector]
+    EXEC --> ELASTIC[Neural Elastic Execution]
+
+    EXEC --> VALID[Validation Layer]
+    VALID --> MEMORY[Memória, feedback e traces]
+    MEMORY --> KBA
 ```
 
-O fluxo é adaptativo: tarefas simples podem seguir caminhos curtos e não precisam atravessar todas as etapas.
+O diagrama representa a arquitetura de referência. Nem todas as conexões e capacidades estão implementadas ou habilitadas nesta etapa.
 
-### Camadas principais
+### 1.2. Responsabilidades por camada
 
 | Camada | Responsabilidade |
 |---|---|
-| Input Processing | Receber entradas e anexos, preservando o conteúdo original |
-| Semantic Analysis | Estimar intenção, capacidades, dificuldade, incerteza, risco e urgência |
-| Deterministic Processing | Executar cálculos, parsers, consultas e verificações por código |
-| Knowledge Retrieval | Recuperar documentos, trechos e evidências |
-| Context Composer | Selecionar e organizar contexto com proveniência |
-| Cognitive Planner | Decompor tarefas e definir dependências |
-| Adaptive Execution Engine | Selecionar motor, modelo, ferramenta ou nó |
-| Validation | Verificar cálculos, evidências, restrições e saídas |
-| Synthesis | Produzir a resposta final quando geração linguística for necessária |
-| Memory and Trace | Registrar histórico, métricas e rastros de execução |
-
-Serviços transversais: **Adaptive Resource Manager**, **Model Manager**, **Knowledge Manager**, **Swarm Manager**, **Telemetry** e **Storage**.
-
-## Núcleo cognitivo
-
-### CognitiveTask
-
-É o contrato intermediário padronizado entre as camadas. Reúne a entrada original, análise, evidências, plano, limites de recursos, rastros e resultado. O contrato terá versão para permitir evolução compatível.
-
-Campos planejados incluem:
-
-- Identidade da tarefa e versão do esquema.
-- Texto original, texto normalizado e anexos.
-- Intenção e capacidades necessárias.
-- Dificuldade, incerteza, risco e urgência.
-- Resultados determinísticos e evidências.
-- Plano de execução e subtarefas.
-- Orçamento de tokens, memória e prazo.
-- Rastro de execução e resultado.
-
-Pontuações serão indicadores até que sejam calibradas com dados de avaliação; não serão tratadas como probabilidades confiáveis por padrão.
-
-### Capability Vectorizer
-
-A primeira taxonomia terá 12 dimensões:
-
-| Dimensão | Capacidade |
-|---|---|
-| D0 | Conversa geral |
-| D1 | Programação |
-| D2 | Matemática e lógica |
-| D3 | Ciências e conhecimento |
-| D4 | RAG e memória externa |
-| D5 | Visão e multimodalidade |
-| D6 | Escrita e criatividade |
-| D7 | Pesquisa externa |
-| D8 | Ferramentas |
-| D9 | Planejamento |
-| D10 | Verificação |
-| D11 | Interdisciplinaridade |
-
-A implementação inicial combinará embeddings, âncoras semânticas e regras multilabel. Dificuldade, risco, incerteza e urgência serão avaliados separadamente.
-
-## Motores de execução
-
-O núcleo utilizará um contrato comum de engine adapter para consultar disponibilidade e capacidades, listar modelos, estimar recursos, executar tarefas, transmitir resultados, cancelar operações e descarregar modelos.
-
-| Motor | Papel | Estado |
-|---|---|---|
-| Ollama | Primeiro backend local | Prioridade da Fase 1 |
-| llama.cpp | Backend alternativo | Planejado |
-| BitNet | Inferência experimental | Laboratório |
-| Remote Engine | Execução em nó autorizado | Planejado |
-| Specialist Engines | Motores especializados | Evolução futura |
-
-O modo manual deverá respeitar a escolha explícita do usuário. O modo automático permitirá que o Orchestrator selecione ferramentas e motores compatíveis.
-
-## Gerenciamento de recursos
-
-O **Adaptive Resource Manager** deverá observar RAM, VRAM, CPU, GPU, pressão de memória, carregamento de modelos, filas, cache e concorrência.
-
-A estimativa de execução considerará, no mínimo:
-
-**T previsto = tempo de fila + carregamento + transferência + execução.**
-
-O orçamento de memória deverá incluir pesos, cache KV, contexto, buffers e sobrecarga do runtime. Paginação em SSD não será tratada como substituta de RAM/VRAM para inferência interativa.
-
-## Conhecimento e RAG
-
-A camada de conhecimento será composta por carregadores de documentos, parsers, chunker, embeddings, armazenamento vetorial, busca híbrida, reranking e composição de contexto.
-
-Toda evidência deverá preservar sua proveniência: documento, trecho, página ou localização, metadados, data de ingestão e hash do conteúdo. A compressão de contexto deverá preservar negações, números, unidades, condições, exceções e referências.
-
-## Swarm P2P
-
-A evolução distribuída será separada em três planos:
-
-1. **Control Plane:** descoberta, identidade, heartbeat, telemetria e inventário de capacidades.
-2. **Data Plane:** transferência autenticada de tarefas, resultados, arquivos e conhecimento.
-3. **Execution Plane:** despacho de subtarefas, especialistas remotos e Map-Reduce.
-
-O primeiro caso de uso será a distribuição de tarefas independentes e a sincronização de conhecimento.
-
-Descoberta na rede não concede autorização. Pareamento entre nós, autenticação, criptografia de transporte, limites de recursos, cancelamento e verificação SHA-256 serão requisitos. Inferência distribuída por camadas e RPC permanecerão experimentais: rede não equivale a memória compartilhada, e latência pode superar o benefício.
-
-## Interface prevista
-
-- **Chat:** conversas, streaming e seleção manual/automática de modelo.
-- **Modelos:** inventário, capacidades, carregamento e estado.
-- **Pipeline:** etapas, decisões e execution traces.
-- **Conhecimento:** documentos, indexação, busca e fontes.
-- **Rede:** nós autorizados, telemetria e tarefas distribuídas.
-- **Diagnóstico:** RAM/VRAM, CPU/GPU, latências e benchmarks.
-
-A interface deverá continuar acessível mesmo quando um backend estiver indisponível.
-
-## Estrutura do repositório
-
-```text
-AILocalUniversal/
-├── README.md
-├── pyproject.toml
-├── requirements.txt
-├── install.sh
-├── .gitignore
-├── CONTRIBUTING.md
-├── docs/
-│   ├── ARCHITECTURE.md
-│   ├── ROADMAP.md
-│   ├── SECURITY.md
-│   └── DATA_CONTRACTS.md
-├── app/
-│   ├── main.py
-│   ├── main_window.py
-│   └── views/
-├── core/
-│   ├── cognitive_task.py
-│   ├── orchestrator.py
-│   ├── task_router.py
-│   ├── capability_vectorizer.py
-│   └── execution_trace.py
-├── pipeline/
-├── engines/
-├── resources/
-├── knowledge/
-├── swarm/
-├── storage/
-├── tests/
-│   ├── unit/
-│   ├── integration/
-│   ├── network/
-│   └── benchmarks/
-└── scripts/
-```
-
-A árvore será preenchida incrementalmente. Diretórios podem ganhar submódulos à medida que existirem implementações e testes correspondentes.
-
-## Plano de desenvolvimento
-
-| Fase | Entrega |
-|---|---|
-| 0 — Fundação | Documentação, contratos, padrões, testes e empacotamento |
-| 1 — Aplicação base | PySide6, histórico, configurações, Engine Adapter e Ollama |
-| 2 — Núcleo cognitivo | CognitiveTask, análise semântica, ferramentas determinísticas e Orchestrator |
-| 3 — Conhecimento | RAG, Context Composer, memória e validação |
-| 4 — Recursos | Monitoramento, Model Manager, filas e seleção adaptativa |
-| 5 — Rede cooperativa | Node Agent, descoberta, protocolo seguro e Map-Reduce |
-| 6 — Laboratório | BitNet, RPC, speculative decoding e experimentos multi-host |
-
-**Diretriz:** primeiro um sistema local confiável; depois adaptativo; por último, distribuído. Cada fase deverá demonstrar funcionamento por testes e métricas antes de ampliar a complexidade.
-
-## Benchmark e critérios de qualidade
-
-Os benchmarks separarão modelo frio de modelo já carregado e registrarão:
-
-- Tempo até o primeiro token e tokens/s.
-- Latência total e tempo por etapa.
-- Tempo de carregamento.
-- Pico de RAM/VRAM e uso de CPU/GPU.
-- Bytes transferidos e custo de coordenação.
-- Qualidade da tarefa, precisão e cobertura de evidências.
-- Falhas, timeouts e cancelamentos.
-
-Cenários mínimos: pergunta simples, operação matemática, lógica, análise de código, RAG documental, planejamento complexo e Map-Reduce multi-host.
-
-Nenhuma melhoria de desempenho será declarada sem benchmark reproduzível e avaliação de qualidade.
-
-## Segurança e privacidade
-
-- Processamento local por padrão.
-- Menor privilégio e autorização explícita para nós remotos.
-- Transporte criptografado e autenticação entre nós.
-- Limites de tempo, memória e concorrência.
-- Isolamento de tarefas remotas e proibição de comandos arbitrários por padrão.
-- Integridade de arquivos por hash.
-- Logs sem credenciais ou segredos.
-- Cancelamento e tratamento de falhas.
-- Separação entre resultados determinísticos, evidências recuperadas e conteúdo gerado por modelos.
-
-Consulte [docs/SECURITY.md](docs/SECURITY.md) antes de habilitar funcionalidades de rede.
-
-## Estado atual
-
-Este repositório está sendo inicializado. A documentação descreve a arquitetura-alvo; ela **não significa que todos os componentes estejam implementados**. O trabalho será acompanhado por fases, testes e registros explícitos de funcionalidades disponíveis, planejadas ou experimentais.
-
-## Como contribuir
-
-Leia [CONTRIBUTING.md](CONTRIBUTING.md), a [arquitetura](docs/ARCHITECTURE.md), o [roadmap](docs/ROADMAP.md) e os [contratos de dados](docs/DATA_CONTRACTS.md). Mudanças devem incluir testes adequados e não devem introduzir promessas de desempenho sem medição.
+| Interface e aplicação | Chat, configurações, modelos, conhecimento, inspeção e workflows |
+| Cognitive Core | Normalização, análise de intenção, decomposição e ferramentas determinísticas |
+| K.BA Runtime | Planejamento cognitivo, seleção de componentes, contratos e feedback |
+| BA | Modelo de rede cognitiva hierárquica, conexões e ativação seletiva; em desenvolvimento conceitual/experimental |
+| ACCA | Formalização da seleção adaptativa, custos, orçamento e estratégia de execução |
+| NAPA | Registro e classificação multilabel de áreas cognitivas |
+| Knowledge Runtime | Coordenação de recuperação documental e evidências |
+| RAG | Ingestão, indexação, recuperação híbrida e composição de contexto |
+| NeSA | Catálogo semântico e navegação por páginas documentais |
+| NeuralModel Hub | Catálogo, descoberta, metadados e compatibilidade de modelos |
+| Adaptive Resource Manager | Estimativa de recursos e seleção condicionada ao hardware |
+| NeuralMap | Editor visual e runtime de workflows declarativos |
+| NeuralPlugin | Gerenciamento de especializações e plugins |
+| NeuralInjector | Formato `.neuralinjector` e importação/exportação de grafos; instalação de plugins e ativação de componentes ainda pendentes |
+| Neural Elastic Execution | Pesquisa e simulação de políticas de cache para especialistas |
+| Validation Layer | Verificação estrutural, replay determinístico e integridade de evidências |
+| Swarm | Arquitetura futura de cooperação entre máquinas |
 
 ---
 
-**AILocal Universal — inteligência local coordenada por software, ferramentas e recursos reais.**
+## 2. K.BA — Núcleo operacional da Brain Artificial
 
-## Licença e propriedade intelectual
+**K.BA** é o núcleo operacional em Rust que fornece contratos, planejamento, coordenação, controle de execução, persistência e integração de recursos para o ecossistema da Brain Artificial.
 
-O código e os materiais originais do AILocal Universal são proprietários e reservados ao titular identificado como `K410Sh4`. Consulte [LICENSE](LICENSE), [NOTICE.md](NOTICE.md), [política de licenciamento](docs/LICENSING.md) e [registro de ativos originais](docs/PROJECT_IP_REGISTER.md).
+K.BA não é uma IA convencional nem um modelo de linguagem. Também não deve ser confundido com a BA completa: o runtime atual é a infraestrutura operacional inicial sobre a qual o sistema BA será desenvolvido.
 
-Bibliotecas, frameworks, motores, modelos, pesos, datasets e conteúdo de terceiros não são relicenciados por este projeto. Consulte [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) antes de distribuir ou integrar componentes.
+### 2.1. Responsabilidades atuais
+
+- Manter uma rede tipada de capacidades, componentes e conexões.
+- Avaliar intenção, contexto, prioridades e disponibilidade declarada.
+- Planejar rotas para componentes compatíveis.
+- Aplicar orçamentos lógicos e leases de recursos.
+- Produzir planos e eventos rastreáveis.
+- Receber feedback avaliado e atualizar prioridades operacionais.
+- Persistir somente o estado cognitivo permitido, sem absorver automaticamente prompts ou documentos.
+- Comunicar-se com a aplicação Python por protocolo local versionado.
+
+### 2.2. Evolução do núcleo operacional
+
+| Versão | Escopo |
+|---|---|
+| K.BA 0.1 | Crate Rust, contratos tipados, rede de capacidades, planner, executores registrados e plasticidade operacional inicial |
+| K.BA 0.2 | Processo persistente `kba-runtime-host`, protocolo JSONL e ponte Python |
+| K.BA 0.3 | Fluxo ACCA integrado ao Chat, NAPA, ferramentas, Ollama e Validation Layer |
+| K.BA 0.4 | Snapshot SQLite, restauração validada, event log e integração Knowledge/NeSA |
+| K.BA 0.5 | Cancelamento cooperativo, deadlines, admissão e leases de recursos |
+
+As versões descrevem o núcleo operacional existente. Não significam que o sistema BA desenvolvimental esteja concluído ou que todos os recursos estejam validados em qualquer hardware.
+
+### 2.3. Limites atuais
+
+K.BA planeja e coordena executores; a execução concreta de ferramentas e modelos continua nos adaptadores da aplicação. Não modifica automaticamente pesos de modelos externos. A plasticidade existente é operacional: atualiza pesos de conexões de roteamento após feedback determinístico validado. Isso não equivale à plasticidade estrutural, ao desenvolvimento ou à evolução da BA.
+
+As reservas de recursos são lógicas; não são quotas do kernel nem garantem consumo físico de CPU, GPU ou memória.
+
+Documentação: [K.BA Architecture](docs/KBA_ARCHITECTURE.md), [Runtime Host Protocol](docs/KBA_RUNTIME_HOST_PROTOCOL.md), [Cognitive Memory](docs/KBA_COGNITIVE_MEMORY.md).
+
+---
+
+## 3. BA — Brain Artificial
+
+A **Brain Artificial (BA)** é o sistema artificial adaptativo e desenvolvimental do projeto. Não é uma IA convencional, não é um LLM e não se define pela soma de modelos externos. Seu fundamento é uma organização interna capaz de se desenvolver, adaptar e evoluir conforme os ambientes em que suas unidades e regiões existem.
+
+### 3.1. Princípio central: adaptação ao ambiente
+
+A BA deve ser construída a partir de mecanismos estruturais inspirados na natureza:
+
+- **Regiões e sub-regiões:** especializações locais com autonomia limitada e coordenação entre escalas.
+- **Unidades artificiais:** elementos computacionais que recebem estímulos, mantêm estado, interagem e podem se especializar.
+- **Nichos ambientais:** cada região opera sob condições locais, recursos, pressões e sinais próprios.
+- **Campos de sinalização:** sinais se propagam, degradam, são absorvidos e interpretados de acordo com a distância, o meio e a sensibilidade local.
+- **Plasticidade e homeostase:** conexões e atividades se ajustam sem permitir crescimento descontrolado ou perda de funções essenciais.
+- **Desenvolvimento:** diferenciação gradual de unidades e regiões conforme histórico, ambiente e necessidades.
+- **Hereditariedade e evolução:** NeuralDNA descreve predisposições e programas herdáveis; variação e seleção exigem linhagens e gerações avaliadas, não simples alteração de pesos.
+
+A BA deve preservar diversidade regional. Um sinal global não pode substituir automaticamente informações locais: em ambientes divergentes, a mistura excessiva pode destruir especializações úteis.
+
+### 3.2. Organização conceitual
+
+```text
+BA/
+├── environment/
+│   ├── local_niches/
+│   ├── gradients/
+│   └── resource_fields/
+├── regions/
+│   ├── subregions/
+│   │   └── units/
+│   ├── local_regulation/
+│   └── regional_homeostasis/
+├── signal_fields/
+├── connection_topology/
+├── plasticity/
+├── development/
+├── neural_dna/
+├── memory/
+└── evaluation_and_selection/
+```
+
+Essa estrutura é um modelo de desenvolvimento. Os termos biológicos orientam princípios de projeto; não afirmam equivalência literal com células, tecidos, neurônios ou organismos vivos.
+
+### 3.3. Separação entre BA, K.BA e modelos externos
+
+- **BA:** sistema adaptativo e desenvolvimental.
+- **K.BA:** núcleo operacional que hospeda, coordena e fornece serviços à BA.
+- **Modelos externos de IA:** provedores opcionais de capacidades específicas, como linguagem, percepção ou especialização. Não são a BA e não determinam sua arquitetura interna.
+- **AILocal Universal:** plataforma de desenvolvimento, integração, interface, distribuição e gerenciamento.
+
+### 3.4. Estado real da implementação
+
+O runtime Rust atual ainda mantém um grafo de capacidades, componentes e conexões. Ele não implementa, por si só, regiões espaciais, unidades autônomas, gradientes ambientais, diferenciação, genoma executável ou evolução multi-geracional.
+
+NeuralDNA, NeuralStem, comunicação espacial e campos de sinal estão sendo avaliados em branches e benchmarks separados. Esses experimentos não devem ser apresentados como uma BA completa nem integrados ao núcleo antes de demonstrarem ganhos reproduzíveis contra baselines locais.
+
+### 3.5. Armazenamento e execução hierárquicos
+
+A pesquisa considera SSD/HDD para estruturas persistentes, RAM para estruturas ativas e VRAM para operações aceleradas, com cache e prefetch orientados pela atividade. Disco não equivale a memória de GPU: latência, largura de banda, PCIe, RAM e VRAM precisam ser medidos. A decisão de residência deve considerar frequência de acesso, tamanho, custo de transferência e pressão ambiental de recursos.
+
+### 3.6. Critério de evolução
+
+Uma mudança só deve ser preservada quando melhora a adaptação em múltiplos ambientes sem destruir especializações raras. Avaliar aquisição, retenção, interferência, estabilidade, custo energético/computacional, diversidade regional e desempenho de pior caso. Toda promoção estrutural precisa de versão, comparação, histórico e rollback.
+
+---
+
+## 4. ACCA — Adaptive Cognitive Computation Architecture
+
+A **ACCA** formaliza como selecionar uma estratégia de processamento considerando qualidade esperada, tempo, energia, risco, recursos e requisitos da tarefa.
+
+Uma formulação de referência para comparar estratégias candidatas é:
+
+```math
+a^* = \arg\max_{a \in A(q)}
+\left[
+\widehat{Q}(a)
+- \lambda_t T(a)
+- \lambda_e E(a)
+- \lambda_r R(a)
+\right]
+```
+
+Onde:
+- `Q`: qualidade esperada ou medida.
+- `T`: tempo/latência.
+- `E`: custo energético ou computacional.
+- `R`: risco e penalidades operacionais.
+- `λ`: pesos de importância configuráveis ou calibrados.
+
+A seleção deve respeitar restrições obrigatórias, como capacidades, permissões, memória, hardware, disponibilidade de executores e orçamento.
+
+**Estado:** há formalização matemática e um planner Rust com sinais heurísticos e orçamento lógico. Os pesos atuais não devem ser tratados como parâmetros treinados ou probabilidades calibradas. Calibração e comparação experimental permanecem necessárias.
+
+A ACCA não substitui a atenção interna de Transformers. Ela opera em nível de coordenação: decide quando e como utilizar modelos, ferramentas, conhecimento e especialistas.
+
+Documentação: [ACCA Mathematical Model](docs/ACCA_MATHEMATICAL_MODEL.md).
+
+---
+
+## 5. NAPA — Neural Adaptive Plasticity Architecture
+
+A NAPA organiza a classificação e o registro de áreas cognitivas ativadas por uma solicitação. Uma tarefa pode envolver várias áreas simultaneamente.
+
+Áreas iniciais incluem:
+- Matemática e conversão.
+- Comunicação e cordialidade social.
+- Raciocínio e opinião.
+- Criatividade e geração.
+- Programação.
+- Conhecimento e recuperação.
+- Percepção e uso de ferramentas.
+
+NAPA 1.0 possui registro de áreas e classificação multilabel com sinais explicáveis. Suas afinidades são heurísticas, não probabilidades calibradas.
+
+NAPA não é, isoladamente, um roteador de modelos, um sistema de treinamento ou um conjunto de LLMs independentes. Ela fornece sinais para o planejamento da K.BA/ACCA.
+
+Documentação: [NAPA](docs/NAPA.md).
+
+---
+
+## 6. Conhecimento local: RAG e NeSA
+
+### 6.1. RAG — Retrieval-Augmented Generation
+
+O subsistema de conhecimento permite indexar documentos localmente e fornecer evidências ao fluxo cognitivo.
+
+Capacidades existentes na linha de desenvolvimento:
+- Loaders explícitos para TXT, Markdown e PDF com extração local.
+- Proveniência por SHA-256, URI, página, seção e offsets.
+- Chunking com limites e sobreposição.
+- Índice lexical SQLite FTS5.
+- Embeddings por endpoint Ollama `/api/embed`.
+- Armazenamento vetorial SQLite.
+- Recuperação lexical e vetorial combinada por Reciprocal Rank Fusion (RRF).
+- Context Composer, referências e Evidence Validator.
+- Integração opcional ao Chat e ferramentas de teste/benchmark.
+
+Documentos recuperados são dados não confiáveis. Integridade de hash e referência de origem não provam que uma alegação gerada seja verdadeira ou logicamente sustentada pela fonte.
+
+### 6.2. NeSA — Neural Semantic Atlas
+
+A NeSA complementa o RAG com um catálogo de páginas documentais. A versão inicial produz fichas por página com metadados de origem, resumo extrativo, palavras-chave e candidatos lexicais a conceitos, indexados para busca.
+
+NeSA não substitui a recuperação de chunks originais nem a validação de evidências. Grafo semântico, embeddings de páginas e relações factuais são evoluções futuras, não capacidades presumidas da versão inicial.
+
+Documentação: [RAG](docs/RAG.md), [Neural Semantic Atlas](docs/NEURAL_SEMANTIC_ATLAS.md).
+
+---
+
+## 7. NeuralModel Hub e Adaptive Resource Manager
+
+### 7.1. NeuralModel Hub
+
+O Hub organiza modelos e artefatos associados a runtimes. Seu papel é manter metadados, descoberta, capacidades, requisitos e estado de instalação sem confundir informações observadas com dados desconhecidos.
+
+A descoberta via Ollama deve registrar fatos retornados pelo runtime. Licença, arquitetura, quantização, contexto e requisitos não devem ser inventados quando não houver fonte confiável.
+
+### 7.2. Adaptive Resource Manager
+
+O gerenciador estima e acompanha requisitos de execução, considerando:
+- Pesos do modelo.
+- Cache KV.
+- Overhead do runtime.
+- RAM e VRAM disponíveis.
+- Contexto e parâmetros de inferência.
+- Posicionamento CPU, GPU ou híbrido quando suportado.
+- Concorrência e orçamento por tarefa.
+
+Os perfis de uso planejados para a interface são:
+- **Leve:** orçamento nominal de até 33%.
+- **Médio:** orçamento nominal de até 66%.
+- **Ultra:** orçamento nominal de até 95%.
+
+Esses percentuais são metas de orçamento/configuração, não garantias de utilização exata de CPU/GPU. A aplicação deve preservar margem para o sistema operacional e validar o comportamento real.
+
+O tamanho de um modelo no disco não equivale à RAM/VRAM necessária para executá-lo. Compatibilidade deve ser marcada como compatível, incompatível ou não avaliada, conforme a evidência disponível.
+
+---
+
+## 8. NeuralMap — editor visual e runtime de workflows
+
+O **NeuralMap** é o ambiente de construção e execução de fluxos cognitivos declarativos. Ele permite organizar especialistas, ferramentas, condições, conexões e etapas de revisão em grafos.
+
+A linha de desenvolvimento inclui:
+- Editor visual com canvas, nós, portas e conexões.
+- Validação de grafos, IDs, portas e ciclos.
+- Condições `always`, `on_success` e `on_failure`.
+- Loops controlados de revisão, com limite de iterações.
+- Dry-run sem executar serviços ou modelos.
+- Execução real em worker, com cancelamento cooperativo.
+- Trace e resultados estruturados.
+- Persistência de grafos em JSON.
+- Integração planejada/experimental com pacotes `.neuralinjector`.
+
+A infraestrutura de imagem define um adaptador, mas a geração real depende de um backend registrado e validado. A integração da resposta estruturada do NeuralMap ao Chat e a execução paralela segura de nós independentes são evoluções pendentes.
+
+Documentação: [NeuralMap](docs/NEURALMAP.md).
+
+---
+
+## 9. NeuralPlugin e NeuralInjector
+
+Os nomes representam responsabilidades diferentes e devem permanecer separados.
+
+| Elemento | Responsabilidade |
+|---|---|
+| NeuralPlugin | Unidade modular de especialização |
+| NeuralPlugin Manager | Instala, administra, habilita, desabilita e remove plugins |
+| NeuralInjector Package | Pacote portátil que transporta especializações e componentes |
+| `.neuralinjector` | Extensão oficial do pacote |
+| NeuralInjector Engine | Motor responsável por validar, compor e aplicar componentes compatíveis |
+| NIP | Especificação do formato do pacote |
+
+A extensão oficial é **`.neuralinjector`**. A extensão anterior `.ailu` não deve ser usada para esse formato.
+
+A proposta NIP 0.1.0 descreve um contêiner ZIP/ZIP64 com `manifest.json`, componentes declarados, compatibilidade e checksums SHA-256. Pacotes podem transportar regras, adaptadores, perfis de hardware, transformações, pipelines, gramáticas e avaliações.
+
+Um checksum detecta alterações em relação ao valor esperado, mas não prova autoria. Assinaturas precisam de verificação com chave confiável. Importação e validação não podem executar scripts arbitrários. Compatibilidade e ganhos de desempenho precisam ser testados no hardware de destino.
+
+**Estado:** a NIP 0.1.0 é uma especificação proposta. Não se deve presumir que leitor, instalador, assinatura e motor completo estejam implementados apenas porque o formato está documentado.
+
+Documentação: [NeuralPlugin](https://github.com/K410Sh4/AILocalUniversal/blob/feature/neuralmap-v1/docs/NEURALPLUGIN.md), [NIP 0.1.0](https://github.com/K410Sh4/AILocalUniversal/blob/proposal/neuralinjector-nip-0.1.0/docs/NEURALINJECTOR_NIP_0.1.0.md), [Adaptive Hardware](https://github.com/K410Sh4/AILocalUniversal/blob/feature/neuralmap-v1/docs/NEURALINJECTOR_ADAPTIVE_HARDWARE.md).
+
+---
+
+## 10. Neural Elastic Execution
+
+Neural Elastic Execution é uma linha experimental de pesquisa sobre cache e disponibilidade seletiva de especialistas, especialmente em cenários MoE.
+
+O simulador existente contempla políticas como LRU, LFU, Statistical e Belady MIN como referência offline sob suas hipóteses. Ele mede métricas simuladas, como hit/miss e evictions, em traces disponíveis.
+
+Isso ainda não representa carregamento real de especialistas pelo runtime, nem comprova aceleração de inferência. A próxima validação deverá utilizar traces reais, I/O de armazenamento, latência, transferência PCIe, memória e qualidade.
+
+Documentação: [Neural Elastic Execution](docs/NEURAL_ELASTIC_EXECUTION.md).
+
+---
+
+## 11. Swarm — execução cooperativa entre máquinas
+
+O Swarm é a arquitetura futura para distribuir tarefas entre computadores autorizados.
+
+A proposta separa:
+- **Control Plane:** identidade, autorização, descoberta, heartbeat e telemetria.
+- **Data Plane:** transporte autenticado de tarefas, resultados e arquivos.
+- **Execution Plane:** despacho e execução, incluindo padrões Map-Reduce quando apropriados.
+
+Descoberta de um peer não concede autorização. Comunicação, identidade, criptografia, limites de recursos e políticas de dados precisam ser implementados antes de habilitar execução remota. RPC e inferência distribuída por camadas permanecem experimentais/planejadas.
+
+---
+
+## 12. Fluxo cognitivo de referência
+
+Um fluxo completo pretendido é:
+
+1. A aplicação recebe a solicitação e preserva a entrada.
+2. Cognitive Core normaliza e analisa intenção, dificuldade, risco e urgência.
+3. NAPA registra as áreas cognitivas relevantes.
+4. Knowledge Runtime consulta RAG/NeSA quando necessário e autorizado.
+5. ACCA/K.BA avaliam capacidades, dependências, custos e restrições.
+6. BA fornece a organização hierárquica e as conexões cognitivas conforme sua implementação evoluir.
+7. Adaptive Resource Manager informa os recursos disponíveis e limites.
+8. K.BA seleciona executores, ferramentas, modelos ou workflows.
+9. NeuralMap pode fornecer um grafo declarativo para a tarefa.
+10. NeuralPlugin/NeuralInjector disponibilizam especializações compatíveis quando instaladas.
+11. Os adaptadores executam as operações nos motores registrados.
+12. Validation Layer verifica estrutura, dependências, replay determinístico e proveniência.
+13. O sistema sintetiza a resposta quando necessário.
+14. Feedback validado pode atualizar prioridades operacionais e traces.
+
+Tarefas simples podem terminar em ferramentas determinísticas sem chamar um LLM. Tarefas complexas podem combinar várias capacidades e especialistas. O fluxo real depende dos componentes habilitados e dos contratos disponíveis.
+
+---
+
+## 13. Estrutura de código
+
+A estrutura abaixo é um mapa lógico dos domínios do projeto; os caminhos exatos podem variar conforme a consolidação das branches.
+
+| Diretório | Responsabilidade |
+|---|---|
+| `app/` | Janela, views, diálogos e interface PySide6 |
+| `core/` | CognitiveTask, análise, planejamento, ferramentas e validação |
+| `engines/` | Contratos e adaptadores de inferência |
+| `workers/` | Operações assíncronas da aplicação |
+| `storage/` | Configurações, conversas e persistência local |
+| `knowledge/` | RAG, loaders, chunks, índices, NeSA e evidências |
+| `kba/` | Crate e runtime operacional Rust do K.BA |
+| `kba_bridge/` | Comunicação e contratos entre Python e Rust |
+| `resources/` | Perfil de hardware, estimativas e seleção |
+| `napa/` | Áreas cognitivas e classificação multilabel |
+| `neural_elastic/` | Simuladores e pesquisas de execução elástica |
+| `neuralmap/` | Editor e runtime de workflows, conforme integração |
+| `neuralplugin/` | Gerenciamento de plugins, conforme integração |
+| `swarm/` | Componentes de cooperação distribuída, conforme implementação |
+| `docs/` | Arquitetura, contratos, segurança, status e roadmap |
+| `tests/` | Testes unitários, integração e regressão |
+
+A estrutura definitiva será documentada após a consolidação física dos diretórios. Este mapa não autoriza assumir que todos os diretórios ou módulos listados já estão presentes nesta branch.
+
+---
+
+## 14. Instalação e execução
+
+### Requisitos básicos
+
+- Linux; Arch Linux é a plataforma prioritária de validação.
+- Python 3.11 ou superior.
+- PySide6 conforme as dependências do projeto.
+- Ollama instalado e executando para o backend inicial.
+- Rust toolchain para compilar e testar o runtime cognitivo.
+- Um modelo de chat instalado no Ollama.
+
+Consulte `pyproject.toml`, os manifests Cargo e os arquivos de instalação desta branch para as versões exatas das dependências.
+
+### Instalação
+
+Na branch de integração, quando os arquivos de instalação estiverem disponíveis:
+
+```bash
+git clone https://github.com/K410Sh4/AILocalUniversal.git
+cd AILocalUniversal
+git checkout integration/unified-architecture-v1
+./install.sh
+```
+
+O instalador configura o ambiente da aplicação. Ele não deve ser presumido como responsável por instalar, iniciar ou baixar modelos do Ollama automaticamente.
+
+### Ollama
+
+```bash
+ollama serve
+ollama pull qwen2.5:7b
+```
+
+O modelo é apenas um exemplo. Escolha um modelo compatível com a memória e o hardware disponíveis.
+
+### Execução
+
+```bash
+.venv/bin/ailocal
+```
+
+Confirme o comando de entrada definido pelo pacote/instalador desta branch.
+
+---
+
+## 15. Testes e validação
+
+A consolidação só deve ser considerada pronta quando os testes dos subsistemas e os testes integrados forem executados na mesma revisão.
+
+### Python
+
+```bash
+.venv/bin/ruff check .
+.venv/bin/python -m pytest
+```
+
+### Rust
+
+```bash
+cargo fmt --all -- --check
+cargo clippy --workspace --all-targets --all-features -- -D warnings
+cargo test --workspace
+```
+
+Execute os comandos Cargo no workspace/crate Rust correspondente, conforme os manifests existentes.
+
+### Validação operacional
+
+Além da CI:
+- Iniciar e encerrar a aplicação no Arch Linux.
+- Validar conexão, streaming, cancelamento e erros do Ollama.
+- Validar descoberta e seleção de modelos.
+- Exercitar perfis e estimativas com hardware real.
+- Indexar e recuperar documentos de teste com proveniência.
+- Iniciar, comunicar, cancelar e restaurar o runtime Rust.
+- Validar grafos NeuralMap em dry-run e execução real, quando integrados.
+- Validar importação segura de pacotes NeuralInjector, quando o loader estiver implementado.
+- Medir desempenho, memória e qualidade com benchmarks reproduzíveis.
+
+Resultados de CI, smoke tests e validação manual devem ser reportados separadamente. Um teste sintético aprovado não prova qualidade em corpus real nem ganho de desempenho geral.
+
+---
+
+## 16. Roadmap de consolidação
+
+| Etapa | Objetivo |
+|---|---|
+| 1. Fundação | Consolidar aplicação, Cognitive Core, contratos e testes |
+| 2. Conhecimento | Integrar RAG, NeSA e validação de evidências |
+| 3. Modelos e recursos | Integrar NeuralModel Hub, Hardware Profiler e Adaptive Resource Manager |
+| 4. K.BA | Consolidar runtime Rust, bridge, ACCA, memória e segurança |
+| 5. Workflows | Integrar NeuralMap e seus contratos de execução |
+| 6. Especialização | Implementar NeuralPlugin Manager e NeuralInjector Engine/NIP |
+| 7. BA | Formalizar e implementar regiões, unidades, conexões e ativação esparsa |
+| 8. Aprendizado | Calibrar preditores, plasticidade e reorganização controlada |
+| 9. Execução elástica | Integrar cache real, prefetch e traces de especialistas |
+| 10. Distribuição | Implementar segurança e execução cooperativa Swarm |
+
+Cada etapa deve possuir critérios de aceite, testes, documentação e benchmark. Funcionalidades futuras não devem ser anunciadas como concluídas.
+
+---
+
+## 17. Segurança, privacidade e propriedade intelectual
+
+- O processamento é local por padrão; integrações remotas exigem configuração e controles explícitos.
+- Documentos, prompts de plugins, saídas de modelos e dados de workflows são entradas não confiáveis.
+- Workflows e pacotes não devem executar shell ou código arbitrário durante importação, inspeção ou validação.
+- Operações destrutivas e alterações de configuração devem ser explícitas e rastreáveis.
+- Segredos não devem ser gravados em traces.
+- Checksums não substituem assinaturas verificadas.
+- Descoberta de peers não implica autorização.
+- Orçamentos lógicos não substituem limites reais do sistema operacional.
+- Dados pessoais e documentos locais devem permanecer sob controle do usuário.
+
+O código e os materiais originais do AILocal Universal seguem a licença do projeto. Componentes, engines, modelos, pesos, datasets e bibliotecas de terceiros mantêm suas próprias licenças e obrigações.
+
+Consulte [LICENSE](LICENSE), [NOTICE.md](NOTICE.md), [SECURITY](docs/SECURITY.md), [LICENSING](docs/LICENSING.md) e [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+
+---
+
+## 18. Documentação
+
+- [Arquitetura geral](docs/ARCHITECTURE.md)
+- [Estado da implementação](docs/IMPLEMENTATION_STATUS.md)
+- [Roadmap](docs/ROADMAP.md)
+- [Contratos de dados](docs/DATA_CONTRACTS.md)
+- [K.BA Architecture](docs/KBA_ARCHITECTURE.md)
+- [K.BA Runtime Host Protocol](docs/KBA_RUNTIME_HOST_PROTOCOL.md)
+- [K.BA Cognitive Memory](docs/KBA_COGNITIVE_MEMORY.md)
+- [ACCA Mathematical Model](docs/ACCA_MATHEMATICAL_MODEL.md)
+- [NAPA](docs/NAPA.md)
+- [RAG](docs/RAG.md)
+- [NeSA](docs/NEURAL_SEMANTIC_ATLAS.md)
+- [NeuralMap](docs/NEURALMAP.md)
+- [NeuralPlugin](docs/NEURALPLUGIN.md)
+- [NeuralInjector NIP 0.1.0](docs/NEURALINJECTOR_NIP_0.1.0.md)
+- [NeuralInjector Adaptive Hardware](docs/NEURALINJECTOR_ADAPTIVE_HARDWARE.md)
+- [Neural Elastic Execution](docs/NEURAL_ELASTIC_EXECUTION.md)
+- [Segurança](docs/SECURITY.md)
+- [Licenciamento](docs/LICENSING.md)
+
+---
+
+**AILocal Universal — uma plataforma cognitiva local que coordena modelos, ferramentas, conhecimento e recursos por meio de uma arquitetura modular e adaptativa.**

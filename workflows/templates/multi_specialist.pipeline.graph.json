@@ -1,0 +1,403 @@
+{
+  "format": "ailocal.pipeline-graph",
+  "version": "1.0",
+  "id": "multi-specialist-reference",
+  "name": "Fluxo Multi-Especialista",
+  "description": "Entrada → código → explicação → imagem → revisão controlada → saída estruturada.",
+  "metadata": {
+    "template_id": "multi_specialist_v1",
+    "layout_version": 1
+  },
+  "nodes": [
+    {
+      "id": "user_input",
+      "type": "input.text",
+      "label": "Solicitação do usuário",
+      "enabled": true,
+      "config": {
+        "required": true
+      },
+      "ui": {
+        "position": {
+          "x": 40,
+          "y": 210
+        }
+      }
+    },
+    {
+      "id": "context",
+      "type": "filter.context",
+      "label": "Preparar contexto",
+      "enabled": true,
+      "config": {
+        "max_characters": 24000,
+        "preserve_attachments": true
+      },
+      "ui": {
+        "position": {
+          "x": 260,
+          "y": 210
+        }
+      }
+    },
+    {
+      "id": "hardware",
+      "type": "hardware.profile",
+      "label": "Perfil de hardware",
+      "enabled": true,
+      "config": {
+        "profile": "auto",
+        "protection_mode": "protected"
+      },
+      "ui": {
+        "position": {
+          "x": 260,
+          "y": 480
+        }
+      }
+    },
+    {
+      "id": "code",
+      "type": "specialist.code",
+      "label": "Especialista em código · Qwen",
+      "enabled": true,
+      "config": {
+        "engine": "ollama",
+        "model_id": "qwen2.5:7b",
+        "system_prompt": "Produza código correto, completo e testável. Considere feedback de revisão quando fornecido.",
+        "plugin_ref": null,
+        "generation": {
+          "temperature": 0.2,
+          "num_predict": 2048
+        },
+        "use_resource_budget": true,
+        "optional": false
+      },
+      "ui": {
+        "position": {
+          "x": 520,
+          "y": 80
+        }
+      }
+    },
+    {
+      "id": "chat",
+      "type": "specialist.chat",
+      "label": "Especialista em explicação · DeepSeek",
+      "enabled": true,
+      "config": {
+        "engine": "ollama",
+        "model_id": "deepseek-r1:7b",
+        "system_prompt": "Explique a solução em português claro, conectando a explicação ao código gerado.",
+        "plugin_ref": null,
+        "generation": {
+          "temperature": 0.4,
+          "num_predict": 2048
+        },
+        "use_resource_budget": true,
+        "optional": false
+      },
+      "ui": {
+        "position": {
+          "x": 800,
+          "y": 210
+        }
+      }
+    },
+    {
+      "id": "image",
+      "type": "specialist.image",
+      "label": "Especialista em imagem · Flux",
+      "enabled": true,
+      "config": {
+        "engine": "image",
+        "model_id": "flux.1",
+        "system_prompt": "Crie uma imagem coerente com a solicitação e com o resultado produzido.",
+        "plugin_ref": null,
+        "generation": {
+          "steps": 24,
+          "width": 1024,
+          "height": 1024
+        },
+        "use_resource_budget": true,
+        "optional": true
+      },
+      "ui": {
+        "position": {
+          "x": 1080,
+          "y": 380
+        }
+      }
+    },
+    {
+      "id": "review",
+      "type": "specialist.review",
+      "label": "Revisor",
+      "enabled": true,
+      "config": {
+        "engine": "ollama",
+        "model_id": "qwen2.5:7b",
+        "system_prompt": "Revise código, explicação e imagem. Retorne approved, score, notes, feedback e retry_targets.",
+        "plugin_ref": null,
+        "generation": {
+          "temperature": 0.1,
+          "num_predict": 1200
+        },
+        "use_resource_budget": true,
+        "optional": false
+      },
+      "ui": {
+        "position": {
+          "x": 1360,
+          "y": 210
+        }
+      }
+    },
+    {
+      "id": "revision_loop",
+      "type": "control.loop",
+      "label": "Loop de revisão · máx. 3",
+      "enabled": true,
+      "config": {
+        "max_iterations": 3,
+        "review_node_id": "review",
+        "default_retry_targets": [
+          "code",
+          "chat",
+          "image"
+        ],
+        "stop_condition": "approved"
+      },
+      "ui": {
+        "position": {
+          "x": 1620,
+          "y": 410
+        }
+      }
+    },
+    {
+      "id": "merge",
+      "type": "merge.outputs",
+      "label": "Consolidar resultado",
+      "enabled": true,
+      "config": {
+        "include_trace": true
+      },
+      "ui": {
+        "position": {
+          "x": 1900,
+          "y": 210
+        }
+      }
+    },
+    {
+      "id": "response",
+      "type": "output.response",
+      "label": "Resposta final",
+      "enabled": true,
+      "config": {
+        "format": "structured"
+      },
+      "ui": {
+        "position": {
+          "x": 2180,
+          "y": 210
+        }
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "e01",
+      "source": "user_input",
+      "source_port": "text",
+      "target": "context",
+      "target_port": "text",
+      "edge_type": "always"
+    },
+    {
+      "id": "e02",
+      "source": "context",
+      "source_port": "text",
+      "target": "code",
+      "target_port": "text",
+      "edge_type": "always"
+    },
+    {
+      "id": "e03",
+      "source": "context",
+      "source_port": "text",
+      "target": "chat",
+      "target_port": "text",
+      "edge_type": "always"
+    },
+    {
+      "id": "e04",
+      "source": "code",
+      "source_port": "code",
+      "target": "chat",
+      "target_port": "code",
+      "edge_type": "always"
+    },
+    {
+      "id": "e05",
+      "source": "context",
+      "source_port": "text",
+      "target": "image",
+      "target_port": "prompt",
+      "edge_type": "always"
+    },
+    {
+      "id": "e06",
+      "source": "code",
+      "source_port": "code",
+      "target": "image",
+      "target_port": "code",
+      "edge_type": "always"
+    },
+    {
+      "id": "e07",
+      "source": "chat",
+      "source_port": "explanation",
+      "target": "image",
+      "target_port": "explanation",
+      "edge_type": "always"
+    },
+    {
+      "id": "e08",
+      "source": "code",
+      "source_port": "code",
+      "target": "review",
+      "target_port": "code",
+      "edge_type": "always"
+    },
+    {
+      "id": "e09",
+      "source": "chat",
+      "source_port": "explanation",
+      "target": "review",
+      "target_port": "explanation",
+      "edge_type": "always"
+    },
+    {
+      "id": "e10",
+      "source": "image",
+      "source_port": "image",
+      "target": "review",
+      "target_port": "image",
+      "edge_type": "always"
+    },
+    {
+      "id": "e11",
+      "source": "review",
+      "source_port": "decision",
+      "target": "merge",
+      "target_port": "review",
+      "edge_type": "on_success"
+    },
+    {
+      "id": "e12",
+      "source": "review",
+      "source_port": "decision",
+      "target": "revision_loop",
+      "target_port": "decision",
+      "edge_type": "on_failure"
+    },
+    {
+      "id": "e13",
+      "source": "revision_loop",
+      "source_port": "repeat",
+      "target": "code",
+      "target_port": "feedback",
+      "edge_type": "always"
+    },
+    {
+      "id": "e14",
+      "source": "revision_loop",
+      "source_port": "repeat",
+      "target": "chat",
+      "target_port": "feedback",
+      "edge_type": "always"
+    },
+    {
+      "id": "e15",
+      "source": "revision_loop",
+      "source_port": "repeat",
+      "target": "image",
+      "target_port": "feedback",
+      "edge_type": "always"
+    },
+    {
+      "id": "e16",
+      "source": "revision_loop",
+      "source_port": "decision",
+      "target": "merge",
+      "target_port": "review",
+      "edge_type": "on_failure"
+    },
+    {
+      "id": "e17",
+      "source": "hardware",
+      "source_port": "budget",
+      "target": "code",
+      "target_port": "budget",
+      "edge_type": "always"
+    },
+    {
+      "id": "e18",
+      "source": "hardware",
+      "source_port": "budget",
+      "target": "chat",
+      "target_port": "budget",
+      "edge_type": "always"
+    },
+    {
+      "id": "e19",
+      "source": "hardware",
+      "source_port": "budget",
+      "target": "image",
+      "target_port": "budget",
+      "edge_type": "always"
+    },
+    {
+      "id": "e20",
+      "source": "hardware",
+      "source_port": "budget",
+      "target": "review",
+      "target_port": "budget",
+      "edge_type": "always"
+    },
+    {
+      "id": "e21",
+      "source": "merge",
+      "source_port": "result",
+      "target": "response",
+      "target_port": "result",
+      "edge_type": "always"
+    },
+    {
+      "id": "e22",
+      "source": "code",
+      "source_port": "code",
+      "target": "merge",
+      "target_port": "code",
+      "edge_type": "always"
+    },
+    {
+      "id": "e23",
+      "source": "chat",
+      "source_port": "explanation",
+      "target": "merge",
+      "target_port": "explanation",
+      "edge_type": "always"
+    },
+    {
+      "id": "e24",
+      "source": "image",
+      "source_port": "image",
+      "target": "merge",
+      "target_port": "image",
+      "edge_type": "always"
+    }
+  ]
+}

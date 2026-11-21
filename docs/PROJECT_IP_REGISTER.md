@@ -11,7 +11,13 @@ Este registro organiza as famílias de materiais originais cobertas pelo aviso d
 | NeuralPlugin | Taxonomia, arquitetura, contratos e proposta do NeuralPlugin Manager | Documentação de proposta |
 | NeuralInjector / NIP | Especificação NIP 0.1.0, manifesto, estrutura ZIP, schema, checksums, pacote .neuralinjector e seus leitores/escritores quando codificados | Proposta e implementação em branches dedicadas |
 | Adaptive Resource Management | Perfis de hardware, orçamentos, políticas e scheduler originais quando codificados | Roadmap / parcialmente documentado |
+| Neural Elastic Execution | Contratos de traces MoE, simulador de cache, políticas de substituição, métricas e ferramentas de benchmark originais | Simulador inicial na branch `feature/neural-elastic-simulator-v1` |
+| NAPA — Neural Adaptive Plasticity Architecture | Taxonomia de áreas cognitivas, contratos, registry, classificador multilabel e integração operacional original quando presentes | NAPA 1.0 na branch `feature/napa-cognitive-area-registry-v1` |
+| NeSA — Neural Semantic Atlas | Contratos de páginas semânticas, indexador extrativo, catálogo persistente e ferramentas originais de inspeção/recuperação do Atlas quando presentes | NeSA 0.1 na branch `feature/nesa-semantic-page-indexer-v0.1` |
+| K.BA / Brain Artificial (BA) | Núcleo operacional Rust K.BA, contratos, rede de capacidades, planner, leases, ponte Python e memória operacional; arquitetura desenvolvimental BA, NeuralDNA, NeuralStem, nichos, sinalização e mecanismos originais de adaptação quando presentes | Runtime K.BA 0.5 integrado; BA desenvolvimental em pesquisa e branches experimentais |
+| NeuroBridge / BCI | Contratos e adaptadores originais de interoperabilidade BCI, consentimento, privacidade e segurança; não inclui hardware, firmware, SDKs, protocolos fechados, dados, marcas ou patentes de terceiros | Arquitetura em PR Draft; integração real depende de API/SDK autorizado |
 | Swarm / P2P | Contratos, identidade, autorização, protocolos e execução cooperativa originais quando codificados | Roadmap / arquitetura |
+| NeuralDNA — Artificial Heredity and Development | Schema de genoma artificial, loci de personalidade/preferências/predisposições, epigenoma artificial, desenvolvimento da BA, recombinação, mutação controlada, proveniência e avaliação de descendentes | Especificação de arquitetura e pesquisa; implementação experimental pendente |
 | Documentação e schemas | Texto técnico, diagramas, exemplos, testes e formatos originais | Evolução contínua |
 
 ## Limites de titularidade
@@ -21,3 +27,5 @@ Este registro organiza as famílias de materiais originais cobertas pelo aviso d
 - Dados de usuário, documentos, conversas, workflows criados pelo usuário e conteúdo de plugins externos não passam a ser propriedade do projeto por serem processados pela aplicação.
 - Cada distribuição de plugin e pacote deve declarar sua própria licença e origem.
 - O registro de software no INPI, registro de marca e eventual patente são procedimentos separados; nenhum deles foi requerido por este arquivo.
+
+| ACCA — Adaptive Cognitive Computation Architecture | Especificação matemática original de relevância, roteamento esparso, restrições, completude e terminação; implementação inicial do fluxo vertical K.BA | K.BA 0.3 na branch feature/kia-acca-vertical-flow-v0.3 |

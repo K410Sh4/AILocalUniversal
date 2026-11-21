@@ -15,9 +15,19 @@ diagrams, interface designs, original examples, and other original creative
 materials authored for or incorporated into this project by its rights holder,
 including the AILocal Universal, Cognitive Pipeline, Cognitive Task Executor,
 Validation Layer, NeuralMap, NeuralPlugin, NeuralPlugin Manager, NeuralInjector
-Engine, NeuralInjector Package Specification (NIP), and the .neuralinjector
-format implementations and documentation, to the extent those materials are
-present in the repository and owned by the rights holder.
+Engine, NeuralInjector Package Specification (NIP), the .neuralinjector
+format implementations and documentation, and Neural Elastic Execution
+contracts, simulator, policies, and original tooling, the Neural Adaptive
+Plasticity Architecture (NAPA), its cognitive-area taxonomy, registry,
+classification contracts and original integration, the Neural Semantic Atlas
+(NeSA), its semantic-page contracts, page indexer, catalog and original
+retrieval tooling, K.BA operational runtime, the Brain Artificial (BA) system architecture,
+Adaptive Cognitive Network, original capability contracts, routing, resource
+budget and operational plasticity implementations; NeuralDNA and NeuralStem
+artificial heredity/development specifications and experiments; spatial niche,
+signal-field and environmental adaptation research; and original NeuroBridge
+BCI interoperability adapters and safety contracts, to the extent those
+materials are present in the repository and owned by the rights holder.
 
 2. ALL RIGHTS RESERVED — NO GENERAL LICENSE
 

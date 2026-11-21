@@ -10,7 +10,12 @@ This file records the direct dependencies and development/build tools declared b
 | PySide6 / Qt for Python | Desktop UI, `PySide6>=6.7,<7` | Community distributions are offered under LGPL/GPL options; Qt commercial licensing is also available. Verify the exact wheel and each Qt module. | Third-party runtime dependency |
 | Shiboken6 / Qt libraries | Installed as part of the Qt for Python stack | License depends on the distributed component and selected Qt licensing option | Third-party dependency; preserve each applicable notice |
 | HTTPX | HTTP client, `httpx>=0.27,<1` | BSD-3-Clause | Third-party runtime dependency |
+| pypdf | Optional PDF text extraction, `pypdf>=7.1.1,<8` via the `documents` extra | BSD-3-Clause | Optional third-party parser; not relicensed by this project |
 | Ollama | Separate local model server/API | MIT for the Ollama software repository | External application; this repository uses its API and does not relicense Ollama |
+
+## Optional document parsing
+
+The `documents` extra installs pypdf for selectable-text PDF extraction. It is not required for TXT/Markdown indexing or for the base application. PDF extraction is performed locally; scanned PDFs are not OCR-processed. The exact resolved pypdf distribution must retain its BSD-3-Clause notice.
 
 ## Development and build tools
 
@@ -59,3 +64,18 @@ Before a public binary release or commercial distribution:
 - [Ollama license](https://github.com/ollama/ollama/blob/main/LICENSE)
 
 This is an inventory of the declared direct dependencies, not a certification of every transitive package. Exact versions and license terms can change.
+
+
+## Rust Cognitive Runtime
+
+| Component | Declared use | License / terms | Project relationship |
+|---|---|---|---|
+| serde | Serialization and deserialization for Rust runtime contracts | MIT OR Apache-2.0 | External dependency; not relicensed by this project |
+| serde_json | JSON serialization for runtime contracts and executor payloads | MIT OR Apache-2.0 | External dependency; not relicensed by this project |
+
+The exact resolved versions and transitive dependencies must be reviewed from cargo metadata / the generated lockfile before a release. Rust dependency licenses do not change the proprietary status of original AILocal Universal or K.IA code.
+
+
+## K.IA Runtime Host / Python Bridge
+
+No additional third-party dependency was added to Python. The Rust host continues to use serde and serde_json as declared above. The host protocol itself is an original local IPC contract; it is not based on a bundled third-party RPC server.

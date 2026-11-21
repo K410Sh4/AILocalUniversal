@@ -1,0 +1,62 @@
+{
+  "profile_id": "performance",
+  "profile_version": "1.0.0",
+  "description": "Prioriza latência com recursos suficientes.",
+  "requirements": {
+    "min_ram_mb": 8192,
+    "min_vram_mb": 0,
+    "min_disk_mb": 0,
+    "min_context_tokens": 4096
+  },
+  "objectives": {
+    "priority": [
+      "latency",
+      "quality",
+      "memory"
+    ],
+    "interactive": true
+  },
+  "budget": {
+    "max_ram_fraction": 0.75,
+    "target_context_tokens": 8192,
+    "max_parallelism": 2,
+    "max_cpu_threads": 16
+  },
+  "execution": {
+    "preferred_backends": [
+      "gpu",
+      "cpu"
+    ],
+    "allow_cpu_fallback": true,
+    "require_gpu": false
+  },
+  "degradation": {
+    "disable_optional_components": true,
+    "reduce_context": true,
+    "reduce_parallelism": true,
+    "allow_artifact_fallback": true
+  },
+  "benchmark": {
+    "default": "none",
+    "allowed": [
+      "none",
+      "quick",
+      "full"
+    ]
+  },
+  "quantization_policy": {
+    "preferred": [
+      "Q6_K",
+      "Q8_0",
+      "Q5_K_M",
+      "Q4_K_M"
+    ],
+    "low_memory_preferred": [
+      "Q5_K_M",
+      "Q4_K_M",
+      "Q4_0"
+    ],
+    "low_memory_threshold_mb": 8192,
+    "allow_lower_precision_fallback": true
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "plugin_format_version": "0.1.0",
+  "id": "org.ailocal.programming",
+  "name": "Especialista em programação",
+  "version": "1.0.0",
+  "kind": "rules",
+  "description": "Orienta respostas técnicas de programação e engenharia de software.",
+  "priority": 40,
+  "enabled_by_default": true,
+  "targets": {
+    "model_refs": [
+      "qwen3-4b"
+    ],
+    "capabilities": [
+      "programming",
+      "code_review"
+    ],
+    "engines": [
+      "ollama"
+    ]
+  },
+  "rules": {
+    "system_prompt": "rules/system.md",
+    "merge_strategy": "compose_by_sections"
+  },
+  "dependencies": [
+    {
+      "id": "org.ailocal.language.pt-br",
+      "version_range": "^1.0.0"
+    }
+  ],
+  "permissions": [],
+  "authors": [
+    "K410Sh4"
+  ],
+  "license": "LicenseRef-AILocal-Universal-Proprietary"
+}

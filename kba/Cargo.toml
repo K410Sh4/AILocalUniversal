@@ -1,0 +1,15 @@
+[package]
+name = "kba-cognitive-runtime"
+version = "0.5.0"
+edition = "2021"
+rust-version = "1.75"
+description = "Rust operational runtime and local host for the Brain Artificial (BA) system"
+license = "LicenseRef-AILocal-Universal-Proprietary"
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+[[bin]]
+name = "kba-runtime-host"
+path = "src/bin/kba-runtime-host.rs"

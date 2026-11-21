@@ -1,0 +1,356 @@
+"""Cliente local JSONL para o processo kba-runtime-host."""
+
+from __future__ import annotations
+
+import json
+import os
+import queue
+import subprocess
+import threading
+from collections.abc import Sequence
+from pathlib import Path
+from typing import Any
+
+HOST_PROTOCOL_VERSION = 2
+MAX_REQUEST_BYTES = 4 * 1024 * 1024
+
+
+class KbaRuntimeError(RuntimeError):
+    """Falha de protocolo ou erro retornado pelo runtime Rust."""
+
+    def __init__(self, message: str, *, code: str = "runtime_error") -> None:
+        super().__init__(message)
+        self.code = code
+
+
+class KbaRuntimeUnavailable(KbaRuntimeError):
+    """O executável Rust não pôde ser localizado ou iniciado."""
+
+
+def _resolve_command(
+    command: str | Path | Sequence[str] | None,
+) -> list[str]:
+    if command is not None:
+        resolved = [str(command)] if isinstance(command, (str, Path)) else [
+            str(part) for part in command
+        ]
+        if not resolved or not resolved[0]:
+            raise KbaRuntimeUnavailable("Comando do K.BA Runtime Host vazio.")
+        return resolved
+
+    configured = os.environ.get("KBA_RUNTIME_HOST") or os.environ.get("KIA_RUNTIME_HOST")
+    if configured:
+        return [configured]
+
+    root = Path(__file__).resolve().parents[1]
+    candidates = (
+        root / "kba" / "target" / "release" / "kba-runtime-host",
+        root / "kba" / "target" / "debug" / "kba-runtime-host",
+        root / "kia" / "target" / "release" / "kia-runtime-host",
+        root / "kia" / "target" / "debug" / "kia-runtime-host",
+    )
+    for candidate in candidates:
+        if candidate.is_file():
+            return [str(candidate)]
+
+    raise KbaRuntimeUnavailable(
+        "Executável kba-runtime-host não encontrado. Compile com "
+        "'cd kba && cargo build --release --bin kba-runtime-host' e configure "
+        "KBA_RUNTIME_HOST com o caminho do executável."
+    )
+
+
+class KbaRuntimeClient:
+    """Mantém um processo Rust e serializa chamadas JSONL request/response.
+
+    O cliente é síncrono e thread-safe: apenas uma solicitação fica em voo por vez.
+    O stdout do processo é reservado ao protocolo; stderr permanece ligado ao host.
+    """
+
+    def __init__(
+        self,
+        command: str | Path | Sequence[str] | None = None,
+        *,
+        timeout_seconds: float = 15.0,
+        memory_store: Any | None = None,
+    ) -> None:
+        if timeout_seconds <= 0:
+            raise ValueError("timeout_seconds precisa ser positivo.")
+        self.timeout_seconds = float(timeout_seconds)
+        self._memory_store = memory_store
+        self._memory_restored = False
+        self._lock = threading.Lock()
+        self._responses: queue.Queue[str | None] = queue.Queue()
+        self._sequence = 0
+        self._closed = False
+        executable = _resolve_command(command)
+        try:
+            self._process = subprocess.Popen(
+                executable,
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=None,
+                text=True,
+                encoding="utf-8",
+                errors="strict",
+                bufsize=1,
+                close_fds=True,
+            )
+        except (OSError, ValueError) as exc:
+            raise KbaRuntimeUnavailable(
+                f"Não foi possível iniciar kba-runtime-host: {exc}"
+            ) from exc
+
+        assert self._process.stdout is not None
+        self._reader = threading.Thread(
+            target=self._read_stdout,
+            args=(self._process.stdout,),
+            name="kba-runtime-stdout",
+            daemon=True,
+        )
+        self._reader.start()
+        try:
+            health = self._request("health")
+            if health.get("service") not in {"kba-cognitive-runtime", "kia-cognitive-runtime"}:
+                raise KbaRuntimeError(
+                    "O processo respondeu, mas não se identificou como K.BA Runtime Host.",
+                    code="invalid_host_identity",
+                )
+        except Exception:
+            self._terminate()
+            raise
+
+    def _read_stdout(self, stream: Any) -> None:
+        try:
+            for line in stream:
+                self._responses.put(line)
+        finally:
+            self._responses.put(None)
+
+    def _request(self, command: str, payload: dict[str, Any] | None = None) -> dict[str, Any]:
+        if self._closed:
+            raise KbaRuntimeError("K.BA Runtime Client já foi encerrado.", code="client_closed")
+        if self._process.poll() is not None:
+            raise KbaRuntimeUnavailable(
+                f"K.BA Runtime Host encerrou com código {self._process.returncode}.",
+                code="host_exited",
+            )
+        self._sequence += 1
+        request_id = f"py-{self._sequence}"
+        command_envelope: dict[str, Any] = {"type": command}
+        if payload is not None:
+            command_envelope["payload"] = payload
+        envelope = {
+            "protocol_version": HOST_PROTOCOL_VERSION,
+            "request_id": request_id,
+            "command": command_envelope,
+        }
+
+        try:
+            encoded = json.dumps(
+                envelope,
+                ensure_ascii=False,
+                separators=(",", ":"),
+                allow_nan=False,
+            )
+        except (TypeError, ValueError) as exc:
+            raise KbaRuntimeError(
+                f"Payload do comando K.BA não é serializável em JSON: {exc}",
+                code="invalid_request_payload",
+            ) from exc
+
+        encoded_size = len(encoded.encode("utf-8"))
+        if encoded_size > MAX_REQUEST_BYTES:
+            raise KbaRuntimeError(
+                f"Solicitação excede o limite JSONL de {MAX_REQUEST_BYTES} bytes.",
+                code="request_too_large",
+            )
+
+        assert self._process.stdin is not None
+        try:
+            self._process.stdin.write(encoded + "\n")
+            self._process.stdin.flush()
+        except (BrokenPipeError, OSError, ValueError) as exc:
+            raise KbaRuntimeUnavailable(
+                f"Falha ao enviar comando ao K.BA Runtime Host: {exc}",
+                code="host_write_failed",
+            ) from exc
+
+        try:
+            line = self._responses.get(timeout=self.timeout_seconds)
+        except queue.Empty as exc:
+            self._terminate()
+            raise KbaRuntimeUnavailable(
+                f"K.BA Runtime Host excedeu o timeout de {self.timeout_seconds:g}s.",
+                code="host_timeout",
+            ) from exc
+        if line is None:
+            raise KbaRuntimeUnavailable(
+                f"K.BA Runtime Host fechou o stdout; código {self._process.poll()}.",
+                code="host_eof",
+            )
+        try:
+            response = json.loads(line)
+        except json.JSONDecodeError as exc:
+            raise KbaRuntimeError(
+                "O Runtime Host retornou uma linha que não é JSON válido.",
+                code="invalid_host_response",
+            ) from exc
+        if not isinstance(response, dict):
+            raise KbaRuntimeError(
+                "O Runtime Host retornou um envelope incompatível.",
+                code="invalid_host_response",
+            )
+        if response.get("protocol_version") != HOST_PROTOCOL_VERSION:
+            raise KbaRuntimeError(
+                "Versão do protocolo retornada pelo host não é compatível.",
+                code="protocol_mismatch",
+            )
+        if response.get("request_id") != request_id:
+            raise KbaRuntimeError(
+                "request_id da resposta não corresponde à solicitação enviada.",
+                code="response_correlation_failed",
+            )
+        if response.get("ok") is not True:
+            error = response.get("error")
+            if isinstance(error, dict):
+                raise KbaRuntimeError(
+                    str(error.get("message", "Falha não especificada pelo host.")),
+                    code=str(error.get("code", "host_error")),
+                )
+            raise KbaRuntimeError("O host rejeitou a solicitação.", code="host_error")
+        result = response.get("result", {})
+        if not isinstance(result, dict):
+            raise KbaRuntimeError(
+                "O host retornou um resultado incompatível.",
+                code="invalid_host_result",
+            )
+        return result
+
+    def health(self) -> dict[str, Any]:
+        with self._lock:
+            return self._request("health")
+
+    def _persist_network(self, event_type: str) -> None:
+        if self._memory_store is None:
+            return
+        try:
+            exported = self._request("export_network")
+            network = exported.get("network")
+            if not isinstance(network, dict):
+                raise ValueError("export_network não retornou uma rede.")
+            self._memory_store.save_network(network, event_type=event_type)
+        except Exception as exc:
+            raise KbaRuntimeError(
+                f"Não foi possível persistir a memória cognitiva: {exc}",
+                code="memory_persistence_failed",
+            ) from exc
+
+    def replace_state(self, state: dict[str, Any]) -> dict[str, Any]:
+        """Restaura plasticidade persistida e sincroniza o estado atual de hardware."""
+        with self._lock:
+            if self._memory_store is not None and not self._memory_restored:
+                try:
+                    previous_network = self._memory_store.load_network()
+                    if previous_network is not None:
+                        self._request(
+                            "restore_learning",
+                            {"network": previous_network},
+                        )
+                except Exception as exc:
+                    raise KbaRuntimeError(
+                        f"Não foi possível restaurar a memória cognitiva: {exc}",
+                        code="memory_restore_failed",
+                    ) from exc
+                self._memory_restored = True
+            result = self._request("replace_state", {"state": state})
+            self._persist_network("network_synced")
+            return result
+
+    def plan(self, request: dict[str, Any]) -> dict[str, Any]:
+        """Solicita um plano Rust; não executa inferência nem ferramentas."""
+        with self._lock:
+            return self._request("plan", {"request": request})
+
+    def record_feedback(
+        self,
+        feedback: dict[str, Any],
+        *,
+        learning_rate: float = 0.1,
+    ) -> dict[str, Any]:
+        with self._lock:
+            result = self._request(
+                "record_feedback",
+                {"feedback": feedback, "learning_rate": learning_rate},
+            )
+            self._persist_network("feedback_applied")
+            return result
+
+    def inspect(self) -> dict[str, Any]:
+        with self._lock:
+            return self._request("inspect")
+
+    def _terminate(self) -> None:
+        self._closed = True
+        process = getattr(self, "_process", None)
+        if process is None:
+            return
+        if process.poll() is None:
+            process.terminate()
+            try:
+                process.wait(timeout=2.0)
+            except subprocess.TimeoutExpired:
+                process.kill()
+                process.wait(timeout=2.0)
+        for stream in (process.stdin, process.stdout):
+            if stream is not None:
+                try:
+                    stream.close()
+                except OSError:
+                    pass
+        reader = getattr(self, "_reader", None)
+        if reader is not None and reader.is_alive():
+            reader.join(timeout=1.0)
+
+    def close(self) -> None:
+        if self._closed:
+            return
+        try:
+            if self._process.poll() is None:
+                try:
+                    with self._lock:
+                        self._request("shutdown")
+                except KbaRuntimeError:
+                    # O finally abaixo encerra o processo mesmo quando o protocolo falhou.
+                    pass
+                try:
+                    self._process.wait(timeout=2.0)
+                except subprocess.TimeoutExpired:
+                    self._process.terminate()
+                    try:
+                        self._process.wait(timeout=2.0)
+                    except subprocess.TimeoutExpired:
+                        self._process.kill()
+                        self._process.wait(timeout=2.0)
+        finally:
+            if self._process.poll() is None:
+                self._process.terminate()
+                try:
+                    self._process.wait(timeout=2.0)
+                except subprocess.TimeoutExpired:
+                    self._process.kill()
+                    self._process.wait(timeout=2.0)
+            self._closed = True
+            for stream in (self._process.stdin, self._process.stdout):
+                if stream is not None:
+                    try:
+                        stream.close()
+                    except OSError:
+                        pass
+            self._reader.join(timeout=1.0)
+
+    def __enter__(self) -> KbaRuntimeClient:
+        return self
+
+    def __exit__(self, *_: object) -> None:
+        self.close()
