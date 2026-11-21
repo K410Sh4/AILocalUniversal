@@ -9,6 +9,7 @@ from core.cognitive_pipeline import analyze_request
 from core.cognitive_task import CognitiveTask
 from core.deterministic_tools import DeterministicToolRegistry
 from core.validation_layer import ValidationLayer
+from engines.base import RunningModelSnapshot
 from kia_bridge.flow import (
     KiaExecutionCoordinator,
     KiaFlowError,
@@ -17,7 +18,6 @@ from kia_bridge.flow import (
     execute_deterministic_selection,
     record_validated_deterministic_feedback,
 )
-from engines.base import RunningModelSnapshot
 from model_hub.contracts import ModelArtifact, ModelRecord
 from model_hub.hardware import HardwareProfile
 from model_hub.registry import ModelRegistry
