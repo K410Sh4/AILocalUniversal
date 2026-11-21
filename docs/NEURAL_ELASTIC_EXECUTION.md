@@ -8,35 +8,35 @@ Esta etapa é um laboratório offline. Ela não modifica o Ollama, o llama.cpp, 
 
 ## O que está implementado na Fase 5.0
 
-O pacote \`neural_elastic/\` fornece:
+O pacote `neural_elastic/` fornece:
 
-- contrato \`AccessTrace\` e evento \`ExpertAccess\`;
+- contrato `AccessTrace` e evento `ExpertAccess`;
 - parser JSONL validado, com um registro por acesso a especialista;
 - cache de capacidade em bytes, inclusive para especialistas de tamanhos diferentes;
 - políticas LRU, LFU e estatística com frequência exponencialmente decaída e bônus de recência;
 - referência offline Belady MIN, restrita a especialistas de tamanho uniforme;
 - gerador determinístico de rastros sintéticos estacionários, uniformes e com fases;
 - comparação das políticas por hit rate, miss rate, bytes lidos simulados, leituras por token, evictions, bypass e ocupação máxima;
-- CLI \`neural-elastic-sim\` e módulo \`python -m neural_elastic.cli\`.
+- CLI `neural-elastic-sim` e módulo `python -m neural_elastic.cli`.
 
 A política estatística é uma baseline explicável; não é um modelo neural treinado. O pacote define uma base extensível para políticas futuras, mas ainda não treina nem executa um Expert Predictor neural.
 
 ## Formato de trace JSONL
 
-Cada linha representa um acesso a um especialista. Vários especialistas selecionados para o mesmo token compartilham \`token_index\`; a ordem das linhas é a ordem de acesso observada.
+Cada linha representa um acesso a um especialista. Vários especialistas selecionados para o mesmo token compartilham `token_index`; a ordem das linhas é a ordem de acesso observada.
 
-\`\`\`jsonl
+```jsonl
 {"token_index":0,"expert_id":"layers.0.experts.4","size_bytes":16777216}
 {"token_index":0,"expert_id":"layers.0.experts.9","size_bytes":16777216}
 {"token_index":1,"expert_id":"layers.0.experts.4","size_bytes":16777216}
 {"token_index":2,"expert_id":"layers.1.experts.2","size_bytes":25165824}
-\`\`\`
+```
 
 Regras do contrato:
 
-- \`token_index\` é inteiro não negativo e não decrescente;
-- \`expert_id\` é uma string não vazia e deve identificar globalmente camada e especialista;
-- \`size_bytes\` é inteiro positivo e precisa permanecer constante para um mesmo especialista no trace;
+- `token_index` é inteiro não negativo e não decrescente;
+- `expert_id` é uma string não vazia e deve identificar globalmente camada e especialista;
+- `size_bytes` é inteiro positivo e precisa permanecer constante para um mesmo especialista no trace;
 - a ordem dos registros precisa preservar a sequência de acesso que se deseja simular;
 - linhas vazias são ignoradas; comentários e JSON malformado são rejeitados.
 
@@ -68,27 +68,27 @@ Todas as políticas começam com cache frio e recebem exatamente a mesma sequên
 
 Trace sintético determinístico:
 
-\`\`\`bash
-.venv/bin/neural-elastic-sim --synthetic \\
-  --tokens 10000 --experts 64 --top-k 2 \\
-  --expert-mib 4 --capacity-mib 64 \\
+```bash
+.venv/bin/neural-elastic-sim --synthetic \
+  --tokens 10000 --experts 64 --top-k 2 \
+  --expert-mib 4 --capacity-mib 64 \
   --workload phased --phase-tokens 500 --seed 42
-\`\`\`
+```
 
 Relatório JSON:
 
-\`\`\`bash
+```bash
 .venv/bin/neural-elastic-sim --synthetic --json
-\`\`\`
+```
 
 Trace instrumentado:
 
-\`\`\`bash
-.venv/bin/neural-elastic-sim --trace ./expert-accesses.jsonl \\
+```bash
+.venv/bin/neural-elastic-sim --trace ./expert-accesses.jsonl \
   --capacity-mib 512 --json
-\`\`\`
+```
 
-Também é possível executar \`python -m neural_elastic.cli\` dentro do ambiente virtual.
+Também é possível executar `python -m neural_elastic.cli` dentro do ambiente virtual.
 
 ## Limites deliberados desta fase
 
