@@ -42,6 +42,7 @@ select = ["E", "F", "I", "UP", "B"]
 
 [tool.setuptools.package-data]
 model_hub = ["catalog_default.json"]
+workflows = ["templates/*.json"]
 
 
 [tool.ruff.lint.isort]
