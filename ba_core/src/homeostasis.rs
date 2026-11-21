@@ -112,9 +112,12 @@ impl HomeostaticRegion {
         }
 
         let state_before = self.state;
-        let requested_rate = (self.target - self.state)
-            .mul_add(self.gain, 0.0)
-            .clamp(-self.max_adjustment_rate, self.max_adjustment_rate);
+        let raw_requested_rate = (self.target - self.state) * self.gain;
+        if !raw_requested_rate.is_finite() {
+            return Err(HomeostasisError::InvalidValue("step_overflow"));
+        }
+        let requested_rate =
+            raw_requested_rate.clamp(-self.max_adjustment_rate, self.max_adjustment_rate);
         let requested_amount = requested_rate.abs() * dt;
         let disturbance_amount = disturbance_rate * dt;
         if !requested_rate.is_finite()
