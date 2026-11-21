@@ -335,7 +335,7 @@
       ]
     },
     {
-      "record_id": "ollama:x/z-image-turbo",
+      "record_id": "ollama:z-image-turbo",
       "display_name": "Z-Image Turbo",
       "family": "Z-Image",
       "summary": "Modelo de geração de imagens de 6B parâmetros. A publicação do Ollama consultada documentava suporte experimental em macOS, com Windows e Linux ainda pendentes.",
