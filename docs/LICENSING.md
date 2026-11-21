@@ -21,9 +21,10 @@ A política cobre o material original presente no repositório, inclusive materi
 - adaptadores, perfis e políticas originais do Resource Manager, quando efetivamente implementados;
 - Neural Elastic Execution: contratos de traces, simulador de cache, políticas de substituição, métricas, predição e otimização originais quando efetivamente implementados;
 - componentes, protocolos, documentação e código originais de Swarm/execução cooperativa, quando efetivamente implementados;
+- NeuralDNA: genoma artificial, expressão epigenética, desenvolvimento da BA, avaliação ambiental, benchmarks antecipatórios e regionais, contratos e documentação experimental originais, somente quando efetivamente presentes e pertencentes ao titular;
 - documentação técnica, diagramas, templates, testes, exemplos e arquivos de configuração originais.
 
-O registro de componentes não significa que tudo esteja implementado. A licença protege expressões concretas que existam no repositório, não funcionalidades descritas apenas como plano.
+O registro de componentes não significa que tudo esteja implementado. A licença protege expressões concretas que existam no repositório, não funcionalidades descritas apenas como plano. Conceitos de biologia, publicações científicas, protocolos de terceiros e tecnologias de interface neural de terceiros não são apropriados nem relicenciados pelo projeto.
 
 ## 2. O que não é coberto pela licença proprietária
 
