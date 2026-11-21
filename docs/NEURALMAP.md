@@ -184,7 +184,7 @@ Pacotes que declaram assinatura Ed25519 são recusados para leitura/edição nes
 6. Salve JSON ou selecione um pacote `.neuralinjector` em **Salvar no pacote**.
 7. Para execução real, garanta Ollama e os modelos declarados. A imagem só será gerada quando um adaptador compatível estiver registrado.
 
-O pacote de exemplo declara os modelos e engines do template em `examples/neuralinjector/manifest.example.json` e inclui uma cópia em `examples/neuralinjector/graph/pipeline.graph.json`.
+O manifesto de exemplo em `examples/neuralinjector/manifest.example.json` declara os modelos e engines esperados. O grafo de referência está em `workflows/templates/multi_specialist.pipeline.graph.json` e `examples/workflows/multi_specialist.pipeline.graph.json`; ainda não há um pacote `.neuralinjector` completo distribuído como artefato de exemplo.
 
 ## 12. Limitações e próximos passos
 
