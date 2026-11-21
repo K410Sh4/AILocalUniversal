@@ -26,8 +26,6 @@ on:
       - feature/neuraldna-regional-niche-benchmark-v0.6
       - feature/neuraldna-spatial-communication-v0.7
       - feature/neuraldna-morphogen-signal-fields-v0.8
-      - feature/neuraldna-regional-niche-benchmark-v0.6
-      - feature/neuraldna-spatial-communication-v0.7
   pull_request:
     branches:
       - main
@@ -49,6 +47,9 @@ on:
       - feature/neuraldna-environmental-assessment-v0.3
       - feature/neuraldna-environmental-integration-plan-v0.4
       - feature/neuraldna-anticipatory-benchmark-v0.5
+      - feature/neuraldna-regional-niche-benchmark-v0.6
+      - feature/neuraldna-spatial-communication-v0.7
+      - feature/neuraldna-morphogen-signal-fields-v0.8
 
 jobs:
   unit-tests:
