@@ -128,15 +128,21 @@ impl HomeostaticRegion {
         }
         let affordable_amount = self.energy_reserve / self.energy_cost_per_unit;
         let correction_amount = requested_amount.min(affordable_amount);
-        let correction_rate = correction_amount.copysign(requested_rate) / dt;
+        let signed_correction_amount = correction_amount.copysign(requested_rate);
         let energy_spent = correction_amount * self.energy_cost_per_unit;
+        if !energy_spent.is_finite() {
+            return Err(HomeostasisError::InvalidValue("energy_overflow"));
+        }
 
-        let unconstrained = self.state + disturbance_amount + correction_rate * dt;
+        let unconstrained = self.state + disturbance_amount + signed_correction_amount;
         if !unconstrained.is_finite() {
             return Err(HomeostasisError::InvalidValue("state_overflow"));
         }
         let state_after = unconstrained.clamp(self.lower_bound, self.upper_bound);
         let boundary_exchange = unconstrained - state_after;
+        if !boundary_exchange.is_finite() {
+            return Err(HomeostasisError::InvalidValue("boundary_overflow"));
+        }
 
         self.state = state_after;
         self.energy_reserve = (self.energy_reserve - energy_spent).max(0.0);
@@ -146,7 +152,7 @@ impl HomeostaticRegion {
             state_before,
             state_after,
             disturbance_amount,
-            correction_amount: correction_rate * dt,
+            correction_amount: signed_correction_amount,
             boundary_exchange,
             energy_spent,
             energy_remaining: self.energy_reserve,
@@ -366,7 +372,7 @@ mod tests {
 
     #[test]
     fn failed_region_preflight_does_not_partially_mutate_the_system() {
-        let mut first = region(1, 1.0);
+        let first = region(1, 1.0);
         let before_first = first.clone();
         let mut second = region(2, 0.0);
         second.lower_bound = -1.7e308;
