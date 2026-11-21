@@ -140,3 +140,57 @@ def test_package_path_traversal_is_rejected(tmp_path):
         save_graph_to_package(package, graph)
 
     assert exc_info.value.reason_code == "UNSAFE_PACKAGE_PATH"
+
+
+
+def test_checksum_digest_must_be_hexadecimal(tmp_path):
+    package = make_package(tmp_path / "bad-checksum.neuralinjector")
+    with zipfile.ZipFile(package, "r") as source:
+        files = {
+            info.filename: source.read(info.filename)
+            for info in source.infolist()
+            if not info.is_dir()
+        }
+    files["security/checksums.sha256"] = (
+        "g" * 64 + "  manifest.json\n"
+    ).encode()
+    with zipfile.ZipFile(package, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+        for name, payload in files.items():
+            archive.writestr(name, payload)
+
+    with pytest.raises(GraphError) as exc_info:
+        load_graph_from_package(package)
+
+    assert exc_info.value.reason_code == "PACKAGE_CHECKSUMS_INVALID"
+
+
+def test_manifest_rejects_duplicate_pipeline_paths(tmp_path):
+    package = make_package(tmp_path / "duplicate-pipeline.neuralinjector")
+    with zipfile.ZipFile(package, "r") as source:
+        files = {
+            info.filename: source.read(info.filename)
+            for info in source.infolist()
+            if not info.is_dir()
+        }
+    manifest = json.loads(files["manifest.json"])
+    manifest["components"]["pipelines"] = [
+        "graph/pipeline.graph.json",
+        "graph/pipeline.graph.json",
+    ]
+    files["manifest.json"] = (json.dumps(manifest) + "\n").encode()
+    files["security/checksums.sha256"] = (
+        "\n".join(
+            f"{hashlib.sha256(files[name]).hexdigest()}  {name}"
+            for name in sorted(files)
+            if name != "security/checksums.sha256"
+        )
+        + "\n"
+    ).encode()
+    with zipfile.ZipFile(package, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+        for name, payload in files.items():
+            archive.writestr(name, payload)
+
+    with pytest.raises(GraphError) as exc_info:
+        load_graph_from_package(package)
+
+    assert exc_info.value.reason_code == "PACKAGE_PIPELINES_INVALID"
