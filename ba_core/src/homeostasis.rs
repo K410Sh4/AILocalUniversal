@@ -116,13 +116,22 @@ impl HomeostaticRegion {
             .mul_add(self.gain, 0.0)
             .clamp(-self.max_adjustment_rate, self.max_adjustment_rate);
         let requested_amount = requested_rate.abs() * dt;
+        let disturbance_amount = disturbance_rate * dt;
+        if !requested_rate.is_finite()
+            || !requested_amount.is_finite()
+            || !disturbance_amount.is_finite()
+        {
+            return Err(HomeostasisError::InvalidValue("step_overflow"));
+        }
         let affordable_amount = self.energy_reserve / self.energy_cost_per_unit;
         let correction_amount = requested_amount.min(affordable_amount);
         let correction_rate = correction_amount.copysign(requested_rate) / dt;
         let energy_spent = correction_amount * self.energy_cost_per_unit;
-        let disturbance_amount = disturbance_rate * dt;
 
         let unconstrained = self.state + disturbance_amount + correction_rate * dt;
+        if !unconstrained.is_finite() {
+            return Err(HomeostasisError::InvalidValue("state_overflow"));
+        }
         let state_after = unconstrained.clamp(self.lower_bound, self.upper_bound);
         let boundary_exchange = unconstrained - state_after;
 
@@ -171,9 +180,18 @@ impl HomeostasisSystem {
         tolerance: f64,
     ) -> Result<HomeostasisStepReport, HomeostasisError> {
         self.validate()?;
+        if !dt.is_finite() || dt <= 0.0 || !tolerance.is_finite() || tolerance < 0.0 {
+            return Err(HomeostasisError::InvalidValue("step_parameters"));
+        }
+        for region in &self.regions {
+            if region.gain * dt > 1.0 + 1e-12 {
+                return Err(HomeostasisError::UnstableStep(region.id));
+            }
+        }
+
         let mut supplied = BTreeSet::new();
         for (id, rate) in disturbances {
-            if !rate.is_finite() {
+            if !rate.is_finite() || !(rate * dt).is_finite() {
                 return Err(HomeostasisError::InvalidValue("disturbance_rate"));
             }
             if !supplied.insert(*id) {
