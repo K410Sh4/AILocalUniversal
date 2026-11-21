@@ -26,6 +26,7 @@ on:
       - feature/neuraldna-regional-niche-benchmark-v0.6
       - feature/neuraldna-spatial-communication-v0.7
       - feature/neuraldna-morphogen-signal-fields-v0.8
+      - feature/neuraldna-field-coupled-adaptation-v0.9
   pull_request:
     branches:
       - main
@@ -50,6 +51,7 @@ on:
       - feature/neuraldna-regional-niche-benchmark-v0.6
       - feature/neuraldna-spatial-communication-v0.7
       - feature/neuraldna-morphogen-signal-fields-v0.8
+      - feature/neuraldna-field-coupled-adaptation-v0.9
 
 jobs:
   unit-tests:
@@ -82,6 +84,8 @@ jobs:
         run: python -m experiments.neuraldna_spatial_communication_benchmark
       - name: Run NeuralDNA morphogen-like signal field benchmark
         run: python -m experiments.neuraldna_morphogen_signal_field
+      - name: Run NeuralDNA field-coupled adaptation benchmark
+        run: python -m experiments.neuraldna_field_coupled_adaptation
 
   kia-rust-runtime:
     runs-on: ubuntu-latest

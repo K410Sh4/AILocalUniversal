@@ -162,7 +162,7 @@ Esta é uma organização lógica proposta, não a afirmação de que cada unida
 
 ### 3.2. Desenvolvimento ambiental e comunicação regional
 
-A pesquisa NeuralDNA/NeuralStem investiga hereditariedade artificial, desenvolvimento, diferenciação regional, avaliação ambiental e linhagens. Os benchmarks 0.5–0.7 avaliam antecipação, nichos regionais e comunicação espacial; o estágio 0.8 pesquisa campos de sinal com transporte, degradação, captação e resposta temporal. Esses experimentos são isolados e não equivalem ainda à BA operacional.
+A pesquisa NeuralDNA/NeuralStem investiga hereditariedade artificial, desenvolvimento, diferenciação regional, avaliação ambiental e linhagens. Os benchmarks 0.5–0.7 avaliam antecipação, nichos regionais e comunicação espacial; o estágio 0.8 pesquisa campos de sinal com transporte, degradação, captação e resposta temporal; o plano 0.9 testa como esses campos podem apoiar adaptação regional sem destruir a autonomia dos nichos. Esses experimentos são isolados e não equivalem ainda à BA operacional.
 
 A hipótese estrutural é que regiões devem manter autonomia quando seus nichos divergem e compartilhar sinais quando há benefício preditivo demonstrável. Topologia, distância, atraso, perda e custo de comunicação devem influenciar a especialização, em vez de impor conectividade global uniforme.
 
