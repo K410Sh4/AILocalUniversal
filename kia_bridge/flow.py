@@ -9,12 +9,14 @@ from typing import Any
 
 from core.cognitive_task import CognitiveTask
 from core.deterministic_tools import DeterministicToolRegistry, ToolResult
+from engines.base import RunningModelSnapshot
 from model_hub.contracts import ModelRecord
 from model_hub.hardware import HardwareProfile
 from model_hub.registry import ModelRegistry
 from napa.contracts import AreaActivation, CognitiveAreaKind, NapaClassification
 from napa.registry import CognitiveAreaRegistry, create_default_registry
 from resources.contracts import ResourcePlacement
+from resources.residency import ResidentCapacityStatus
 
 from .adapters import (
     build_network_payload,
@@ -461,6 +463,8 @@ class KiaExecutionCoordinator:
         context_tokens: int | None = None,
         local_engine_endpoint: bool = True,
         knowledge_enabled: bool = False,
+        running_models: list[RunningModelSnapshot] | None = None,
+        concurrent_requests: int = 1,
         max_components: int = 8,
     ) -> KiaPlanDecision:
         if not task.intent:
@@ -515,28 +519,53 @@ class KiaExecutionCoordinator:
 
         if local_engine_endpoint and cpu_reservation > 0:
             for record in records:
-                try:
-                    estimate = resource_manager.estimate_model(
-                        record.record_id,
-                        model_registry,
-                        context_tokens=token_context,
-                        hardware=hardware,
+                resident_ready = False
+                if running_models is not None:
+                    try:
+                        residency = resource_manager.assess_resident_capacity(
+                            record.record_id,
+                            model_registry,
+                            running_models,
+                            context_tokens=token_context,
+                            concurrent_requests=concurrent_requests,
+                        )
+                    except (AttributeError, KeyError, TypeError, ValueError):
+                        residency = None
+                    resident_ready = (
+                        residency is not None
+                        and residency.status is ResidentCapacityStatus.REUSE_READY
                     )
-                except (KeyError, TypeError, ValueError):
-                    continue
-                # 0.3 aceita somente colocação integral em RAM. GPU/híbrido ficam
-                # no roteamento legado até termos prova do alvo de execução do backend.
-                if (
-                    estimate.placement is not ResourcePlacement.CPU
-                    or estimate.total_required_bytes is None
-                ):
-                    continue
-                resource_estimates[record.record_id] = {
-                    # Reserva lógica alinhada ao teto de threads do ResourceManager;
-                    # não representa FLOPs nem ocupação física medida.
-                    "cpu_millis": cpu_reservation,
-                    "ram_bytes": estimate.total_required_bytes,
-                }
+
+                if resident_ready:
+                    resource_estimates[record.record_id] = {
+                        # O runner já reservou pesos/KV/buffers; o custo de RAM
+                        # incremental para esta solicitação serial é zero.
+                        "cpu_millis": cpu_reservation,
+                        "ram_bytes": 0,
+                    }
+                else:
+                    try:
+                        estimate = resource_manager.estimate_model(
+                            record.record_id,
+                            model_registry,
+                            context_tokens=token_context,
+                            hardware=hardware,
+                        )
+                    except (KeyError, TypeError, ValueError):
+                        continue
+                    # 0.3 aceita somente colocação integral em RAM. GPU/híbrido ficam
+                    # no roteamento legado até termos prova do alvo do backend.
+                    if (
+                        estimate.placement is not ResourcePlacement.CPU
+                        or estimate.total_required_bytes is None
+                    ):
+                        continue
+                    resource_estimates[record.record_id] = {
+                        # Reserva lógica alinhada ao teto de threads do ResourceManager;
+                        # não representa FLOPs nem ocupação física medida.
+                        "cpu_millis": cpu_reservation,
+                        "ram_bytes": estimate.total_required_bytes,
+                    }
                 execution_targets[record.record_id] = "remote"
                 quality[record.record_id] = (
                     0.65 if preferred_model and any(
