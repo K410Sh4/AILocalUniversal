@@ -973,7 +973,7 @@ class NeuralMapView(QWidget):
 
     def apply_template(self) -> None:
         root = Path(__file__).resolve().parents[2]
-        template_path = root / "examples" / "workflows" / "multi_specialist.pipeline.graph.json"
+        template_path = root / "workflows" / "templates" / "multi_specialist.pipeline.graph.json"
         try:
             graph = WorkflowGraph.load(template_path)
         except GraphError as exc:
