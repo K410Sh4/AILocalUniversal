@@ -19,7 +19,7 @@ SPDX-License-Identifier: LicenseRef-AILocal-Universal-Proprietary
 | NeSA — Neural Semantic Atlas | Contratos de páginas semânticas, indexador extrativo, catálogo persistente e ferramentas originais de inspeção/recuperação do Atlas quando presentes | NeSA 0.1 na branch feature/nesa-semantic-page-indexer-v0.1 |
 | K.IA / Artificial Brain | Rust Cognitive Runtime, Adaptive Cognitive Network, contratos tipados, política de seleção, orçamento lógico, conexões e mecanismos originais de plasticidade operacional quando presentes | K.IA 0.1 na branch feature/kia-rust-cognitive-runtime-v0.1 |
 | Swarm / P2P | Contratos, identidade, autorização, protocolos e execução cooperativa originais quando codificados | Roadmap / arquitetura |
-| NeuralDNA — Artificial Heredity and Development | Genoma artificial, loci de personalidade/preferências/predisposições, epigenoma, desenvolvimento da BA, recombinação, mutação, proveniência, avaliação ambiental, ReactionNorm e protocolos de integração ambiental | Especificação; NeuralStem 0.1, linhagem regional 0.2, avaliação ambiental 0.3 e protocolo experimental 0.4 em branches empilhadas |
+| NeuralDNA — Artificial Heredity and Development | Genoma artificial, loci de personalidade/preferências/predisposições, epigenoma, desenvolvimento da BA, recombinação, mutação, proveniência, avaliação ambiental, ReactionNorm, predição ambiental adquirida e protocolos de integração | Especificação; NeuralStem 0.1, linhagem regional 0.2, avaliação ambiental 0.3, protocolo 0.4 e benchmark antecipatório experimental 0.5 em branches empilhadas |
 | Documentação e schemas | Texto técnico, diagramas, exemplos, testes e formatos originais | Evolução contínua |
 
 ## Limites de titularidade
@@ -32,3 +32,13 @@ SPDX-License-Identifier: LicenseRef-AILocal-Universal-Proprietary
 - Conceitos biológicos, resultados científicos e publicações citadas permanecem atribuídos aos respectivos autores; o projeto reivindica apenas suas expressões, especificações, desenhos técnicos, implementações e documentação originais.
 
 | ACCA — Adaptive Cognitive Computation Architecture | Especificação matemática original de relevância, roteamento esparso, restrições, completude e terminação; fluxo vertical K.IA | K.IA 0.3 na branch feature/kia-acca-vertical-flow-v0.3 |
+
+
+## Addendum NeuralDNA 0.5 — benchmark antecipatório
+
+A branch `feature/neuraldna-anticipatory-benchmark-v0.5` acrescenta a expressão original do benchmark de pistas antecipatórias, a comparação de estratégias, o estimador Markoviano adquirido de transições ambientais e os testes automatizados correspondentes.
+
+O registro cobre a implementação, os parâmetros sintéticos, os protocolos de avaliação, os relatórios e a documentação originais. O estimador de transições representa estado ambiental adquirido durante a execução; não é genoma herdado nem alteração epigenética. Conceitos de plasticidade antecipatória, bet-hedging, entropia e modelos de Markov permanecem conceitos científicos gerais, não reivindicados como propriedade exclusiva.
+
+Copyright © 2026 K410Sh4. All rights reserved.  
+SPDX-License-Identifier: LicenseRef-AILocal-Universal-Proprietary
