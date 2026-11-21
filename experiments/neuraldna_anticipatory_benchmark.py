@@ -154,10 +154,10 @@ def environment_metrics(
         return 0.0, 0.0
     changes = sum(
         previous != current
-        for previous, current in zip(states, states[1:], strict=True)
+        for previous, current in zip(states, states[1:])
     )
     counts = [[0] * STATE_COUNT for _ in range(STATE_COUNT)]
-    for previous, current in zip(states, states[1:], strict=True):
+    for previous, current in zip(states, states[1:]):
         counts[previous][current] += 1
     conditional_entropy = 0.0
     for row in counts:
