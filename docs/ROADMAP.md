@@ -112,6 +112,20 @@ As fases são entregas progressivas. Uma funcionalidade só é considerada concl
 
 **Limite desta implementação:** o Ollama recebe um limite aproximado de threads de CPU, aplicado pelo runner no carregamento do modelo. O percentual real de CPU não é garantido, e não existe aqui um limitador portátil de computação da GPU. A elegibilidade de modelos continua baseada em viabilidade de memória independente do perfil de CPU.
 
+## Fase 5.0 — Neural Elastic Execution: simulador de cache MoE
+
+- [x] Contrato JSONL de acesso a especialistas, com identidade, token, tamanho e ordem de acesso.
+- [x] Simulador determinístico de cache em bytes, com LRU, LFU e política estatística explicável.
+- [x] Belady MIN como referência offline somente quando os especialistas têm tamanho uniforme.
+- [x] Gerador de traces sintéticos estacionários, uniformes e com mudanças de fase.
+- [x] Métricas de hit/miss, bytes simulados por token, evictions, bypass e ocupação máxima.
+- [x] CLI e testes automatizados para as políticas e os contratos.
+- [ ] Coletar traces reais de roteamento por instrumentação de runtime; Ollama /api/chat não expõe IDs de especialistas.
+- [ ] Calibrar latência/largura de banda do armazenamento e validar o simulador contra medições físicas.
+- [ ] Comparar predição neural somente após construir um corpus de traces reais representativo.
+
+**Limite:** a Fase 5.0 simula substituição de cache, não inferência completa. Bytes lidos são misses simulados, não I/O físico; traces sintéticos não demonstram aceleração, qualidade ou viabilidade em hardware de 4 GB. Consulte \`docs/NEURAL_ELASTIC_EXECUTION.md\`.
+
 ## Fase 5 — Agentes especialistas e autoengenharia
 
 - [ ] System Analyst em modo somente leitura.
