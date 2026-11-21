@@ -186,7 +186,7 @@ def test_measured_model_cost_and_explicit_target_make_component_eligible() -> No
     assert component["resource_estimate_available"] is True
     assert component["estimated_cost"]["ram_bytes"] == 5_000_000_000
     assert component["execution_target"] == "cpu"
-    assert len(network["network"]["connections"]) == 2
+    assert len(network["network"]["connections"]) == 3
 
 
 def test_model_bridge_ignores_uninstalled_artifacts_and_unknown_capabilities() -> None:

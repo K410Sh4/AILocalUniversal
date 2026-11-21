@@ -7,7 +7,6 @@ import os
 import queue
 import subprocess
 import threading
-import time
 from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
@@ -160,6 +159,7 @@ class KiaRuntimeClient:
         try:
             line = self._responses.get(timeout=self.timeout_seconds)
         except queue.Empty as exc:
+            self._terminate()
             raise KiaRuntimeUnavailable(
                 f"K.IA Runtime Host excedeu o timeout de {self.timeout_seconds:g}s.",
                 code="host_timeout",
@@ -255,6 +255,9 @@ class KiaRuntimeClient:
                     stream.close()
                 except OSError:
                     pass
+        reader = getattr(self, "_reader", None)
+        if reader is not None and reader.is_alive():
+            reader.join(timeout=1.0)
 
     def close(self) -> None:
         if self._closed:
@@ -273,6 +276,13 @@ class KiaRuntimeClient:
                         self._process.kill()
                         self._process.wait(timeout=2.0)
         finally:
+            if self._process.poll() is None:
+                self._process.terminate()
+                try:
+                    self._process.wait(timeout=2.0)
+                except subprocess.TimeoutExpired:
+                    self._process.kill()
+                    self._process.wait(timeout=2.0)
             self._closed = True
             for stream in (self._process.stdin, self._process.stdout):
                 if stream is not None:

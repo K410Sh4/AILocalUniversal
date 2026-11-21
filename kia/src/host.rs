@@ -1,6 +1,6 @@
 use crate::{
     plan_with_executor_ids, AdaptiveCognitiveNetwork, CognitiveFeedback, CognitiveRequest,
-    ComponentId, ExecutionPlan, ResourceBudget, ResourceSnapshot, CONTRACT_SCHEMA_VERSION,
+    ComponentId, ResourceBudget, ResourceSnapshot, CONTRACT_SCHEMA_VERSION,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};

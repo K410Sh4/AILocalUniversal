@@ -14,6 +14,11 @@ from napa.registry import CognitiveAreaRegistry
 
 DEFAULT_MODEL_AREA_MAP: dict[str, tuple[str, ...]] = {
     "chat": ("generation",),
+    "coding": ("programming",),
+    "reasoning": ("reasoning",),
+    "general": ("generation",),
+    "embeddings": ("retrieval",),
+    "vision": ("perception",),
     "vision": ("perception",),
     "tool_calling": ("tool_use",),
     "embeddings": ("retrieval",),
@@ -80,11 +85,13 @@ def components_from_model_records(
     quality_scores = baseline_quality or {}
     area_map = capability_area_map or DEFAULT_MODEL_AREA_MAP
     components: list[dict[str, Any]] = []
+    seen_component_ids: set[str] = set()
 
     for record in records:
         mapped: set[str] = set()
         for advertised in record.capabilities:
             mapped.update(area_map.get(advertised, ()))
+        mapped.update(area_map.get(record.category, ()))
         supported = sorted(mapped.intersection(capability_ids))
         if not supported:
             continue
@@ -95,6 +102,9 @@ def components_from_model_records(
             component_id = _component_id(
                 record.record_id, artifact.runtime, artifact.reference
             )
+            if component_id in seen_component_ids:
+                raise ValueError(f"Artefato duplicado no registro de modelos: {component_id}")
+            seen_component_ids.add(component_id)
             raw_estimate = estimates.get(component_id, estimates.get(record.record_id))
             target_value = targets.get(
                 component_id,
