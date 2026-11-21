@@ -13,8 +13,8 @@ from knowledge.index import SQLiteKnowledgeIndex
 from knowledge.ingestion import DocumentIngestor
 from knowledge.loaders import LoaderRegistry
 from knowledge.models import ContextBundle, SemanticPageHit, SemanticPageRecord
-from knowledge.semantic_pages import SemanticPageIndexer
 from knowledge.retrieval import HybridRetriever
+from knowledge.semantic_pages import SemanticPageIndexer
 from knowledge.vectors import (
     OllamaEmbeddingProvider,
     SQLiteVectorSearchBackend,
