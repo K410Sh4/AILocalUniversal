@@ -58,7 +58,11 @@ def _artifact_quantization(model: ModelRecord) -> str | None:
         value = artifact.quantization
         if value:
             return value
-        match = re.search(r"(q[4568]_[a-z0-9_]+|f16|fp16|bf16|f32|fp32)", artifact.reference, re.I)
+        match = re.search(
+            r"(q[4568]_[a-z0-9_]+|f16|fp16|bf16|f32|fp32)",
+            artifact.reference,
+            re.I,
+        )
         if match:
             return match.group(1)
     return None
@@ -96,7 +100,11 @@ class ResourceEstimator:
         *,
         context_tokens: int = 4096,
     ) -> ModelResourceEstimate:
-        if isinstance(context_tokens, bool) or context_tokens <= 0:
+        if (
+            isinstance(context_tokens, bool)
+            or not isinstance(context_tokens, int)
+            or context_tokens <= 0
+        ):
             raise ValueError("context_tokens precisa ser um inteiro positivo.")
 
         reasons: list[str] = []
@@ -160,17 +168,6 @@ class ResourceEstimator:
         ]
         gpu_available = max(gpu_values) if gpu_values else None
         ram_available = hardware.ram_available_bytes
-
-        gpu_usable = (
-            int(gpu_available * (1 - self.memory_reserve))
-            if gpu_available is not None
-            else None
-        )
-        ram_usable = (
-            int(ram_available * (1 - self.memory_reserve))
-            if ram_available is not None
-            else None
-        )
 
         gpu_usable = (
             int(gpu_available * (1 - self.memory_reserve))
@@ -262,6 +259,11 @@ class ResourceEstimator:
             placement = ResourcePlacement.UNKNOWN
             reasons.append("RAM/VRAM disponível não pôde ser medida.")
 
+        if placement in {ResourcePlacement.GPU, ResourcePlacement.HYBRID}:
+            reasons.append(
+                "A GPU foi detectada pelo sistema, mas isso não comprova suporte do "
+                "backend Ollama; confirme a distribuição real com ollama ps."
+            )
         reasons.append(
             "Estimativa teórica de confiança média; não é garantia de carregamento "
             "nem substitui medição real do Ollama."
