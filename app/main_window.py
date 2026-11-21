@@ -1706,10 +1706,24 @@ class MainWindow(QMainWindow):
                 return
         if self._chat_worker is not None and self._chat_worker.isRunning():
             self._chat_worker.cancel()
-            self._chat_worker.wait(5000)
+            if not self._chat_worker.wait(5000):
+                QMessageBox.information(
+                    self,
+                    "Geração em andamento",
+                    "A geração ainda está encerrando. Aguarde antes de fechar a aplicação.",
+                )
+                event.ignore()
+                return
         if self._status_worker is not None and self._status_worker.isRunning():
             self._status_worker.cancel()
-            self._status_worker.wait(2000)
+            if not self._status_worker.wait(2000):
+                QMessageBox.information(
+                    self,
+                    "Consulta ao Ollama em andamento",
+                    "A consulta ainda está encerrando. Aguarde antes de fechar a aplicação.",
+                )
+                event.ignore()
+                return
         if self._kia_runtime_client is not None:
             try:
                 self._kia_runtime_client.close()
