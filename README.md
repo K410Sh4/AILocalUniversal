@@ -207,7 +207,7 @@ A suíte cobre contratos, seleção, persistência, protocolo Ollama simulado, a
 | 1 | Aplicação desktop, Ollama, streaming, histórico e configurações |
 | 2 | Núcleo cognitivo e ferramentas determinísticas |
 | 3 | RAG, Context Composer e validação |
-| 4 | Gerenciamento adaptativo de recursos |
+| 4 | NeuralModel Hub, estimativa inicial de recursos e seleção adaptativa (em implementação/validação) |
 | 5 | Rede cooperativa, segurança e Map-Reduce |
 | 6 | Laboratório BitNet, RPC e otimizações multi-host |
 

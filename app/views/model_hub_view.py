@@ -32,6 +32,7 @@ from model_hub.catalog import (
 from model_hub.compatibility import CompatibilityResult, CompatibilityStatus
 from model_hub.contracts import ModelRecord
 from model_hub.hardware import HardwareProfile
+from resources.contracts import ModelResourceEstimate
 
 
 class ModelHubView(QWidget):
@@ -74,6 +75,10 @@ class ModelHubView(QWidget):
         self.details.setReadOnly(True)
         self.details.setMaximumHeight(125)
         self.details.setPlaceholderText("Selecione um modelo para consultar seus metadados.")
+        self.resource_label = QLabel(
+            "Seletor adaptativo aguardando uma avaliação de recursos."
+        )
+        self.resource_label.setWordWrap(True)
 
         self.remove_button = QPushButton("Remover modelo selecionado")
         self.remove_button.setEnabled(False)
@@ -81,6 +86,7 @@ class ModelHubView(QWidget):
 
         self.local_tab = QWidget()
         local_layout = QVBoxLayout(self.local_tab)
+        local_layout.addWidget(self.resource_label)
         local_layout.addWidget(self.table, 1)
         local_layout.addWidget(self.details)
         local_layout.addWidget(self.remove_button)
@@ -170,6 +176,7 @@ class ModelHubView(QWidget):
 
         self._records: list[ModelRecord] = []
         self._compatibility: dict[str, CompatibilityResult] = {}
+        self._resource_estimates: dict[str, ModelResourceEstimate] = {}
         self._row_record_ids: list[str] = []
         self._catalog_document: CatalogDocument | None = None
         self._catalog_entries: list[CatalogEntry] = []
@@ -183,6 +190,10 @@ class ModelHubView(QWidget):
     def _format_bytes(value: int | None) -> str:
         return format_size(value)
 
+    def set_resource_recommendation(self, message: str) -> None:
+        """Exibe a justificativa da última decisão do seletor adaptativo."""
+        self.resource_label.setText(message.strip() or "Nenhuma recomendação disponível.")
+
     def set_data(
         self,
         hardware: HardwareProfile,
@@ -191,9 +202,11 @@ class ModelHubView(QWidget):
         *,
         runtime_available: set[str],
         registry_warning: str | None = None,
+        resource_estimates: dict[str, ModelResourceEstimate] | None = None,
     ) -> None:
         self._records = records
         self._compatibility = compatibility
+        self._resource_estimates = resource_estimates or {}
         ram = (
             f"{self._format_bytes(hardware.ram_available_bytes)} disponíveis de "
             f"{self._format_bytes(hardware.ram_total_bytes)}"
@@ -323,6 +336,20 @@ class ModelHubView(QWidget):
             f"quantização={item.quantization or 'não informada'}"
             for item in record.artifacts
         ) or "Nenhum artefato associado."
+        estimate = self._resource_estimates.get(record_id)
+        if estimate is None:
+            estimate_label = "Não calculada nesta atualização."
+        else:
+            estimate_label = (
+                f"Contexto: {estimate.context_tokens} tokens; "
+                f"pesos: {self._format_bytes(estimate.weight_bytes)}; "
+                f"cache KV: {self._format_bytes(estimate.kv_cache_bytes)}; "
+                f"reserva runtime: {self._format_bytes(estimate.runtime_overhead_bytes)}; "
+                f"total: {self._format_bytes(estimate.total_required_bytes)}; "
+                f"posicionamento: {estimate.placement.value}; "
+                f"confiança: {estimate.confidence.value}. "
+                f"Premissas: {'; '.join(estimate.reasons)}"
+            )
         self.details.setPlainText(
             f"ID: {record.record_id}\n"
             f"Família: {record.family}\n"
@@ -336,7 +363,8 @@ class ModelHubView(QWidget):
             f"Fonte: {record.source_url or 'não cadastrada'}\n"
             f"Artefatos:\n{artifacts}\n"
             f"Compatibilidade: {result.status.value} — {'; '.join(result.reasons)}\n"
-            f"Requisitos: {requirement_label}"
+            f"Requisitos: {requirement_label}\n"
+            f"Estimativa de inferência: {estimate_label}"
         )
 
         selected_ref = next(

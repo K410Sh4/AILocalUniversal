@@ -19,7 +19,7 @@ from core.cognitive_task import CognitiveTask, TaskStatus
 from core.input_processing import InputValidationError
 from core.validation_layer import ValidationLayer
 from engines.base import EngineAdapter, EngineRequest, ModelInfo
-from engines.model_selector import ModelSelectionError, choose_model
+from engines.model_selector import ModelSelectionError
 from engines.ollama_engine import OllamaEngine
 from engines.registry import EngineRegistry
 from model_hub.catalog import CatalogDocument, CatalogEntry, CatalogVariant, ModelCatalogClient
@@ -27,6 +27,7 @@ from model_hub.compatibility import CompatibilityEngine
 from model_hub.contracts import ModelArtifact, ModelRecord
 from model_hub.hardware import HardwareProfiler
 from model_hub.registry import ModelRegistry, ModelRegistryError
+from resources.manager import AdaptiveResourceManager
 from storage.configuration import AppConfig, ConfigurationError, ConfigurationStore
 from storage.conversations import Conversation, ConversationStore
 from workers.knowledge_workers import KnowledgeRetrievalWorker
@@ -65,6 +66,7 @@ class MainWindow(QMainWindow):
         self._ollama_healthy = False
         self.model_hub_registry = ModelRegistry()
         self.hardware_profiler = HardwareProfiler()
+        self.resource_manager = AdaptiveResourceManager(self.hardware_profiler)
         self.model_catalog_client = ModelCatalogClient()
         self._catalog_document: CatalogDocument | None = None
         self._catalog_worker: ModelCatalogWorker | None = None
@@ -191,12 +193,21 @@ class MainWindow(QMainWindow):
                 )
                 for record in records
             }
+            resource_estimates = {
+                record.record_id: self.resource_manager.estimator.estimate(
+                    record,
+                    profile,
+                    context_tokens=4096,
+                )
+                for record in records
+            }
             self.model_hub_view.set_data(
                 profile,
                 records,
                 compatibility,
                 runtime_available={"ollama"} if self._ollama_healthy else set(),
                 registry_warning=self.model_hub_registry.load_warning,
+                resource_estimates=resource_estimates,
             )
             if self._catalog_document is not None:
                 installed_refs = {
@@ -660,7 +671,15 @@ class MainWindow(QMainWindow):
                 )
             self.config.manual_model = selected
             return selected
-        return choose_model(self.models, self.config.preferred_model).name
+        selection = self.resource_manager.select_chat_model(
+            self.models,
+            self.model_hub_registry,
+            preferred_model=self.config.preferred_model,
+            context_tokens=4096,
+        )
+        self.model_hub_view.set_resource_recommendation(selection.explanation)
+        self.statusBar().showMessage(selection.explanation, 10000)
+        return selection.model.name
 
     def send_message(self, text: str) -> None:
         if self._chat_worker is not None and self._chat_worker.isRunning():

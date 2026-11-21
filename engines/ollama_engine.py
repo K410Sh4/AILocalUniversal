@@ -76,31 +76,33 @@ class OllamaEngine(EngineAdapter):
         except httpx.HTTPError:
             return False
 
-    async def _read_model_capabilities(
+    async def _read_model_metadata(
         self,
         client: httpx.AsyncClient,
         model_name: str,
         semaphore: asyncio.Semaphore,
-    ) -> EngineCapabilities:
-        """Lê capacidades declaradas pelo Ollama sem inferi-las pelo nome do modelo."""
+    ) -> tuple[EngineCapabilities, dict[str, Any]]:
+        """Lê capacidades e metadados explícitos de /api/show."""
         async with semaphore:
             try:
                 response = await client.post("/api/show", json={"model": model_name})
                 if not response.is_success:
-                    return EngineCapabilities(chat=False, verified=False)
+                    return EngineCapabilities(chat=False, verified=False), {}
                 payload = response.json()
             except (httpx.HTTPError, ValueError):
-                return EngineCapabilities(chat=False, verified=False)
+                return EngineCapabilities(chat=False, verified=False), {}
 
-        raw_capabilities = payload.get("capabilities") if isinstance(payload, dict) else None
+        if not isinstance(payload, dict):
+            return EngineCapabilities(chat=False, verified=False), {}
+        raw_capabilities = payload.get("capabilities")
         if not isinstance(raw_capabilities, list) or not all(
             isinstance(value, str) for value in raw_capabilities
         ):
-            return EngineCapabilities(chat=False, verified=False)
+            return EngineCapabilities(chat=False, verified=False), {}
 
         capabilities = {value.casefold() for value in raw_capabilities}
         supports_completion = "completion" in capabilities
-        return EngineCapabilities(
+        normalized_capabilities = EngineCapabilities(
             chat=supports_completion,
             streaming=supports_completion,
             vision="vision" in capabilities,
@@ -108,6 +110,50 @@ class OllamaEngine(EngineAdapter):
             embeddings="embedding" in capabilities,
             verified=True,
         )
+
+        details = payload.get("details")
+        details = details if isinstance(details, dict) else {}
+        model_info = payload.get("model_info")
+        model_info = model_info if isinstance(model_info, dict) else {}
+        architecture = model_info.get("general.architecture")
+        architecture = architecture if isinstance(architecture, str) else None
+
+        def positive_int(value: object) -> int | None:
+            if isinstance(value, int) and not isinstance(value, bool) and value > 0:
+                return value
+            return None
+
+        parameter_count = positive_int(model_info.get("general.parameter_count"))
+        context_window = (
+            positive_int(model_info.get(f"{architecture}.context_length"))
+            if architecture
+            else None
+        )
+        kv_cache_bytes_per_token = None
+        # Fórmula aplicada somente a arquiteturas densas com metadados explícitos
+        # de todas as camadas/head dimensions. Arquiteturas híbridas ficam sem inferência.
+        if architecture in {"llama", "qwen2", "qwen3", "mistral"}:
+            layers = positive_int(model_info.get(f"{architecture}.block_count"))
+            kv_heads = positive_int(model_info.get(f"{architecture}.attention.head_count_kv"))
+            key_length = positive_int(model_info.get(f"{architecture}.attention.key_length"))
+            value_length = positive_int(model_info.get(f"{architecture}.attention.value_length"))
+            if all(value is not None for value in (layers, kv_heads, key_length, value_length)):
+                # Cache FP16: K e V usam 2 bytes por elemento.
+                kv_cache_bytes_per_token = (
+                    layers * kv_heads * (key_length + value_length) * 2
+                )
+
+        return normalized_capabilities, {
+            "parameter_count": parameter_count,
+            "architecture": architecture,
+            "quantization": (
+                str(details["quantization_level"])
+                if isinstance(details.get("quantization_level"), str)
+                else None
+            ),
+            "context_window": context_window,
+            "kv_cache_bytes_per_token": kv_cache_bytes_per_token,
+        }
 
     async def list_models(self) -> list[ModelInfo]:
         try:
@@ -130,12 +176,21 @@ class OllamaEngine(EngineAdapter):
                         return None
                     name = str(item["name"])
                     size = item.get("size")
-                    capabilities = await self._read_model_capabilities(client, name, semaphore)
+                    capabilities, runtime_metadata = await self._read_model_metadata(
+                        client, name, semaphore
+                    )
                     return ModelInfo(
                         name=name,
                         size_bytes=int(size) if isinstance(size, (int, float)) else None,
                         digest=str(item["digest"]) if item.get("digest") else None,
                         capabilities=capabilities,
+                        parameter_count=runtime_metadata.get("parameter_count"),
+                        architecture=runtime_metadata.get("architecture"),
+                        quantization=runtime_metadata.get("quantization"),
+                        context_window=runtime_metadata.get("context_window"),
+                        kv_cache_bytes_per_token=runtime_metadata.get(
+                            "kv_cache_bytes_per_token"
+                        ),
                     )
 
                 inspected = await asyncio.gather(*(build_model(item) for item in raw_models))

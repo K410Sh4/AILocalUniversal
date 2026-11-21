@@ -79,14 +79,24 @@ As fases são entregas progressivas. Uma funcionalidade só é considerada concl
 - [ ] Validar download, cancelamento, retomada e remoção no Arch Linux.
 - [ ] Adicionar verificação pós-download de digest quando o runtime expuser uma fonte confiável.
 
-### 4.5 — Adaptive Model Selector (planejado)
+### 4.5 — Adaptive Resource Manager e Adaptive Model Selector (implementação inicial)
 
-- [ ] Requisitos de memória por modelo, quantização, runtime, contexto e offload, baseados em evidência ou medição.
-- [ ] Benchmark local de qualidade, latência, RAM/VRAM e estabilidade.
-- [ ] Seleção por tarefa, recursos, preferência, qualidade medida e fallback explicável.
-- [ ] Políticas de carregamento, descarregamento, leases e concorrência integradas ao Resource Manager.
+- [x] Contratos para estimativas de pesos, cache KV, overhead de runtime, posicionamento sugerido e confiança.
+- [x] Estimativa de pesos por parâmetros totais e bits médios da quantização; nunca converte tamanho do artefato em RAM/VRAM.
+- [x] Coleta de parâmetros, arquitetura, quantização e contexto pela API Ollama `/api/show`.
+- [x] Cálculo do cache KV/token apenas para arquiteturas densas suportadas e quando todos os campos necessários estão disponíveis; arquiteturas híbridas permanecem sem estimativa automática.
+- [x] Reserva configurável por código para buffers/runtime e margem de memória livre; posicionamentos GPU, CPU, híbrido, não cabe e desconhecido.
+- [x] Seletor explicável integrado ao modo Automático do Chat; preferência preservada quando viável, alternativas impossíveis descartadas e fallback explicitado quando faltam metadados.
+- [x] Painel do NeuralModel Hub exibe a justificativa da última decisão automática.
+- [x] Testes unitários para estimativas, limites de contexto, MoE (parâmetros totais), seleção, fallback e extração dos metadados Ollama.
+- [ ] Validar a decisão e as estimativas no Arch com Qwen3 4B, Qwen3.5 e Qwen3-Coder-Next 80B; comparar com medições reais de RAM/VRAM e `ollama ps`.
+- [ ] Persistir benchmarks controlados de qualidade, latência, RAM/VRAM, estabilidade e estado quente/frio.
+- [ ] Adicionar orçamento de contexto configurável e recomendações por tarefa/capacidade com métricas de qualidade.
+- [ ] Implementar telemetria contínua, leases, concorrência e políticas de carregamento/descarregamento.
 
-**Saída:** descoberta, instalação e seleção de modelos explicáveis, conservadoras e adaptadas ao hardware real.
+**Limites desta iteração:** as estimativas são teóricas e de confiança média; overhead de runtime é uma reserva fixa, não uma medição. O posicionamento híbrido é recomendação, não controle de offload. Na ausência de metadados suficientes, o seletor mantém o fallback legado e informa que não verificou a memória. Nenhum modelo é carregado/descarregado automaticamente por esta entrega.
+
+**Saída:** primeira seleção automática orientada por memória, com justificativa e fallback explícito, sem afirmar compatibilidade quando os dados são incompletos.
 
 ## Fase 5 — Agentes especialistas e autoengenharia
 

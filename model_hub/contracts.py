@@ -156,6 +156,7 @@ class ModelRecord:
     metadata_source: str = "runtime_discovery"
     resource_requirements: ResourceRequirements | None = None
     artifacts: tuple[ModelArtifact, ...] = ()
+    kv_cache_bytes_per_token: int | None = None
 
     def __post_init__(self) -> None:
         if not re.fullmatch(r"[a-z0-9][a-z0-9._:/+-]{0,191}", self.record_id):
@@ -177,7 +178,10 @@ class ModelRecord:
             item not in MODALITIES for item in self.modalities
         ):
             raise ValueError("modalities contém modalidade não suportada.")
-        for name in ("parameter_count", "active_parameter_count", "context_window"):
+        for name in (
+            "parameter_count", "active_parameter_count", "context_window",
+            "kv_cache_bytes_per_token",
+        ):
             _positive(getattr(self, name), name)
         if (
             self.parameter_count is not None
@@ -235,4 +239,5 @@ class ModelRecord:
                 if requirements is not None else None
             ),
             artifacts=tuple(ModelArtifact.from_dict(item) for item in artifacts),
+            kv_cache_bytes_per_token=data.get("kv_cache_bytes_per_token"),
         )

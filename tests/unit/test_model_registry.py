@@ -87,3 +87,35 @@ def test_corrupted_registry_is_preserved_and_not_overwritten(tmp_path) -> None:
     registry.sync_runtime_inventory("ollama", [ModelInfo("new:latest")])
     assert path.read_text(encoding="utf-8") == "{broken"
     assert len(registry.list_records(installed_only=True)) == 1
+
+def test_runtime_inventory_persists_architecture_and_quantization_metadata(tmp_path) -> None:
+    registry = ModelRegistry(tmp_path / "registry.json")
+    registry.sync_runtime_inventory(
+        "ollama",
+        [
+            ModelInfo(
+                "qwen3:4b",
+                size_bytes=2_600_000_000,
+                capabilities=EngineCapabilities(chat=True, verified=True),
+                parameter_count=4_000_000_000,
+                architecture="qwen3",
+                quantization="Q4_K_M",
+                context_window=32_768,
+                kv_cache_bytes_per_token=147_456,
+            )
+        ],
+    )
+
+    stored = registry.get("ollama:qwen3:4b")
+    assert stored is not None
+    assert stored.parameter_count == 4_000_000_000
+    assert stored.architecture == "qwen3"
+    assert stored.context_window == 32_768
+    assert stored.kv_cache_bytes_per_token == 147_456
+    assert stored.artifacts[0].quantization == "Q4_K_M"
+
+    restored = ModelRegistry(tmp_path / "registry.json").get("ollama:qwen3:4b")
+    assert restored is not None
+    assert restored.kv_cache_bytes_per_token == 147_456
+    assert restored.artifacts[0].quantization == "Q4_K_M"
+

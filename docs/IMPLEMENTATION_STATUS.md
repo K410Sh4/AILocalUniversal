@@ -164,3 +164,23 @@ Resultado informado pelo usuário no Arch Linux:
 - A resposta gerada chegou ao usuário, mas não foi considerada validada em qualidade: continha recomendações repetidas e imprecisas sobre modificar dimensões de embedding, heads e layers de modelos pré-treinados, além de confusão entre famílias/tamanhos de parâmetros.
 
 Este é um smoke test operacional ponta a ponta reportado pelo usuário, não um benchmark de qualidade, velocidade ou consumo. A captura identifica o modelo como `qwen3.5:2b-q4_K_M` e mostra `138.15 tokens/s` para a resposta observada; o tempo de download e o perfil de recursos não foram registrados. Testes de cancelamento, retomada e remoção continuam pendentes.
+
+## Fase 4.5 — Adaptive Resource Manager e Adaptive Model Selector (implementação inicial)
+
+Implementado na branch `feature/adaptive-resource-manager-v1`:
+- Serviço `AdaptiveResourceManager` que obtém snapshot de hardware, estima um modelo do registro e seleciona modelos de chat para o modo Automático.
+- `ResourceEstimator` estima memória dos pesos a partir de contagem total de parâmetros e bits médios da quantização. Parâmetros ativos de MoE não são usados para reduzir o cálculo dos pesos.
+- Estimativa do cache KV por token a partir de metadados explícitos de arquitetura retornados pelo Ollama. Nesta iteração, a fórmula FP16 só é aplicada a arquiteturas densas suportadas e com número de camadas, cabeças KV, comprimento de chave e comprimento de valor disponíveis. Arquiteturas híbridas e metadados ausentes permanecem desconhecidos.
+- Reserva padrão de 768 MiB para runtime e margem de 15% sobre a memória disponível. Essas duas constantes são premissas conservadoras do estimador, não medições.
+- Posicionamento sugerido: GPU, CPU, híbrido, não cabe ou desconhecido. A sugestão híbrida não força offload; o Ollama continua decidindo a distribuição real.
+- Seletor usa compatibilidade estimada, preferência do usuário e execução em GPU como critérios explicáveis. Se todos os candidatos têm metadados insuficientes, mantém o fallback de preferência/nome estável e avisa que não houve validação de memória.
+- Modo Manual continua respeitando a seleção explícita do usuário. O Chat Automático passa pelo novo seletor e o NeuralModel Hub mostra a justificativa da última decisão.
+
+### Limites e validação pendente
+- Estimativa de pesos usa coeficientes médios por quantização e margem; não equivale ao tamanho exato do GGUF nem a uma medição de memória do processo.
+- O cache KV só é calculado quando o Ollama expõe arquitetura densa e todos os metadados requeridos. Não há inferência por nome do modelo.
+- Overhead, alocações temporárias, cache quantizado, concorrência, fragmentação e outros estados do backend podem alterar o uso real.
+- O seletor considera contexto de 4.096 tokens como ponto inicial fixo na integração atual.
+- Benchmark de qualidade/latência, telemetria contínua, leases, concorrência e carregamento/descarregamento automático ainda não foram implementados.
+- A validação operacional com Qwen3 4B, Qwen3.5 e Qwen3-Coder-Next 80B ainda precisa comparar estimativa com `ollama ps`, RAM/VRAM observadas e estabilidade no Arch Linux.
+
