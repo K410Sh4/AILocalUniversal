@@ -310,9 +310,10 @@ mod tests {
     #[test]
     fn transport_rejects_unstable_combined_edge_load() {
         let mut world = two_niche_world();
+        world.regions.push(region(3, 30, [0.5, 0.5], 0.0, 303));
         world.diffusion_rate = 1.0;
         world.connections[0].permeability = 1.0;
-        world.connections.push(Connection { a: 1, b: 2, permeability: 0.5 });
-        assert!(matches!(world.validate(), Err(ValidationError::DuplicateConnection(_, _))));
+        world.connections.push(Connection { a: 1, b: 3, permeability: 1.0 });
+        assert_eq!(world.validate(), Err(ValidationError::UnstableTransport(1)));
     }
 }
