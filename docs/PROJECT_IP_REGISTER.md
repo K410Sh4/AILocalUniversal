@@ -16,6 +16,7 @@ Este registro organiza as famílias de materiais originais cobertas pelo aviso d
 | NeSA — Neural Semantic Atlas | Contratos de páginas semânticas, indexador extrativo, catálogo persistente e ferramentas originais de inspeção/recuperação do Atlas quando presentes | NeSA 0.1 na branch `feature/nesa-semantic-page-indexer-v0.1` |
 | K.IA / Artificial Brain | Rust Cognitive Runtime, Adaptive Cognitive Network, contratos tipados, política de seleção, orçamento lógico, conexões e mecanismos originais de plasticidade operacional quando presentes | K.IA 0.1 na branch `feature/kia-rust-cognitive-runtime-v0.1` |
 | Swarm / P2P | Contratos, identidade, autorização, protocolos e execução cooperativa originais quando codificados | Roadmap / arquitetura |
+| NeuroBridge / BCI | Arquitetura vendor-neutral, contrato de eventos de intenção, políticas originais de consentimento, segurança e co-adaptação, simuladores e adaptadores independentes quando codificados | Especificação 0.1; integração com dispositivos e SDKs externos não implementada |
 | NeuralDNA — Artificial Heredity and Development | Schema de genoma artificial, loci de personalidade/preferências/predisposições, epigenoma artificial, desenvolvimento da BA, recombinação, mutação controlada, proveniência e avaliação de descendentes | Especificação de arquitetura e pesquisa; implementação experimental pendente |
 | Documentação e schemas | Texto técnico, diagramas, exemplos, testes e formatos originais | Evolução contínua |
 
@@ -28,3 +29,13 @@ Este registro organiza as famílias de materiais originais cobertas pelo aviso d
 - O registro de software no INPI, registro de marca e eventual patente são procedimentos separados; nenhum deles foi requerido por este arquivo.
 
 | ACCA — Adaptive Cognitive Computation Architecture | Especificação matemática original de relevância, roteamento esparso, restrições, completude e terminação; implementação inicial do fluxo vertical K.IA | K.IA 0.3 na branch feature/kia-acca-vertical-flow-v0.3 |
+
+
+## Addendum NeuroBridge BCI 0.1 — interoperabilidade
+
+A branch `feature/neurobridge-bci-interoperability-v0.1` registra a arquitetura original de interoperabilidade BCI independente de fornecedor, normalização de intenções decodificadas, consentimento, privacidade, segurança, co-adaptação humano-BA e critérios de integração.
+
+O registro cobre apenas a expressão documental e os futuros componentes originais efetivamente desenvolvidos pelo projeto. Não reivindica dispositivos, dados, APIs, protocolos, patentes, marcas ou software da Neuralink ou de outros fornecedores. A tecnologia de terceiros mantém sua licença própria.
+
+Copyright © 2026 K410Sh4. All rights reserved.  
+SPDX-License-Identifier: LicenseRef-AILocal-Universal-Proprietary

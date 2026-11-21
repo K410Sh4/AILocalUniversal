@@ -21,9 +21,11 @@ A política cobre o material original presente no repositório, inclusive materi
 - adaptadores, perfis e políticas originais do Resource Manager, quando efetivamente implementados;
 - Neural Elastic Execution: contratos de traces, simulador de cache, políticas de substituição, métricas, predição e otimização originais quando efetivamente implementados;
 - componentes, protocolos, documentação e código originais de Swarm/execução cooperativa, quando efetivamente implementados;
+- NeuroBridge: arquitetura, contratos normalizados, simuladores e adaptadores BCI independentes originais, quando efetivamente presentes;
+- NeuralDNA: arquitetura de hereditariedade e desenvolvimento artificial, benchmarks ambientais e protocolos experimentais originais, quando efetivamente presentes;
 - documentação técnica, diagramas, templates, testes, exemplos e arquivos de configuração originais.
 
-O registro de componentes não significa que tudo esteja implementado. A licença protege expressões concretas que existam no repositório, não funcionalidades descritas apenas como plano.
+O registro de componentes não significa que tudo esteja implementado. A licença protege expressões concretas que existam no repositório, não funcionalidades descritas apenas como plano. Ela não concede direitos sobre dispositivos, APIs proprietárias, patentes, marcas, protocolos fechados ou dados da Neuralink ou de qualquer outro fornecedor BCI.
 
 ## 2. O que não é coberto pela licença proprietária
 
