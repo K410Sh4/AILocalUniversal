@@ -34,6 +34,7 @@ class BenchmarkResult:
     history_forecast_accuracy: float
     mean_plasticity: float
     mean_diversity_reserve: float
+    mean_forecast_uncertainty: float
     environmental_change_rate: float
     transition_entropy: float
 
@@ -172,15 +173,27 @@ def environment_metrics(
     return changes / total, conditional_entropy / total / math.log2(STATE_COUNT)
 
 
-def _cue_skill(successes: float, failures: float) -> float:
-    """Reliability above three-class chance, discounted by evidence volume."""
-    evidence = successes + failures
-    confidence = evidence / (evidence + 2.0)
-    reliability = (1.0 + successes) / (2.0 + evidence)
-    chance_adjusted = max(
-        0.0, (reliability - 1.0 / STATE_COUNT) / (1.0 - 1.0 / STATE_COUNT)
-    )
-    return min(1.0, confidence * chance_adjusted)
+class PredictorCalibration:
+    """Online accuracy estimate against the three-class chance baseline."""
+
+    def __init__(self) -> None:
+        self.successes = 0.0
+        self.failures = 0.0
+
+    def observe(self, correct: bool) -> None:
+        self.successes = self.successes * CUE_RETENTION + float(correct)
+        self.failures = self.failures * CUE_RETENTION + float(not correct)
+
+    @property
+    def skill(self) -> float:
+        evidence = self.successes + self.failures
+        confidence = evidence / (evidence + 2.0)
+        reliability = (1.0 + self.successes) / (2.0 + evidence)
+        chance_adjusted = max(
+            0.0,
+            (reliability - 1.0 / STATE_COUNT) / (1.0 - 1.0 / STATE_COUNT),
+        )
+        return min(1.0, confidence * chance_adjusted)
 
 
 def simulate_trial(
@@ -205,10 +218,12 @@ def simulate_trial(
     environment = generate_environment(seed, length, process)
     cues = generate_cues(seed, environment, steps, cue_horizon, cue_accuracy)
     transition = TransitionModel()
-    successes = failures = 0.0
+    cue_calibration = PredictorCalibration()
+    history_calibration = PredictorCalibration()
+    history_predictions: list[int] = []
     log_fitness = 0.0
     cue_hits = history_hits = 0
-    plasticity_total = reserve_total = 0.0
+    plasticity_total = reserve_total = forecast_uncertainty_total = 0.0
     diversified_fitness = (
         1.0 + (STATE_COUNT - 1) * mismatch_fitness
     ) / STATE_COUNT
@@ -216,15 +231,28 @@ def simulate_trial(
     for step in range(steps):
         if step > 0:
             transition.observe(environment[step - 1], environment[step])
-        if step >= development_latency:
-            correct = cues[step - development_latency] == environment[step]
-            successes = successes * CUE_RETENTION + float(correct)
-            failures = failures * CUE_RETENTION + float(not correct)
+        if development_latency > 0 and step >= development_latency:
+            prior_decision = step - development_latency
+            cue_calibration.observe(
+                cues[prior_decision] == environment[step]
+            )
+            history_calibration.observe(
+                history_predictions[prior_decision] == environment[step]
+            )
 
         forecast = transition.forecast(environment[step], development_latency)
-        history_state = max(range(STATE_COUNT), key=lambda state: (forecast[state], -state))
-        uncertainty = transition.normalized_entropy(forecast)
-        cue_skill = _cue_skill(successes, failures)
+        history_state = max(
+            range(STATE_COUNT), key=lambda state: (forecast[state], -state)
+        )
+        forecast_uncertainty = transition.normalized_entropy(forecast)
+        history_predictions.append(history_state)
+        cue_skill = cue_calibration.skill
+        history_skill = history_calibration.skill
+        best_predictor_skill = max(cue_skill, history_skill)
+        residual_uncertainty = 1.0 - best_predictor_skill
+        cue_advantage = max(0.0, cue_skill - history_skill)
+        cue_advantage /= max(1e-9, 1.0 - history_skill)
+        cue_advantage = min(1.0, cue_advantage)
 
         if strategy == "generalist":
             plasticity, reserve, mode = 0.0, 0.0, "generalist"
@@ -235,15 +263,15 @@ def simulate_trial(
         elif strategy == "history":
             plasticity, reserve, mode = 0.0, 0.0, "history"
         elif strategy == "adaptive":
-            plasticity = 0.05 + 0.95 * cue_skill
-            reserve = 0.05 + 0.75 * uncertainty
+            plasticity = 0.05 + 0.95 * cue_advantage
+            reserve = 0.05 + 0.75 * residual_uncertainty
             mode = "combined"
         elif strategy == "adaptive_plasticity":
-            plasticity = 0.05 + 0.95 * cue_skill
+            plasticity = 0.05 + 0.95 * cue_advantage
             reserve, mode = 0.0, "combined"
         else:
             plasticity = 0.0
-            reserve = 0.05 + 0.75 * uncertainty
+            reserve = 0.05 + 0.75 * (1.0 - history_skill)
             mode = "history"
 
         target = environment[step + development_latency]
@@ -273,6 +301,7 @@ def simulate_trial(
         log_fitness += math.log(max(1e-12, portfolio_fitness * cost))
         plasticity_total += plasticity
         reserve_total += reserve
+        forecast_uncertainty_total += forecast_uncertainty
 
     change_rate, entropy = environment_metrics(
         environment, steps + development_latency
@@ -284,6 +313,7 @@ def simulate_trial(
         history_forecast_accuracy=history_hits / steps,
         mean_plasticity=plasticity_total / steps,
         mean_diversity_reserve=reserve_total / steps,
+        mean_forecast_uncertainty=forecast_uncertainty_total / steps,
         environmental_change_rate=change_rate,
         transition_entropy=entropy,
     )
@@ -317,6 +347,7 @@ def run() -> None:
                 f"history={statistics.fmean(r.history_forecast_accuracy for r in results):.3f} "
                 f"plasticity={statistics.fmean(r.mean_plasticity for r in results):.3f} "
                 f"reserve={statistics.fmean(r.mean_diversity_reserve for r in results):.3f} "
+                f"forecast_uncertainty={statistics.fmean(r.mean_forecast_uncertainty for r in results):.3f} "
                 f"volatility={statistics.fmean(r.environmental_change_rate for r in results):.3f} "
                 f"entropy={statistics.fmean(r.transition_entropy for r in results):.3f}"
             )
