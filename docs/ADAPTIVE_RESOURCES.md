@@ -111,6 +111,22 @@ O perfil não é convertido em porcentagem de RAM/VRAM. A elegibilidade de model
 
 A configuração antiga sem `resource_profile` é carregada como `medium`. O modo Manual continua respeitando o modelo selecionado pelo usuário; o orçamento de threads é aplicado às solicitações de inferência Ollama tanto no modo Manual quanto no Automático.
 
+## Residência real de modelos — lacuna identificada na auditoria
+
+O estimador atual calcula `pesos + cache KV + overhead` como requisito total e compara esse valor com a memória disponível observada pelo sistema. Isso é conservador para um carregamento frio, mas pode contar os pesos duas vezes quando o Ollama já mantém o modelo residente: a memória disponível do sistema já foi reduzida pela carga existente, enquanto a estimativa volta a incluir os pesos completos. Em máquinas com pouca RAM, isso pode rejeitar um modelo que já está carregado e cujo custo incremental seria principalmente o contexto/cache e buffers adicionais.
+
+A integração atual consulta `/api/tags` e `/api/show`, mas ainda não consulta `/api/ps`. O endpoint de modelos em execução fornece identidade/digest, tamanho reportado, uso de VRAM, contexto e expiração da residência. Esses dados permitem construir um provider de residência, mas não devem ser tratados como medição completa de RAM/KV sem validação no backend e no hardware.
+
+**Correção arquitetural proposta para a próxima etapa:**
+
+1. Adicionar um contrato `RunningModelSnapshot` ao Engine Adapter, com nome, digest, tamanho reportado, VRAM reportada, contexto e expiração quando disponíveis.
+2. Consultar `/api/ps` no adaptador Ollama e reconciliar a identidade pelo digest do artefato, não apenas pelo nome/tag.
+3. Separar custo de carregamento frio (pesos + KV + overhead) de custo incremental de uma instância já residente (KV/contexto adicional e buffers ainda não contabilizados).
+4. Manter reservas de residência do modelo separadas dos leases temporários de cada tarefa. A reserva residente só é liberada após confirmação de unload/expiração; não liberar pesos ao terminar uma única geração se o runtime mantiver o modelo carregado.
+5. Se a telemetria estiver indisponível, inconsistente ou com digest divergente, manter o caminho conservador de carregamento frio e registrar a incerteza.
+
+O campo `context_length` reportado pelo runtime deve ser tratado inicialmente como metadado de configuração/execução, não como prova de ocupação exata do cache KV. O cálculo incremental precisa continuar conservador até ser comparado com RAM/VRAM observadas durante cargas frias e quentes.
+
 ## Limites desta versão
 
 Ainda não implementado:
