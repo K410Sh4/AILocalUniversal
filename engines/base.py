@@ -48,6 +48,7 @@ class RunningModelSnapshot:
     context_length: int | None = None
     expires_at: str | None = None
     details: dict[str, Any] = field(default_factory=dict)
+    observed_at: str | None = None
 
     def __post_init__(self) -> None:
         if not self.name.strip():
@@ -58,6 +59,10 @@ class RunningModelSnapshot:
                 isinstance(value, bool) or not isinstance(value, int) or value < 0
             ):
                 raise ValueError(f"{field_name} precisa ser inteiro não negativo ou None.")
+        if self.observed_at is not None and (
+            not isinstance(self.observed_at, str) or not self.observed_at.strip()
+        ):
+            raise ValueError("observed_at precisa ser uma string não vazia ou None.")
         if self.context_length is not None and (
             isinstance(self.context_length, bool)
             or not isinstance(self.context_length, int)
