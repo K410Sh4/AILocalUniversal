@@ -4,7 +4,9 @@
 
 Envelope versionado que atravessa o pipeline. Implementação: core/cognitive_task.py.
 
-Campos principais: schema_version, task_id, original_text, normalized_text, intent, capabilities, indicadores heurísticos, evidence, deterministic_results, execution_plan, subtask_plan, execution_trace, result, validation_report e status.
+Campos principais: schema_version, task_id, original_text, normalized_text, intent, capabilities, cognitive_areas, indicadores heurísticos, evidence, deterministic_results, execution_plan, subtask_plan, execution_trace, result, validation_report e status.
+
+O campo aditivo opcional `cognitive_areas` contém o resultado versionado da NAPA: classifier_version, method, score_semantics, active_areas e activations. Cada ativação contém area_id, kind, affinity e sinais explicáveis. Affinity é uma afinidade heurística, não probabilidade nem verificação factual. Payloads legados sem `cognitive_areas` são lidos como classificação ainda não executada.
 
 O campo validation_report é opcional para compatibilidade com tarefas serializadas antes da Validation Layer. A ausência do campo equivale a validação ainda não executada; não deve ser interpretada como aprovação.
 

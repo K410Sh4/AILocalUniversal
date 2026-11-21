@@ -17,7 +17,9 @@ including the AILocal Universal, Cognitive Pipeline, Cognitive Task Executor,
 Validation Layer, NeuralMap, NeuralPlugin, NeuralPlugin Manager, NeuralInjector
 Engine, NeuralInjector Package Specification (NIP), the .neuralinjector
 format implementations and documentation, and Neural Elastic Execution
-contracts, simulator, policies, and original tooling, to the extent those
+contracts, simulator, policies, and original tooling, the Neural Adaptive
+Plasticity Architecture (NAPA), its cognitive-area taxonomy, registry,
+classification contracts and original integration, to the extent those
 materials are present in the repository and owned by the rights holder.
 
 2. ALL RIGHTS RESERVED — NO GENERAL LICENSE

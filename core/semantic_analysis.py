@@ -7,6 +7,7 @@ import unicodedata
 
 from core.capability_vectorizer import CapabilityVectorizer
 from core.cognitive_task import CognitiveTask
+from napa.classifier import CognitiveAreaClassifier
 
 
 def _fold(text: str) -> str:
@@ -88,8 +89,15 @@ class SemanticAnalysisStage:
 
     name = "semantic_analysis"
 
-    def __init__(self, vectorizer: CapabilityVectorizer | None = None) -> None:
+    def __init__(
+        self,
+        vectorizer: CapabilityVectorizer | None = None,
+        area_classifier: CognitiveAreaClassifier | None = None,
+    ) -> None:
         self.vectorizer = vectorizer or CapabilityVectorizer()
+        self.area_classifier = area_classifier or CognitiveAreaClassifier(
+            vectorizer=self.vectorizer
+        )
 
     async def process(self, task: CognitiveTask) -> CognitiveTask:
         text = task.normalized_text or task.original_text
@@ -98,6 +106,11 @@ class SemanticAnalysisStage:
 
         task.intent = classify_intent(text)
         task.capabilities = self.vectorizer.classify(text).to_dict()
+        task.cognitive_areas = self.area_classifier.classify(
+            text,
+            intent=task.intent,
+            capability_scores=task.capabilities,
+        ).to_dict()
 
         length_factor = min(len(words) / 80.0, 1.0) * 0.35
         structure_factor = min(text.count("\n") / 5.0, 1.0) * 0.15
