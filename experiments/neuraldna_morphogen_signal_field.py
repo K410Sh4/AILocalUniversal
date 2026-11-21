@@ -166,12 +166,15 @@ class SignalField:
                 raise ValueError("production rows must match signal_classes")
             if any(not math.isfinite(value) or value < 0.0 for value in row):
                 raise ValueError("production rates must be finite and non-negative")
+            if any(not math.isfinite(value * self.config.time_step) for value in row):
+                raise ValueError("integrated production exceeds finite numeric range")
 
         dt = self.config.time_step
         max_rate = self.config.diffusion * self._max_row_sum
-        if not math.isfinite(max_rate):
+        scaled_rate = dt * max_rate
+        if not math.isfinite(scaled_rate):
             raise ValueError("diffusion stability rate overflowed")
-        substeps = max(1, math.ceil(dt * max_rate / 0.45))
+        substeps = max(1, math.ceil(scaled_rate / 0.45))
         if substeps > self.config.max_substeps:
             raise ValueError("required diffusion substeps exceed max_substeps")
         sub_dt = dt / substeps
@@ -229,11 +232,14 @@ class SignalField:
                         self.sensitivity_kd[region],
                         self.hill_coefficient[region],
                     )
-                    self._exposures[region][signal] = (
+                    exposure = (
                         self._exposures[region][signal]
                         * math.exp(-self.exposure_clearance[region] * sub_dt)
                         + response * sub_dt
                     )
+                    if not math.isfinite(concentration) or not math.isfinite(exposure):
+                        raise OverflowError("signal field state exceeded finite range")
+                    self._exposures[region][signal] = exposure
 
         self._step_count += 1
         return self.snapshot(substeps)
