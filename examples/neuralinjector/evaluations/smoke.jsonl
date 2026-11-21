@@ -1,0 +1,2 @@
+{"id":"greeting-pt-br","input":"Diga olá em português brasileiro.","checks":{"language":"pt-BR","must_not_expose_internal_reasoning":true}}
+{"id":"technical-uncertainty","input":"Explique uma funcionalidade ainda não implementada.","checks":{"must_distinguish_proposal_from_implementation":true}}
