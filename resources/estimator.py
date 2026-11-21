@@ -153,36 +153,6 @@ class ResourceEstimator:
         )
 
         kv_bytes_per_token = model.kv_cache_bytes_per_token
-        if kv_bytes_per_token is None:
-            return ModelResourceEstimate(
-                model_id=model.record_id,
-                context_tokens=context_tokens,
-                quantization=quantization,
-                weight_bytes=weight_bytes,
-                kv_cache_bytes=None,
-                runtime_overhead_bytes=self.runtime_overhead_bytes,
-                total_required_bytes=None,
-                placement=ResourcePlacement.UNKNOWN,
-                confidence=EstimateConfidence.PARTIAL,
-                reasons=(
-                    *reasons,
-                    "Cache KV não estimado: faltam metadados arquiteturais suficientes.",
-                    "A decisão de compatibilidade permanece inconclusiva.",
-                ),
-            )
-
-        kv_cache_bytes = kv_bytes_per_token * context_tokens
-        total_required_bytes = weight_bytes + kv_cache_bytes + self.runtime_overhead_bytes
-        reasons.extend(
-            (
-                f"Cache KV calculado em {kv_bytes_per_token} bytes/token × "
-                f"{context_tokens} tokens.",
-                f"Reserva fixa de runtime: {self.runtime_overhead_bytes} bytes.",
-                "O custo estimado não inclui cargas externas, concorrência ou "
-                "particularidades não expostas pelo runtime.",
-            )
-        )
-
         gpu_values = [
             item.vram_available_bytes
             for item in hardware.accelerators
@@ -202,12 +172,74 @@ class ResourceEstimator:
             else None
         )
 
+        gpu_usable = (
+            int(gpu_available * (1 - self.memory_reserve))
+            if gpu_available is not None
+            else None
+        )
+        ram_usable = (
+            int(ram_available * (1 - self.memory_reserve))
+            if ram_available is not None
+            else None
+        )
+
+        if kv_bytes_per_token is None:
+            lower_bound = weight_bytes + self.runtime_overhead_bytes
+            reasons.append(
+                "Cache KV não estimado: faltam metadados arquiteturais suficientes."
+            )
+            reasons.append(
+                f"Limite inferior conhecido (pesos + runtime): {lower_bound} bytes."
+            )
+            if (
+                gpu_usable is not None
+                and ram_usable is not None
+                and lower_bound > gpu_usable + ram_usable
+            ) or (
+                gpu_usable is None
+                and ram_usable is not None
+                and lower_bound > ram_usable
+            ) or (
+                ram_usable is None
+                and gpu_usable is not None
+                and lower_bound > gpu_usable
+            ):
+                placement = ResourcePlacement.DOES_NOT_FIT
+                reasons.append(
+                    "Mesmo sem contabilizar o cache KV, o limite inferior excede "
+                    "a memória utilizável observada."
+                )
+            else:
+                placement = ResourcePlacement.UNKNOWN
+                reasons.append("A decisão de compatibilidade permanece inconclusiva.")
+            return ModelResourceEstimate(
+                model_id=model.record_id,
+                context_tokens=context_tokens,
+                quantization=quantization,
+                weight_bytes=weight_bytes,
+                kv_cache_bytes=None,
+                runtime_overhead_bytes=self.runtime_overhead_bytes,
+                total_required_bytes=None,
+                placement=placement,
+                confidence=EstimateConfidence.PARTIAL,
+                reasons=tuple(reasons),
+            )
+
+        kv_cache_bytes = kv_bytes_per_token * context_tokens
+        total_required_bytes = weight_bytes + kv_cache_bytes + self.runtime_overhead_bytes
+        reasons.extend(
+            (
+                f"Cache KV calculado em {kv_bytes_per_token} bytes/token × "
+                f"{context_tokens} tokens.",
+                f"Reserva fixa de runtime: {self.runtime_overhead_bytes} bytes.",
+                "O custo estimado não inclui cargas externas, concorrência ou "
+                "particularidades não expostas pelo runtime.",
+            )
+        )
+
         if gpu_usable is not None and total_required_bytes <= gpu_usable:
             placement = ResourcePlacement.GPU
             reasons.append("A estimativa cabe na VRAM medida após a margem de segurança.")
-        elif ram_usable is not None and total_required_bytes <= ram_usable:
-            placement = ResourcePlacement.CPU
-            reasons.append("A estimativa cabe na RAM disponível após a margem de segurança.")
         elif (
             gpu_usable is not None
             and ram_usable is not None
@@ -218,6 +250,9 @@ class ResourceEstimator:
                 "A soma conservadora de RAM e VRAM comporta a estimativa; "
                 "a execução híbrida depende do offload suportado pelo runtime."
             )
+        elif ram_usable is not None and total_required_bytes <= ram_usable:
+            placement = ResourcePlacement.CPU
+            reasons.append("A estimativa cabe na RAM disponível após a margem de segurança.")
         elif gpu_usable is not None or ram_usable is not None:
             placement = ResourcePlacement.DOES_NOT_FIT
             reasons.append(
