@@ -30,6 +30,7 @@ class OllamaProcessMemorySnapshot:
     rss_bytes: int | None
     observed_at: str
     reason: str
+    root_start_time_ticks: int | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -62,7 +63,7 @@ def _is_ollama_server(argv: list[str] | None) -> bool:
     return executable == "ollama" and "serve" in arguments
 
 
-def _parent_pid(process_dir: Path) -> int | None:
+def _process_stat(process_dir: Path) -> tuple[int, int] | None:
     try:
         stat = (process_dir / "stat").read_text(encoding="utf-8")
     except OSError:
@@ -71,13 +72,16 @@ def _parent_pid(process_dir: Path) -> int | None:
     if closing < 0:
         return None
     fields = stat[closing + 1 :].split()
-    if len(fields) < 2:
+    if len(fields) <= 19:
         return None
     try:
         parent = int(fields[1])
+        start_time = int(fields[19])
     except ValueError:
         return None
-    return parent if parent >= 0 else None
+    if parent < 0 or start_time < 0:
+        return None
+    return parent, start_time
 
 
 def _parse_smaps_rollup(process_dir: Path) -> tuple[int, int] | None:
@@ -166,11 +170,12 @@ def probe_ollama_process_memory(
         )
 
     root_pid = roots[0]
-    parents = {
-        int(item.name): _parent_pid(item)
+    process_stats = {
+        int(item.name): _process_stat(item)
         for item in process_dirs
     }
-    if parents.get(root_pid) is None:
+    root_stat = process_stats.get(root_pid)
+    if root_stat is None:
         return OllamaProcessMemorySnapshot(
             ProcessMemoryProbeStatus.INCOMPLETE,
             root_pid,
@@ -181,6 +186,11 @@ def probe_ollama_process_memory(
             "Não foi possível determinar a árvore de processos do Ollama.",
         )
 
+    root_start_time_ticks = root_stat[1]
+    parents = {
+        pid: stat[0] if stat is not None else None
+        for pid, stat in process_stats.items()
+    }
     process_ids = {root_pid}
     changed = True
     while changed:
@@ -215,6 +225,7 @@ def probe_ollama_process_memory(
         rss_total,
         observed_at,
         "PSS/RSS medidos para o processo Ollama e todos os descendentes visíveis.",
+        root_start_time_ticks=root_start_time_ticks,
     )
 
 
@@ -227,6 +238,8 @@ def compare_process_memory(
         before.status is not ProcessMemoryProbeStatus.AVAILABLE
         or after.status is not ProcessMemoryProbeStatus.AVAILABLE
         or before.root_pid != after.root_pid
+        or before.root_start_time_ticks is None
+        or before.root_start_time_ticks != after.root_start_time_ticks
         or before.pss_bytes is None
         or after.pss_bytes is None
         or before.rss_bytes is None
