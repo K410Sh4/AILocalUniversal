@@ -10,17 +10,17 @@ from .development import (
     NicheState,
     develop_population,
 )
-from .lineage import (
-    LineagePolicy,
-    RegionalNiche,
-    RegionalStepResult,
-    advance_region,
-)
 from .environment import (
     CueCalibration,
     CueEvidence,
     ReactionExpression,
     ReactionNorm,
+)
+from .lineage import (
+    LineagePolicy,
+    RegionalNiche,
+    RegionalStepResult,
+    advance_region,
 )
 
 __all__ = [
