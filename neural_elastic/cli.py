@@ -12,7 +12,6 @@ from neural_elastic.contracts import AccessTrace, TraceFormatError
 from neural_elastic.simulator import compare_policies
 from neural_elastic.synthetic import generate_synthetic_trace
 
-
 MIB = 1024 * 1024
 
 
