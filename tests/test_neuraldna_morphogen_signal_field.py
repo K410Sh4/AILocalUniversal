@@ -62,7 +62,7 @@ def test_localized_source_forms_a_decreasing_concentration_gradient():
     for _ in range(120):
         result = field.step(source(6))
     profile = tuple(row[0] for row in result.concentrations)
-    assert all(left > right for left, right in zip(profile, profile[1:]))
+    assert all(left > right for left, right in zip(profile[:-1], profile[1:], strict=True))
 
 
 def test_higher_transport_increases_far_field_reach():
