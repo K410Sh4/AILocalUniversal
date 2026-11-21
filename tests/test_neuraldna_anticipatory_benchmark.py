@@ -139,3 +139,21 @@ def test_adaptive_prefers_the_predictor_with_higher_measured_skill():
         result.mean_plasticity for result in history_leads
     )
     assert cue_led_plasticity > history_led_plasticity + 0.4
+
+
+
+def test_adaptive_rejects_a_current_only_cue_when_latency_makes_it_stale():
+    results = [
+        trial(
+            seed,
+            process="cycle",
+            cue_accuracy=0.95,
+            cue_horizon=0,
+            development_latency=2,
+        )
+        for seed in range(10)
+    ]
+    mean_plasticity = statistics.fmean(
+        result.mean_plasticity for result in results
+    )
+    assert mean_plasticity < 0.01
