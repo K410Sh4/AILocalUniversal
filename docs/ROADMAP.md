@@ -93,6 +93,9 @@ As fases são entregas progressivas. Uma funcionalidade só é considerada concl
 - [ ] Persistir benchmarks controlados de qualidade, latência, RAM/VRAM, estabilidade e estado quente/frio.
 - [ ] Adicionar orçamento de contexto configurável e recomendações por tarefa/capacidade com métricas de qualidade.
 - [ ] Implementar telemetria contínua, leases, concorrência e políticas de carregamento/descarregamento.
+- [ ] Adicionar provider de residência Ollama via `/api/ps`, reconciliando modelos carregados por digest e registrando tamanho/VRAM/contexto/expiração reportados.
+- [ ] Separar contabilização de carregamento frio, residência persistente e custo incremental por tarefa, evitando dupla contagem dos pesos em modelos já residentes.
+- [ ] Validar seleção quente/fria no Arch Linux, comparando estimativas com RAM/VRAM observadas e confirmando o comportamento de unload/keep-alive.
 
 **Limites desta iteração:** as estimativas são teóricas e de confiança média; overhead de runtime é uma reserva fixa, não uma medição. O posicionamento híbrido é recomendação, não controle de offload. Na ausência de metadados suficientes, o seletor mantém o fallback legado e informa que não verificou a memória. Nenhum modelo é carregado/descarregado automaticamente por esta entrega.
 
