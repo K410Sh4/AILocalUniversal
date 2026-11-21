@@ -134,7 +134,7 @@ def simulate_trace(
     if selected_policy is CachePolicy.STATISTICAL:
         if (
             isinstance(statistical_half_life, bool)
-            or not isinstance(statistical_half_life, (int, float))
+            or type(statistical_half_life) not in (int, float)
             or not isfinite(statistical_half_life)
             or statistical_half_life <= 0
         ):
