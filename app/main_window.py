@@ -25,15 +25,15 @@ from engines.base import EngineAdapter, EngineRequest, ModelInfo, RunningModelSn
 from engines.model_selector import ModelSelectionError
 from engines.ollama_engine import OllamaEngine
 from engines.registry import EngineRegistry
-from kia_bridge import (
-    KiaExecutionCoordinator,
-    KiaFlowError,
-    KiaMemoryError,
-    KiaMemoryStore,
-    KiaRuntimeClient,
-    KiaRuntimeError,
-    KiaRuntimeUnavailable,
-    append_kia_plan_to_task,
+from kba_bridge import (
+    KbaExecutionCoordinator,
+    KbaFlowError,
+    KbaMemoryError,
+    KbaMemoryStore,
+    KbaRuntimeClient,
+    KbaRuntimeError,
+    KbaRuntimeUnavailable,
+    append_kba_plan_to_task,
     execute_deterministic_selection,
     record_validated_deterministic_feedback,
 )
@@ -111,9 +111,9 @@ class MainWindow(QMainWindow):
         self._current_assistant_index: int | None = None
         self.last_cognitive_task: CognitiveTask | None = None
         self.deterministic_tools = DeterministicToolRegistry()
-        self._kia_runtime_client: KiaRuntimeClient | None = None
-        self._kia_memory_store: KiaMemoryStore | None = None
-        self._kia_runtime_unavailable = False
+        self._kba_runtime_client: KbaRuntimeClient | None = None
+        self._kba_memory_store: KbaMemoryStore | None = None
+        self._kba_runtime_unavailable = False
 
         self.conversations = self._load_conversations()
         self.conversations.sort(key=lambda item: item.updated_at, reverse=True)
@@ -862,29 +862,29 @@ class MainWindow(QMainWindow):
             options["options"] = {"num_thread": thread_limit}
         return options
 
-    def _ensure_kia_runtime(self) -> KiaRuntimeClient | None:
+    def _ensure_kba_runtime(self) -> KbaRuntimeClient | None:
         """Inicia o host Rust sob demanda; ausência do binário preserva o modo legado."""
-        if self._kia_runtime_client is not None:
-            return self._kia_runtime_client
-        if self._kia_runtime_unavailable:
+        if self._kba_runtime_client is not None:
+            return self._kba_runtime_client
+        if self._kba_runtime_unavailable:
             return None
         try:
-            self._kia_memory_store = KiaMemoryStore()
-            self._kia_runtime_client = KiaRuntimeClient(
+            self._kba_memory_store = KbaMemoryStore()
+            self._kba_runtime_client = KbaRuntimeClient(
                 timeout_seconds=8.0,
-                memory_store=self._kia_memory_store,
+                memory_store=self._kba_memory_store,
             )
-        except (KiaRuntimeUnavailable, KiaRuntimeError, KiaMemoryError) as exc:
-            if self._kia_memory_store is not None:
-                self._kia_memory_store.close()
-                self._kia_memory_store = None
-            self._kia_runtime_unavailable = True
+        except (KbaRuntimeUnavailable, KbaRuntimeError, KbaMemoryError) as exc:
+            if self._kba_memory_store is not None:
+                self._kba_memory_store.close()
+                self._kba_memory_store = None
+            self._kba_runtime_unavailable = True
             self.statusBar().showMessage(
-                f"K.IA indisponível; usando o roteamento anterior: {exc}",
+                f"K.BA indisponível; usando o roteamento anterior: {exc}",
                 8000,
             )
             return None
-        return self._kia_runtime_client
+        return self._kba_runtime_client
 
     @staticmethod
     def _is_local_engine_endpoint(base_url: str) -> bool:
@@ -894,9 +894,9 @@ class MainWindow(QMainWindow):
             return False
         return hostname in {"localhost", "127.0.0.1", "::1"}
 
-    def _plan_with_kia(self, task: CognitiveTask):
+    def _plan_with_kba(self, task: CognitiveTask):
         """Entrega NAPA/modelos/recursos ao host Rust e recebe um plano executável."""
-        client = self._kia_runtime_client
+        client = self._kba_runtime_client
         if client is None:
             return None
 
@@ -923,7 +923,7 @@ class MainWindow(QMainWindow):
                 manual_model = preferred_model
 
         hardware = self.resource_manager.snapshot()
-        coordinator = KiaExecutionCoordinator(
+        coordinator = KbaExecutionCoordinator(
             client,
             tools=self.deterministic_tools,
             napa_registry=napa_registry,
@@ -944,7 +944,7 @@ class MainWindow(QMainWindow):
             concurrent_requests=1,
         )
 
-    def _apply_kia_plan(self, task: CognitiveTask, decision) -> bool:
+    def _apply_kba_plan(self, task: CognitiveTask, decision) -> bool:
         """Só aplica planos executáveis por adaptadores já registrados na aplicação."""
         deterministic = decision.deterministic_selections()
         models = decision.model_selections()
@@ -952,11 +952,11 @@ class MainWindow(QMainWindow):
 
         if len(deterministic) == 1 and not models and not memory and len(decision.selections) == 1:
             execute_deterministic_selection(task, decision, self.deterministic_tools)
-            append_kia_plan_to_task(task, decision)
+            append_kba_plan_to_task(task, decision)
             for step in task.execution_plan:
                 if step.get("component") == "cognitive_analysis":
                     step["route"] = "deterministic_only"
-                    step["reason"] = "selected_by_kia_rust_runtime"
+                    step["reason"] = "selected_by_kba_rust_runtime"
             return True
 
         if len(models) != 1:
@@ -975,11 +975,11 @@ class MainWindow(QMainWindow):
         model = str(metadata.get("reference", ""))
         if not model or runtime not in self.engine_registry.names():
             return False
-        append_kia_plan_to_task(task, decision, selected_model=model)
+        append_kba_plan_to_task(task, decision, selected_model=model)
         task.execution_plan.append(
             {
                 "step": len(task.execution_plan),
-                "component": "kia_model_dispatch",
+                "component": "kba_model_dispatch",
                 "runtime": runtime,
                 "model": model,
                 "component_id": component.get("id"),
@@ -990,7 +990,7 @@ class MainWindow(QMainWindow):
             task.execution_plan.append(
                 {
                     "step": len(task.execution_plan),
-                    "component": "kia_knowledge_dispatch",
+                    "component": "kba_knowledge_dispatch",
                     "provider": "knowledge_library",
                     "component_id": provider.get("id"),
                     "retrieval": provider.get("metadata", {}).get("retrieval"),
@@ -999,9 +999,9 @@ class MainWindow(QMainWindow):
         return True
 
     @staticmethod
-    def _kia_model_for_task(task: CognitiveTask) -> str | None:
+    def _kba_model_for_task(task: CognitiveTask) -> str | None:
         for step in reversed(task.execution_plan):
-            if step.get("component") == "kia_model_dispatch":
+            if step.get("component") == "kba_model_dispatch":
                 model = step.get("model")
                 return str(model) if isinstance(model, str) and model.strip() else None
         return None
@@ -1016,13 +1016,13 @@ class MainWindow(QMainWindow):
         self._active_knowledge_bundle = None
         self._pending_knowledge_message = None
 
-        kia_client = self._ensure_kia_runtime()
+        kba_client = self._ensure_kba_runtime()
         try:
             cognitive_task = asyncio.run(
                 analyze_request(
                     text,
                     execute_deterministic=(
-                        kia_client is None and not self.config.knowledge_enabled
+                        kba_client is None and not self.config.knowledge_enabled
                     ),
                 )
             )
@@ -1037,36 +1037,36 @@ class MainWindow(QMainWindow):
             )
             return
 
-        if kia_client is not None:
+        if kba_client is not None:
             try:
-                decision = self._plan_with_kia(cognitive_task)
-                if decision is None or not self._apply_kia_plan(cognitive_task, decision):
-                    raise KiaFlowError(
-                        "Não existe um plano K.IA executável para esta solicitação; "
+                decision = self._plan_with_kba(cognitive_task)
+                if decision is None or not self._apply_kba_plan(cognitive_task, decision):
+                    raise KbaFlowError(
+                        "Não existe um plano K.BA executável para esta solicitação; "
                         "será utilizado o pipeline compatível."
                     )
             except (
-                KiaRuntimeError,
-                KiaFlowError,
+                KbaRuntimeError,
+                KbaFlowError,
                 ModelSelectionError,
                 ValueError,
                 KeyError,
             ) as exc:
                 if (
-                    isinstance(exc, KiaRuntimeUnavailable)
-                    or getattr(kia_client, "_closed", False)
+                    isinstance(exc, KbaRuntimeUnavailable)
+                    or getattr(kba_client, "_closed", False)
                     or getattr(exc, "code", "")
                     in {"memory_restore_failed", "memory_persistence_failed"}
                 ):
                     try:
-                        kia_client.close()
-                    except KiaRuntimeError:
+                        kba_client.close()
+                    except KbaRuntimeError:
                         pass
-                    self._kia_runtime_client = None
-                    self._kia_runtime_unavailable = True
-                    if self._kia_memory_store is not None:
-                        self._kia_memory_store.close()
-                        self._kia_memory_store = None
+                    self._kba_runtime_client = None
+                    self._kba_runtime_unavailable = True
+                    if self._kba_memory_store is not None:
+                        self._kba_memory_store.close()
+                        self._kba_memory_store = None
                 cognitive_task = asyncio.run(
                     analyze_request(
                         text,
@@ -1127,16 +1127,16 @@ class MainWindow(QMainWindow):
                 validation_report["status"],
                 {"scope": "deterministic_response"},
             )
-            if self._kia_runtime_client is not None:
+            if self._kba_runtime_client is not None:
                 try:
                     record_validated_deterministic_feedback(
-                        self._kia_runtime_client,
+                        self._kba_runtime_client,
                         cognitive_task,
                     )
-                except KiaRuntimeError as exc:
+                except KbaRuntimeError as exc:
                     cognitive_task.execution_trace.append(
                         {
-                            "stage": "kia_neuroplasticity",
+                            "stage": "kba_neuroplasticity",
                             "status": "feedback_rejected",
                             "details": {"error": str(exc)},
                         }
@@ -1333,7 +1333,7 @@ class MainWindow(QMainWindow):
 
     def _continue_send_message(self, text: str, cognitive_task: CognitiveTask) -> None:
         try:
-            model = self._kia_model_for_task(cognitive_task) or self._resolve_model()
+            model = self._kba_model_for_task(cognitive_task) or self._resolve_model()
         except ModelSelectionError as exc:
             cognitive_task.status = TaskStatus.FAILED
             cognitive_task.result = {
@@ -1898,13 +1898,13 @@ class MainWindow(QMainWindow):
                 )
                 event.ignore()
                 return
-        if self._kia_runtime_client is not None:
+        if self._kba_runtime_client is not None:
             try:
-                self._kia_runtime_client.close()
-            except KiaRuntimeError:
+                self._kba_runtime_client.close()
+            except KbaRuntimeError:
                 pass
-            self._kia_runtime_client = None
-        if self._kia_memory_store is not None:
-            self._kia_memory_store.close()
-            self._kia_memory_store = None
+            self._kba_runtime_client = None
+        if self._kba_memory_store is not None:
+            self._kba_memory_store.close()
+            self._kba_memory_store = None
         event.accept()
