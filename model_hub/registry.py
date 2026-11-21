@@ -212,7 +212,7 @@ class ModelRegistry:
                     else existing.capabilities
                 ),
                 modalities=(
-                    ("text", "image") if model.capabilities.vision else ("text",)
+                    (("text", "image") if model.capabilities.vision else ("text",))
                     if existing.metadata_source == "runtime_discovery"
                     else existing.modalities
                 ),
