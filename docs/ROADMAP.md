@@ -94,7 +94,7 @@ As fases são entregas progressivas. Uma funcionalidade só é considerada concl
 - [ ] Adicionar orçamento de contexto configurável e recomendações por tarefa/capacidade com métricas de qualidade.
 - [ ] Implementar telemetria contínua, leases, concorrência e políticas de carregamento/descarregamento.
 - [x] Expor snapshot de residência Ollama via `/api/ps` no contrato Engine Adapter (`RunningModelSnapshot`), preservando digest, tamanho, VRAM, contexto e expiração reportados.
-- [ ] Reconciliar snapshots com artefatos instalados por digest; divergência/ausência deve manter o caminho conservador.
+- [x] Reconciliar snapshots com artefatos instalados por referência exata + digest; estados ausente/divergente/ambíguo permanecem inconclusivos e não reduzem a estimativa.
 - [ ] Separar contabilização de carregamento frio, residência persistente e custo incremental por tarefa, evitando dupla contagem dos pesos em modelos já residentes.
 - [ ] Validar seleção quente/fria no Arch Linux, comparando estimativas com RAM/VRAM observadas e confirmando o comportamento de unload/keep-alive.
 
