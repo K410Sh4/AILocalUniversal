@@ -1,6 +1,6 @@
 import pytest
 
-from engines.base import EngineCapabilities, ModelInfo
+from engines.base import EngineCapabilities, ModelInfo, RunningModelSnapshot
 from engines.model_selector import ModelSelectionError
 from model_hub.contracts import ModelArtifact, ModelRecord
 from model_hub.hardware import AcceleratorInfo, HardwareProfile
@@ -164,3 +164,93 @@ def test_selector_ignores_unverified_and_embedding_only_models() -> None:
 
     with pytest.raises(ModelSelectionError, match="Nenhum modelo de chat verificado"):
         AdaptiveModelSelector().select(models, {}, _hardware())
+
+
+
+def test_selector_prefers_confirmed_resident_runner_over_cold_load() -> None:
+    model = ModelInfo("resident-model")
+    record = ModelRecord(
+        record_id="ollama:resident-model",
+        display_name="Resident model",
+        family="test",
+        category="general",
+        parameter_count=80_000_000_000,
+        context_window=32_768,
+        artifacts=(
+            ModelArtifact(
+                runtime="ollama",
+                reference="resident-model",
+                installed=True,
+                digest="sha256:resident",
+                quantization="Q4_K_M",
+            ),
+        ),
+    )
+    running = RunningModelSnapshot(
+        name="resident-model",
+        model="resident-model",
+        digest="sha256:resident",
+        size_bytes=50 * 1024**3,
+        size_vram_bytes=30 * 1024**3,
+        context_length=8192,
+    )
+
+    result = AdaptiveModelSelector().select(
+        [model],
+        {record.record_id: record},
+        _hardware(),
+        context_tokens=4096,
+        running_models=[running],
+    )
+
+    assert result.model.name == "resident-model"
+    assert result.strategy == "resident_reuse"
+    assert result.estimate.placement.value == "resident"
+    assert result.estimate.total_required_bytes == 0
+    assert result.residency_assessment is not None
+    assert result.residency_assessment.incremental_runner_bytes == 0
+
+
+def test_selector_uses_cold_estimate_when_resident_context_is_too_small() -> None:
+    model = ModelInfo("qwen3:4b")
+    record = _record(
+        "qwen3:4b",
+        parameters=4_000_000_000,
+        quantization="Q4_K_M",
+        kv_bytes_per_token=147_456,
+    )
+    record = ModelRecord(
+        **{
+            **record.to_dict(),
+            "artifacts": (
+                ModelArtifact(
+                    runtime="ollama",
+                    reference="qwen3:4b",
+                    installed=True,
+                    digest="sha256:qwen",
+                    quantization="Q4_K_M",
+                ),
+            ),
+        }
+    )
+    running = RunningModelSnapshot(
+        name="qwen3:4b",
+        model="qwen3:4b",
+        digest="sha256:qwen",
+        size_bytes=5 * 1024**3,
+        size_vram_bytes=3 * 1024**3,
+        context_length=2048,
+    )
+
+    result = AdaptiveModelSelector().select(
+        [model],
+        {record.record_id: record},
+        _hardware(),
+        context_tokens=4096,
+        running_models=[running],
+    )
+
+    assert result.strategy == "adaptive"
+    assert result.estimate.placement.value == "gpu"
+    assert result.residency_assessment is not None
+    assert result.residency_assessment.status.value == "context_requires_reload"
