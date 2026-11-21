@@ -202,7 +202,7 @@ Ainda exige validação manual no Arch Linux. O controle de threads é aproximad
 
 ## Fase 5.0 — Neural Elastic Execution Simulator
 
-Implementação inicial na branch \`feature/neural-elastic-simulator-v1\`:
+Implementação inicial na branch `feature/neural-elastic-simulator-v1`:
 - contrato versionado por estrutura para traces JSONL: token, ID do especialista, tamanho em bytes e ordem de acesso;
 - cache limitado em bytes, com suporte a especialistas de tamanhos diferentes nas políticas online;
 - baselines LRU, LFU e política estatística baseada em frequência exponencialmente decaída e recência;
@@ -210,4 +210,4 @@ Implementação inicial na branch \`feature/neural-elastic-simulator-v1\`:
 - traces sintéticos reproduzíveis (stationary, uniform e phased), CLI e saída JSON;
 - métricas de hits, misses, bytes lidos simulados, bytes por token, evictions, bypass e ocupação.
 
-**Limites:** ainda não há trace real de IDs de especialistas capturado do Qwen/Ollama. A API de chat não expõe decisões do roteador MoE. O simulador não mede SSD, não executa kernels, não modela prefetch nem prova ganho de tokens/s. A predição neural e a validação em máquinas de 4 GB permanecem futuras. Consulte \`docs/NEURAL_ELASTIC_EXECUTION.md\`.
+**Limites:** ainda não há trace real de IDs de especialistas capturado do Qwen/Ollama. A API de chat não expõe decisões do roteador MoE. O simulador não mede SSD, não executa kernels, não modela prefetch nem prova ganho de tokens/s. A predição neural e a validação em máquinas de 4 GB permanecem futuras. Consulte `docs/NEURAL_ELASTIC_EXECUTION.md`.
