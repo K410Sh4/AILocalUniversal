@@ -6,7 +6,7 @@
 - Entrada: uma mensagem JSON UTF-8 por linha (newline-delimited JSON).
 - Saída: exatamente uma resposta JSON por solicitação, também delimitada por newline.
 - O stdout é reservado ao protocolo. Logs/debug devem usar stderr.
-- Limite de entrada por mensagem: 4 MiB.
+- Limite de entrada por mensagem: 4 MiB; o binário lê em buffer limitado, descarta o restante de linhas excedentes e recupera o enquadramento na próxima linha.
 - A aplicação inicia o processo sem shell, mantém stdin/stdout abertos e encerra com `shutdown` ou EOF.
 - Cada mensagem exige `protocol_version=2` e um `request_id` ASCII estável.
 - O host não persiste payloads e não registra prompts nem documentos.
