@@ -1,5 +1,7 @@
 """Registro extensível de áreas cognitivas e taxonomia NAPA inicial."""
 
+# ruff: noqa: I001
+
 from __future__ import annotations
 
 from collections.abc import Iterable
