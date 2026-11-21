@@ -22,6 +22,7 @@ on:
       - feature/neuralstem-regional-lineage-v0.2
       - feature/neuraldna-environmental-assessment-v0.3
       - feature/neuraldna-environmental-integration-plan-v0.4
+      - feature/neuraldna-anticipatory-benchmark-v0.5
   pull_request:
     branches:
       - main
