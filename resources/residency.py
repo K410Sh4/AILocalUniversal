@@ -7,6 +7,7 @@ SPDX-License-Identifier: LicenseRef-AILocal-Universal-Proprietary
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import UTC, datetime
 from enum import StrEnum
 
 from engines.base import RunningModelSnapshot
@@ -33,6 +34,9 @@ class ResidentCapacityStatus(StrEnum):
     CONTEXT_REQUIRES_RELOAD = "context_requires_reload"
     MODEL_CONTEXT_EXCEEDED = "model_context_exceeded"
     CONCURRENCY_UNVERIFIED = "concurrency_unverified"
+    SNAPSHOT_STALE = "snapshot_stale"
+    EXPIRY_UNVERIFIED = "expiry_unverified"
+    RESIDENCY_EXPIRED = "residency_expired"
 
 
 @dataclass(frozen=True, slots=True)
@@ -156,6 +160,18 @@ def reconcile_model_residency(
     )
 
 
+def _parse_aware_timestamp(value: str | None) -> datetime | None:
+    if not isinstance(value, str) or not value.strip():
+        return None
+    try:
+        parsed = datetime.fromisoformat(value.strip().replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    if parsed.tzinfo is None or parsed.utcoffset() is None:
+        return None
+    return parsed.astimezone(UTC)
+
+
 def assess_resident_capacity(
     record: ModelRecord,
     snapshots: list[RunningModelSnapshot],
@@ -163,6 +179,7 @@ def assess_resident_capacity(
     context_tokens: int,
     concurrent_requests: int = 1,
     runtime: str = "ollama",
+    now: datetime | None = None,
 ) -> ResidentCapacityAssessment:
     """Avalia se um runner residente pode atender uma tarefa sem novo load.
 
@@ -178,6 +195,11 @@ def assess_resident_capacity(
     ):
         if isinstance(value, bool) or not isinstance(value, int) or value <= 0:
             raise ValueError(f"{name} precisa ser um inteiro positivo.")
+
+    current_time = now or datetime.now(UTC)
+    if current_time.tzinfo is None or current_time.utcoffset() is None:
+        raise ValueError("now precisa conter fuso horário.")
+    current_time = current_time.astimezone(UTC)
 
     residency = reconcile_model_residency(record, snapshots, runtime=runtime)
 
@@ -237,6 +259,30 @@ def assess_resident_capacity(
         return result(
             ResidentCapacityStatus.TELEMETRY_INCOMPLETE,
             "Tamanho total, VRAM ou capacidade de contexto do runner é ausente ou inconsistente.",
+            snapshot=snapshot,
+        )
+
+    observed_at = _parse_aware_timestamp(snapshot.observed_at)
+    expires_at = _parse_aware_timestamp(snapshot.expires_at)
+    if observed_at is None or expires_at is None:
+        return result(
+            ResidentCapacityStatus.EXPIRY_UNVERIFIED,
+            "Snapshot sem horário de observação ou expiração confiável; usar estimativa fria.",
+            snapshot=snapshot,
+        )
+
+    snapshot_age = (current_time - observed_at).total_seconds()
+    if snapshot_age < -2 or snapshot_age > 30:
+        return result(
+            ResidentCapacityStatus.SNAPSHOT_STALE,
+            "Snapshot está fora da janela de atualidade de 30 segundos; atualizar /api/ps.",
+            snapshot=snapshot,
+        )
+
+    if (expires_at - current_time).total_seconds() <= 2:
+        return result(
+            ResidentCapacityStatus.RESIDENCY_EXPIRED,
+            "A residência expirou ou está próxima da expiração; atualizar /api/ps.",
             snapshot=snapshot,
         )
 
