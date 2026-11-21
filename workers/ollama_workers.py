@@ -64,7 +64,21 @@ class OllamaStatusWorker(_AsyncWorker):
     async def execute(self) -> None:
         healthy = await self.engine.health()
         models = await self.engine.list_models() if healthy else []
-        self.completed.emit({"healthy": healthy, "models": models})
+        running_models = []
+        residency_error = None
+        if healthy:
+            try:
+                running_models = await self.engine.list_running_models()
+            except Exception as exc:
+                residency_error = str(exc)
+        self.completed.emit(
+            {
+                "healthy": healthy,
+                "models": models,
+                "running_models": running_models,
+                "residency_error": residency_error,
+            }
+        )
 
 
 class OllamaChatWorker(_AsyncWorker):
