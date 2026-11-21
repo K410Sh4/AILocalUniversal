@@ -4,7 +4,7 @@
 **License identifier:** `LicenseRef-AILocal-Universal-Proprietary`  
 **License text:** [LICENSE](LICENSE)
 
-The proprietary notice covers original project materials authored for AILocal Universal, including the original application and cognitive components, NeuralMap implementation and documentation, NeuralPlugin architecture, NeuralInjector/NIP specifications and implementations, package schemas, NeuralDNA heredity/development and environmental adaptation research implementations, original benchmarks, workflows, diagrams, and project documentation, only to the extent those materials are present in this repository and owned by the rights holder.
+The proprietary notice covers original project materials authored for AILocal Universal, including the original application and cognitive components, NeuralMap implementation and documentation, NeuralPlugin architecture, NeuralInjector/NIP specifications and implementations, package schemas, Brain Artificial (BA) original developmental and adaptive architecture, K.IA as a separate coordination runtime, NeuralDNA heredity/development, environmental adaptation and spatial communication research implementations, original benchmarks, workflows, diagrams, and project documentation, only to the extent those materials are present in this repository and owned by the rights holder.
 
 It does not cover third-party software, frameworks, tools, model weights, adapters, datasets, user content, or plugin content created by other parties. Those remain under their respective licenses and terms. See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) and [docs/LICENSING.md](docs/LICENSING.md).
 
