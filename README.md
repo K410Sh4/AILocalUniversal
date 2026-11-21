@@ -178,14 +178,16 @@ Armazenamento em disco não equivale a memória de GPU: latência, largura de ba
 
 ### 3.5. Plasticidade
 
-A evolução deverá distinguir:
-- Plasticidade de prioridades de roteamento.
-- Plasticidade de conexões entre componentes.
-- Aprendizado de modelos roteadores.
-- Adaptadores paramétricos, como LoRA/DoRA.
-- Transformações estruturais de modelos.
+A plasticidade própria da BA deverá distinguir:
+- **Plasticidade estrutural:** formação, fortalecimento, enfraquecimento e remoção controlada de conexões.
+- **Regulação funcional:** alteração reversível da atividade e da expressão de capacidades conforme o nicho.
+- **Diferenciação:** especialização progressiva de regiões e unidades conforme desenvolvimento e demanda.
+- **Homeostase:** manutenção de estabilidade interna, limites de recursos e equilíbrio populacional.
+- **Herança e evolução:** transmissão de características apenas por ciclos hereditários explicitamente definidos, com proveniência e avaliação de descendência.
 
-Cada mecanismo deverá possuir avaliação, limites, versionamento e possibilidade de rollback.
+Treinamento de LLMs, LoRA/DoRA e transformação de pesos pertencem ao ecossistema de modelos externos do AILU; não definem a plasticidade nem a evolução próprias da BA.
+
+Cada mecanismo deverá possuir avaliação, limites, versionamento, rastreabilidade e possibilidade de rollback.
 
 ---
 
