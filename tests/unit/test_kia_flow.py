@@ -5,9 +5,9 @@ from types import SimpleNamespace
 import pytest
 
 from core.cognitive_pipeline import analyze_request
+from core.cognitive_task import CognitiveTask
 from core.deterministic_tools import DeterministicToolRegistry
 from core.validation_layer import ValidationLayer
-from core.cognitive_task import CognitiveTask
 from kia_bridge.flow import (
     KiaExecutionCoordinator,
     KiaFlowError,
@@ -324,7 +324,6 @@ async def test_kia_planner_does_not_publish_knowledge_provider_when_disabled(tmp
 
     assert decision.memory_selections() == []
     assert "retrieval" not in client.request["required_capabilities"]
-
 
 
 @pytest.mark.parametrize(
