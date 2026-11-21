@@ -75,6 +75,9 @@ impl SignalEcology {
                 || !nonnegative_finite(region.production_rate)
                 || !nonnegative_finite(region.uptake_rate)
                 || !nonnegative_finite(region.degradation_rate)
+                || !(region.uptake_rate + region.degradation_rate).is_finite()
+                || !(region.volume * region.concentration).is_finite()
+                || !(region.production_rate * region.volume * dt).is_finite()
             {
                 return Err(SignalError::InvalidValue("region_parameters"));
             }
@@ -83,7 +86,9 @@ impl SignalEcology {
         let mut pairs = std::collections::BTreeSet::new();
         let mut loads = vec![0.0_f64; self.regions.len()];
         for edge in &self.edges {
-            if !nonnegative_finite(edge.conductance) {
+            if !nonnegative_finite(edge.conductance)
+                || !(edge.conductance * dt).is_finite()
+            {
                 return Err(SignalError::InvalidValue("conductance"));
             }
             let a = self
@@ -117,6 +122,9 @@ impl SignalEcology {
     pub fn step(&mut self, dt: f64) -> Result<SignalStepReport, SignalError> {
         self.validate(dt)?;
         let initial_mass = self.total_mass();
+        if !initial_mass.is_finite() {
+            return Err(SignalError::NumericalFailure);
+        }
         let mut delta_amount = vec![0.0; self.regions.len()];
 
         for edge in &self.edges {
@@ -146,6 +154,9 @@ impl SignalEcology {
             let uptake = region.uptake_rate;
             let degradation = region.degradation_rate;
             let total_rate = uptake + degradation;
+            if !(total_rate * dt).is_finite() {
+                return Err(SignalError::NumericalFailure);
+            }
             produced_mass += source * region.volume * dt;
 
             if total_rate == 0.0 {
@@ -176,6 +187,13 @@ impl SignalEcology {
         }
 
         let final_mass = self.total_mass();
+        if !produced_mass.is_finite()
+            || !uptake_mass.is_finite()
+            || !degraded_mass.is_finite()
+            || !final_mass.is_finite()
+        {
+            return Err(SignalError::NumericalFailure);
+        }
         let residual =
             initial_mass + produced_mass - uptake_mass - degraded_mass - final_mass;
         if !residual.is_finite() {
@@ -375,6 +393,34 @@ mod tests {
             sensitivity: 1.0,
         };
         assert_eq!(receptor.response(0.0).unwrap(), 0.0);
+    }
+
+    #[test]
+    fn transport_conserves_amount_across_spatial_sizes_and_topologies() {
+        for count in [1_usize, 2, 4, 8, 16] {
+            let regions = (0..count)
+                .map(|index| {
+                    region(
+                        index as u32,
+                        0.5 + index as f64 * 0.1,
+                        (index % 3) as f64,
+                    )
+                })
+                .collect::<Vec<_>>();
+            let mut edges = Vec::new();
+            for index in 1..count {
+                edges.push(SignalEdge {
+                    a: 0,
+                    b: index as u32,
+                    conductance: 0.001,
+                });
+            }
+            let mut ecology = SignalEcology { regions, edges };
+            let before = ecology.total_mass();
+            ecology.step(0.1).unwrap();
+            assert!((ecology.total_mass() - before).abs() < 1e-10);
+            assert!(ecology.regions.iter().all(|r| r.concentration >= 0.0));
+        }
     }
 
     #[test]
