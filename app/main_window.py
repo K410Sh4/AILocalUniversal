@@ -392,9 +392,15 @@ class MainWindow(QMainWindow):
                             variant.reference.casefold() in installed_folded
                             or bool(previous and previous.installed)
                         ),
-                        size_bytes=variant.size_bytes,
+                        size_bytes=(
+                            previous.size_bytes
+                            if previous and previous.installed and previous.size_bytes is not None
+                            else variant.size_bytes
+                        ),
                         digest=previous.digest if previous else None,
-                        quantization=variant.quantization,
+                        quantization=variant.quantization or (
+                            previous.quantization if previous else None
+                        ),
                     )
                 )
                 self.model_hub_registry.upsert(
@@ -405,9 +411,22 @@ class MainWindow(QMainWindow):
                         category=entry.categories[0],
                         capabilities=entry.capabilities,
                         modalities=entry.modalities,
-                        parameter_count=entry.parameter_count,
-                        active_parameter_count=entry.active_parameter_count,
-                        context_window=entry.context_window,
+                        architecture=existing.architecture if existing else None,
+                        parameter_count=(
+                            entry.parameter_count
+                            if entry.parameter_count is not None
+                            else existing.parameter_count if existing else None
+                        ),
+                        active_parameter_count=(
+                            entry.active_parameter_count
+                            if entry.active_parameter_count is not None
+                            else existing.active_parameter_count if existing else None
+                        ),
+                        context_window=(
+                            entry.context_window
+                            if entry.context_window is not None
+                            else existing.context_window if existing else None
+                        ),
                         license_name=entry.license_name,
                         license_url=entry.license_url,
                         license_verified=entry.license_verified,
@@ -415,6 +434,9 @@ class MainWindow(QMainWindow):
                         publisher=entry.publisher,
                         metadata_source="catalog_import",
                         artifacts=tuple(artifacts),
+                        kv_cache_bytes_per_token=(
+                            existing.kv_cache_bytes_per_token if existing else None
+                        ),
                     )
                 )
 
