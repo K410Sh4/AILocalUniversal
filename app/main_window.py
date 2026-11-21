@@ -926,7 +926,12 @@ class MainWindow(QMainWindow):
         kia_client = self._ensure_kia_runtime()
         try:
             cognitive_task = asyncio.run(
-                analyze_request(text, execute_deterministic=kia_client is None)
+                analyze_request(
+                    text,
+                    execute_deterministic=(
+                        kia_client is None and not self.config.knowledge_enabled
+                    ),
+                )
             )
         except InputValidationError as exc:
             QMessageBox.information(self, "Entrada inválida", str(exc))
@@ -969,7 +974,12 @@ class MainWindow(QMainWindow):
                     if self._kia_memory_store is not None:
                         self._kia_memory_store.close()
                         self._kia_memory_store = None
-                cognitive_task = asyncio.run(analyze_request(text))
+                cognitive_task = asyncio.run(
+                    analyze_request(
+                        text,
+                        execute_deterministic=not self.config.knowledge_enabled,
+                    )
+                )
 
         self.last_cognitive_task = cognitive_task
         self.cognitive_view.set_task(cognitive_task)

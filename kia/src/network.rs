@@ -263,6 +263,59 @@ impl AdaptiveCognitiveNetwork {
         Ok(())
     }
 
+    /// Preserva pesos operacionais e contadores ao sincronizar um novo snapshot.
+    ///
+    /// Somente conexões com a mesma identidade tipada e ainda válidas no novo grafo
+    /// são transportadas. Assim, replace_state não zera a plasticidade a cada turno.
+    pub fn carry_learning_from(&mut self, previous: &Self) -> Result<(), NetworkError> {
+        previous.validate()?;
+        let structure_changed = self.capabilities.keys().ne(previous.capabilities.keys())
+            || self.components.keys().ne(previous.components.keys())
+            || self.connections.len() != previous.connections.len()
+            || self.connections.iter().any(|connection| {
+                !previous.connections.iter().any(|old| {
+                    old.from == connection.from
+                        && old.to == connection.to
+                        && old.kind == connection.kind
+                })
+            });
+
+        for connection in &mut self.connections {
+            if let Some(old) = previous.connections.iter().find(|old| {
+                old.from == connection.from
+                    && old.to == connection.to
+                    && old.kind == connection.kind
+            }) {
+                connection.weight = old.weight;
+                connection.observations = old.observations;
+                connection.successes = old.successes;
+            }
+        }
+
+        self.feedback_history = previous
+            .feedback_history
+            .iter()
+            .filter(|feedback| {
+                self.capabilities.contains_key(&feedback.capability_id)
+                    && self
+                        .components
+                        .get(&feedback.component_id)
+                        .is_some_and(|component| {
+                            component
+                                .supported_capabilities
+                                .contains(&feedback.capability_id)
+                        })
+            })
+            .cloned()
+            .rev()
+            .take(4096)
+            .collect::<Vec<_>>();
+        self.feedback_history.reverse();
+
+        self.version = self.version.max(previous.version) + u64::from(structure_changed);
+        self.validate()
+    }
+
     pub fn support_weight(&self, capability_id: &CapabilityId, component_id: &ComponentId) -> f32 {
         self.connections
             .iter()

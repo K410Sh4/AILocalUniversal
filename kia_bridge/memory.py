@@ -138,7 +138,11 @@ class KiaMemoryStore:
             raise
 
     @staticmethod
-    def _validate_network(network: dict[str, Any]) -> int:
+    def _validate_network(
+        network: dict[str, Any],
+        *,
+        allow_free_text_notes: bool = False,
+    ) -> int:
         if not isinstance(network, dict):
             raise KiaMemoryError("Snapshot da rede precisa ser um objeto.")
         required = ("capabilities", "components", "connections", "feedback_history", "version")
@@ -185,7 +189,10 @@ class KiaMemoryStore:
         for feedback in network["feedback_history"]:
             if not isinstance(feedback, dict):
                 raise KiaMemoryError("Registro de feedback persistido precisa ser objeto.")
-            if feedback.get("notes") not in (None, ""):
+            if (
+                feedback.get("notes") not in (None, "")
+                and not allow_free_text_notes
+            ):
                 raise KiaMemoryError("Notas livres não podem ser persistidas na memória cognitiva.")
         return version
 
@@ -230,6 +237,7 @@ class KiaMemoryStore:
             raise ValueError("event_type de memória não reconhecido.")
         # Remove notas livres antes da validação e da serialização; pesos e
         # referências estruturadas permanecem disponíveis para restaurar a plasticidade.
+        self._validate_network(network, allow_free_text_notes=True)
         persisted_network = json.loads(_canonical_json(network))
         for feedback in persisted_network["feedback_history"]:
             feedback["notes"] = None
