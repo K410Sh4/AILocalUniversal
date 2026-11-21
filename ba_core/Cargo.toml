@@ -1,0 +1,14 @@
+# Copyright © 2026 K410Sh4. All rights reserved.
+# SPDX-License-Identifier: LicenseRef-AILocal-Universal-Proprietary
+
+[package]
+name = "ba-core"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.75"
+description = "Deterministic developmental substrate experiments for the Brain Artificial (BA)"
+license = "LicenseRef-AILocal-Universal-Proprietary"
+
+[lib]
+name = "ba_core"
+path = "src/lib.rs"
