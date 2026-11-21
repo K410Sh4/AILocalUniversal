@@ -1,5 +1,5 @@
 from workers.neuralmap_worker import NeuralMapWorker
-from workflows.graph import GraphNode, WorkflowGraph
+from workflows.graph import WorkflowGraph
 from workflows.runtime import GraphRuntime, HandlerRegistry
 
 
