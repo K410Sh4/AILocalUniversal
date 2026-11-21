@@ -240,6 +240,7 @@ def test_hardware_bridge_does_not_infer_gpu_compute_support_from_device_presence
         cpu_logical_cores=8,
         ram_total_bytes=8_000,
         ram_available_bytes=4_000,
+        disk_free_bytes=1_000,
         accelerators=(
             AcceleratorInfo(
                 vendor="AMD",
