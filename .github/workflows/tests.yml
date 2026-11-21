@@ -18,6 +18,10 @@ on:
       - feature/kia-persistent-semantic-memory-v0.4
       - feature/kia-execution-safety-v0.5
       - integration/unified-architecture-v1
+      - feature/neuraldna-development-lab-v0.1
+      - feature/neuralstem-regional-lineage-v0.2
+      - feature/neuraldna-environmental-assessment-v0.3
+      - feature/neuraldna-environmental-integration-plan-v0.4
   pull_request:
     branches:
       - main
@@ -34,6 +38,10 @@ on:
       - feature/kia-acca-vertical-flow-v0.3
       - feature/kia-persistent-semantic-memory-v0.4
       - feature/kia-execution-safety-v0.5
+      - feature/neuraldna-development-lab-v0.1
+      - feature/neuralstem-regional-lineage-v0.2
+      - feature/neuraldna-environmental-assessment-v0.3
+      - feature/neuraldna-environmental-integration-plan-v0.4
 
 jobs:
   unit-tests:
