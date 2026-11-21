@@ -3,6 +3,7 @@ name: Tests
 on:
   push:
     branches:
+      - feature/ba-core-signal-ecology-v0.3
       - feature/ba-core-benchmark-matrix-v0.2
       - main
       - bootstrap/project-structure
@@ -23,6 +24,7 @@ on:
     branches:
       - feature/ba-developmental-substrate-contracts-v0.1
       - feature/ba-core-spatial-adaptation-v0.1
+      - feature/ba-core-benchmark-matrix-v0.2
       - integration/unified-architecture-v1
       - main
       - bootstrap/project-structure
