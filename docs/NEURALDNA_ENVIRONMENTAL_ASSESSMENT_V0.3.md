@@ -49,6 +49,34 @@ A local independent mathematical prototype checked:
 
 The committed Python test file defines 16 collected test cases. The repository CI for this branch has not yet run; therefore these tests are not reported as passed.
 
+
+## Synthetic multi-environment experiment
+
+A reproducible benchmark script is included at `experiments/neuraldna_reaction_norm_sweep.py`. The exploratory run used 100 seeds × 1,000 steps for each scenario, with three environmental states and a simple synthetic fitness function. It is a mechanism test, not a biological or cognitive benchmark.
+
+| Scenario | Fixed baseline | Fixed plasticity | Fixed hedge | Cue-assessed adaptive |
+|---|---:|---:|---:|---:|
+| Stable, reliable cues | 0.6200 | 0.9750 | 0.7837 | 0.9237 |
+| Fast change, reliable cues | 0.6200 | 0.9750 | 0.7837 | 0.9070 |
+| Fast change, noisy cues | 0.6200 | 0.3112 | 0.5007 | 0.6056 |
+| Stable, noisy cues | 0.6200 | 0.3110 | 0.5007 | 0.5835 |
+| Fast change, adversarial cues | 0.6200 | 0.2134 | 0.4319 | 0.5997 |
+
+Interpretation:
+- When cues are reliable, direct plasticity can win because the cue accurately identifies the useful phenotype; the adaptive strategy pays a cost for retaining alternatives and learning cue reliability.
+- When cues are noisy or misleading, fixed plasticity collapses in this toy environment. Cue assessment plus a diversity reserve substantially reduces the damage and approaches the fixed baseline.
+- The adaptive strategy does not dominate every scenario. This is desirable evidence against a universal fixed policy: the correct balance depends on cue reliability, volatility and the costs of plasticity/diversity.
+- The adaptive strategy is slightly below the fixed baseline in noisy scenarios because the prototype retains nonzero base plasticity and incurs explicit costs. These parameters must be evolved/calibrated, not hand-tuned into a claimed win.
+
+Assumptions and limitations:
+- The environment has only three equally likely states; the switching process is deliberately simple.
+- Cues predict the current state and the simulator reveals the realized state after each step.
+- The generalist fitness (0.62), specialist match (1.0), mismatch (0.15), plasticity cost (2.5%) and diversity cost (1.5%) are synthetic constants.
+- The benchmark does not yet include NeuralStem development, genotype reproduction, recombination, mutations, multi-region interactions, model quality, real hardware costs or task distributions.
+- Reported values are geometric-mean fitness over time, averaged across seeds; they are not probabilities or measured performance of K.IA.
+
+This experiment supports proceeding to an integrated multi-environment benchmark, but does not justify integrating the reaction norm into BA before broader validation.
+
 ## Limits
 
 - Cue calibration is currently one tracker per cue; persistence, cue registry and source identity are not implemented.
