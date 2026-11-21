@@ -37,7 +37,7 @@ Ambiente local isolado, Python 3.11+:
 | Rejeição de orçamento inválido | aprovado |
 | Conservação da população | aprovado |
 
-Resultado: **28 testes/casos aprovados**. compileall aprovado. Ruff não estava instalado no ambiente de prototipagem; lint não foi declarado como aprovado.
+Resultado: **14 testes/casos aprovados** no arquivo desta branch. compileall aprovado. Uma varredura adicional de 243 combinações de limiar, sensibilidade à atividade, atividade do nicho, orçamento e custo unitário preservou conservação da população e o limite de recursos em todos os casos. Ruff não estava instalado no ambiente de prototipagem; lint não foi declarado como aprovado.
 
 ## Interpretação e limites
 
