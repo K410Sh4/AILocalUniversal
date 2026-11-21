@@ -26,7 +26,7 @@ DEFAULT_MODEL_AREA_MAP: dict[str, tuple[str, ...]] = {
 
 
 def _component_id(record_id: str, runtime: str, reference: str) -> str:
-    material = f"{record_id}\0{runtime}\0{reference}".encode("utf-8")
+    material = f"{record_id}\0{runtime}\0{reference}".encode()
     return "model-" + hashlib.sha256(material).hexdigest()[:24]
 
 

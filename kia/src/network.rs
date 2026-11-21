@@ -248,7 +248,8 @@ impl AdaptiveCognitiveNetwork {
         for feedback in &self.feedback_history {
             let component = self.components.get(&feedback.component_id);
             let component_supports_capability = component.is_some_and(|item| {
-                item.supported_capabilities.contains(&feedback.capability_id)
+                item.supported_capabilities
+                    .contains(&feedback.capability_id)
             });
             if !self.capabilities.contains_key(&feedback.capability_id)
                 || !component_supports_capability

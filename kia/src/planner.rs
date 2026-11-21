@@ -187,7 +187,6 @@ where
     })
 }
 
-
 /// Planeja usando IDs de executores conhecidos pelo processo da aplicação.
 pub fn plan_with_executor_ids(
     network: &AdaptiveCognitiveNetwork,

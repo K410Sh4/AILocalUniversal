@@ -61,8 +61,12 @@ pub struct HostRequest {
 #[serde(tag = "type", content = "payload", rename_all = "snake_case")]
 pub enum HostCommand {
     Health,
-    ReplaceState { state: HostState },
-    Plan { request: CognitiveRequest },
+    ReplaceState {
+        state: HostState,
+    },
+    Plan {
+        request: CognitiveRequest,
+    },
     RecordFeedback {
         feedback: CognitiveFeedback,
         learning_rate: f32,
@@ -183,11 +187,7 @@ impl RuntimeHost {
         self.dispatch(request.request_id, request.command)
     }
 
-    fn dispatch(
-        &mut self,
-        request_id: String,
-        command: HostCommand,
-    ) -> (HostResponse, bool) {
+    fn dispatch(&mut self, request_id: String, command: HostCommand) -> (HostResponse, bool) {
         match command {
             HostCommand::Health => (
                 HostResponse::success(
@@ -220,7 +220,10 @@ impl RuntimeHost {
                     return (
                         HostResponse::failure(
                             request_id,
-                            HostError::new("state_not_configured", "Envie replace_state antes de plan."),
+                            HostError::new(
+                                "state_not_configured",
+                                "Envie replace_state antes de plan.",
+                            ),
                         ),
                         false,
                     );
@@ -261,7 +264,10 @@ impl RuntimeHost {
                         false,
                     );
                 };
-                match state.network.record_evaluated_feedback(feedback, learning_rate) {
+                match state
+                    .network
+                    .record_evaluated_feedback(feedback, learning_rate)
+                {
                     Ok(update) => (
                         HostResponse::success(
                             request_id,

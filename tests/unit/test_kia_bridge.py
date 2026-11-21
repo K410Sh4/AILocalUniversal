@@ -1,13 +1,10 @@
 from __future__ import annotations
 
-import json
-import os
 import sys
 from pathlib import Path
 
 import pytest
 
-from engines.base import EngineCapabilities, ModelInfo
 from kia_bridge import (
     KiaRuntimeClient,
     KiaRuntimeError,
@@ -20,7 +17,6 @@ from kia_bridge import (
 )
 from model_hub.contracts import ModelArtifact, ModelRecord
 from model_hub.hardware import AcceleratorInfo, HardwareProfile
-from model_hub.registry import ModelRegistry
 from napa import CognitiveAreaClassifier, create_default_registry
 
 
@@ -128,7 +124,6 @@ def test_napa_registry_exports_all_declared_areas_and_active_request() -> None:
 
 
 def test_model_artifact_size_never_becomes_resource_estimate() -> None:
-    registry = ModelRegistry()
     record = ModelRecord(
         record_id="ollama:qwen3-coder:4b",
         display_name="Qwen3 Coder 4B",
