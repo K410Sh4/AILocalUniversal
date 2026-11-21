@@ -132,7 +132,12 @@ def simulate_trace(
     selected_policy = _normalize_policy(policy)
 
     if selected_policy is CachePolicy.STATISTICAL:
-        if not isfinite(statistical_half_life) or statistical_half_life <= 0:
+        if (
+            isinstance(statistical_half_life, bool)
+            or not isinstance(statistical_half_life, (int, float))
+            or not isfinite(statistical_half_life)
+            or statistical_half_life <= 0
+        ):
             raise ValueError("statistical_half_life precisa ser um número positivo.")
     if (
         selected_policy is CachePolicy.BELADY_MIN
