@@ -195,7 +195,7 @@ O pacote de exemplo declara os modelos e engines do template em `examples/neural
 - Renderizar o objeto final na aba Chat com blocos de código, Markdown e imagem.
 - Validar manualmente a interface em sessão gráfica Linux/Arch e executar o fluxo com Ollama real; benchmarks e latência em hardware-alvo permanecem pendentes.
 
-**Validação automatizada:** GitHub Actions no commit `d56e37e` — Ruff aprovado e 113 testes passaram, incluindo o smoke test PySide6 offscreen.
+**Validação automatizada:** a integração desta branch é validada pelos workflows Python/Ruff e Rust do GitHub Actions; os resultados atuais devem ser consultados na PR, pois mudam a cada commit.
 
 ## Licenciamento do NeuralMap
 
