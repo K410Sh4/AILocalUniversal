@@ -1,5 +1,7 @@
 """Fluxo vertical ACCA v0.3: NAPA -> plano Rust -> executor Python -> validação."""
 
+# ruff: noqa: I001  # Absolute project imports plus relative package imports are intentional.
+
 from __future__ import annotations
 
 from dataclasses import dataclass
