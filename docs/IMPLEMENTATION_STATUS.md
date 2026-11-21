@@ -292,3 +292,19 @@ Implementação em andamento na branch feature/kia-acca-vertical-flow-v0.3:
 - Testes cobrem NAPA → planner → calculadora Python → replay de validação → feedback e planejamento de modelo com custo explícito.
 
 **Limites:** plasticidade operacional permanece em memória do processo, sem persistência após reinício. A reserva sequencial é lógica, não quota do kernel. O custo CPU usa teto de threads configurado, não FLOPs medidos. GPU/híbrido, RAG/NeSA como provedor de plano, ANN/CSR semântico, energia, terminação entre etapas, treinamento e LoRA ainda não estão integrados. CI não substitui validação real no Arch Linux.
+
+
+## K.IA 0.4 — Persistent Cognitive Memory & Semantic Integration
+
+Implementação em andamento na branch feature/kia-persistent-semantic-memory-v0.4:
+- Protocolo JSONL v2 com comandos restore_learning e export_network. O host valida snapshots antes de aceitar plasticidade anterior.
+- Cliente Python restaura a rede persistida antes do primeiro replace_state e grava um snapshot após sincronização e feedback.
+- SQLite local com tabela de snapshots e event log limitado a 10.000 eventos; save usa BEGIN IMMEDIATE, atualização transacional e SHA-256 do JSON canônico. Notas livres do feedback são removidas antes de gravar; pesos, contadores e validation_ref permanecem.
+- Diretórios próprios da K.IA recebem modo 0700; banco recebe modo 0600. O schema do banco é versionado por PRAGMA user_version.
+- Snapshot guarda somente a AdaptiveCognitiveNetwork: capacidades, componentes, conexões, pesos e feedback avaliado. Hardware, budget e executores são sempre reconstruídos.
+- Persistência rejeita chaves que indicariam prompt, input de usuário, conversa, mensagens ou conteúdo documental. Eventos armazenam apenas contagens e hash do snapshot.
+- NeuralComponent de memória memory-knowledge-library passa pelo planner Rust quando knowledge_enabled estiver ativo; o plano requer retrieval + generation. Python executa a busca existente em worker Qt e o modelo continua no Ollama.
+- KnowledgeLibrary usa fichas NeSA FTS5 como candidatos de documento e executa busca híbrida nos chunks; se o conjunto de candidatos não cobrir o limite de resultados, expande para a biblioteca inteira.
+- O worker devolve apenas IDs/posições/scores das páginas candidatas; o Cognitive Inspector recebe contagens e IDs, enquanto trechos citáveis continuam sendo chunks originais.
+
+**Limites:** snapshot local não é criptografado; permissões privadas e hash protegem acesso casual/integridade, não substituem criptografia em disco. Persistência é local e por namespace; não sincroniza entre dispositivos. O log mantém no máximo 10.000 eventos e a rede carrega até 4.096 feedbacks durante carry_learning_from. Fichas NeSA continuam sendo busca lexical FTS5, não embeddings semânticos, e seus scores não são probabilidades. O custo e a priorização do provedor Knowledge são valores iniciais explícitos, ainda não calibrados por benchmark. CI não substitui validação manual no Arch Linux.

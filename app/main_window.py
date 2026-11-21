@@ -27,6 +27,8 @@ from engines.registry import EngineRegistry
 from kia_bridge import (
     KiaExecutionCoordinator,
     KiaFlowError,
+    KiaMemoryError,
+    KiaMemoryStore,
     KiaRuntimeClient,
     KiaRuntimeError,
     KiaRuntimeUnavailable,
@@ -95,6 +97,7 @@ class MainWindow(QMainWindow):
         self.last_cognitive_task: CognitiveTask | None = None
         self.deterministic_tools = DeterministicToolRegistry()
         self._kia_runtime_client: KiaRuntimeClient | None = None
+        self._kia_memory_store: KiaMemoryStore | None = None
         self._kia_runtime_unavailable = False
 
         self.conversations = self._load_conversations()
@@ -775,8 +778,15 @@ class MainWindow(QMainWindow):
         if self._kia_runtime_unavailable:
             return None
         try:
-            self._kia_runtime_client = KiaRuntimeClient(timeout_seconds=8.0)
-        except KiaRuntimeUnavailable as exc:
+            self._kia_memory_store = KiaMemoryStore()
+            self._kia_runtime_client = KiaRuntimeClient(
+                timeout_seconds=8.0,
+                memory_store=self._kia_memory_store,
+            )
+        except (KiaRuntimeUnavailable, KiaRuntimeError, KiaMemoryError) as exc:
+            if self._kia_memory_store is not None:
+                self._kia_memory_store.close()
+                self._kia_memory_store = None
             self._kia_runtime_unavailable = True
             self.statusBar().showMessage(
                 f"K.IA indisponível; usando o roteamento anterior: {exc}",
@@ -804,7 +814,7 @@ class MainWindow(QMainWindow):
 
         napa_registry = create_default_registry()
         active_ids = set(task.cognitive_areas.get("active_areas", []))
-        needs_model = any(
+        needs_model = self.config.knowledge_enabled or any(
             area.area_id in active_ids
             and area.kind is not CognitiveAreaKind.DETERMINISTIC_TOOL
             for area in napa_registry.areas
@@ -838,14 +848,16 @@ class MainWindow(QMainWindow):
             manual_model=manual_model,
             model_references=tuple(model.name for model in self.models),
             local_engine_endpoint=self._is_local_engine_endpoint(self.config.base_url),
+            knowledge_enabled=self.config.knowledge_enabled,
         )
 
     def _apply_kia_plan(self, task: CognitiveTask, decision) -> bool:
         """Só aplica planos executáveis por adaptadores já registrados na aplicação."""
         deterministic = decision.deterministic_selections()
         models = decision.model_selections()
+        memory = decision.memory_selections()
 
-        if len(deterministic) == 1 and not models and len(decision.selections) == 1:
+        if len(deterministic) == 1 and not models and not memory and len(decision.selections) == 1:
             execute_deterministic_selection(task, decision, self.deterministic_tools)
             append_kia_plan_to_task(task, decision)
             for step in task.execution_plan:
@@ -856,9 +868,12 @@ class MainWindow(QMainWindow):
 
         if len(models) != 1:
             return False
-        if deterministic:
-            # O executor multi-etapas ainda não consome o plano Rust por subtarefa.
-            # Até essa integração existir, não executar parcialmente um plano misto.
+        if deterministic or len(memory) > 1:
+            # Não executa parcialmente planos mistos ou ambíguos.
+            return False
+        if self.config.knowledge_enabled and len(memory) != 1:
+            return False
+        if memory and not self.config.knowledge_enabled:
             return False
 
         component = models[0]["component"]
@@ -877,6 +892,17 @@ class MainWindow(QMainWindow):
                 "component_id": component.get("id"),
             }
         )
+        if memory:
+            provider = memory[0]["component"]
+            task.execution_plan.append(
+                {
+                    "step": len(task.execution_plan),
+                    "component": "kia_knowledge_dispatch",
+                    "provider": "knowledge_library",
+                    "component_id": provider.get("id"),
+                    "retrieval": provider.get("metadata", {}).get("retrieval"),
+                }
+            )
         return True
 
     @staticmethod
@@ -928,13 +954,21 @@ class MainWindow(QMainWindow):
                 ValueError,
                 KeyError,
             ) as exc:
-                if isinstance(exc, KiaRuntimeUnavailable) or getattr(kia_client, "_closed", False):
+                if (
+                    isinstance(exc, KiaRuntimeUnavailable)
+                    or getattr(kia_client, "_closed", False)
+                    or getattr(exc, "code", "")
+                    in {"memory_restore_failed", "memory_persistence_failed"}
+                ):
                     try:
                         kia_client.close()
                     except KiaRuntimeError:
                         pass
                     self._kia_runtime_client = None
                     self._kia_runtime_unavailable = True
+                    if self._kia_memory_store is not None:
+                        self._kia_memory_store.close()
+                        self._kia_memory_store = None
                 cognitive_task = asyncio.run(analyze_request(text))
 
         self.last_cognitive_task = cognitive_task
@@ -1101,6 +1135,40 @@ class MainWindow(QMainWindow):
 
             self._active_knowledge_bundle = bundle if bundle.evidence else None
             KnowledgeRuntime.attach_to_task(task, bundle)
+
+        semantic_candidates = payload.get("semantic_page_candidates", [])
+        if isinstance(semantic_candidates, list) and semantic_candidates:
+            candidate_ids = [
+                str(item["page_id"])
+                for item in semantic_candidates
+                if isinstance(item, dict) and item.get("page_id")
+            ]
+            document_ids = {
+                str(item["document_id"])
+                for item in semantic_candidates
+                if isinstance(item, dict) and item.get("document_id")
+            }
+            task.execution_plan.append(
+                {
+                    "step": len(task.execution_plan),
+                    "component": "nesa_semantic_page_index",
+                    "strategy": "progressive_document_candidates",
+                    "candidate_page_count": len(candidate_ids),
+                    "candidate_document_count": len(document_ids),
+                    "page_ids": candidate_ids,
+                }
+            )
+            task.execution_trace.append(
+                {
+                    "stage": "nesa_semantic_page_index",
+                    "status": "candidates_found",
+                    "timestamp": datetime.now(UTC).isoformat(),
+                    "details": {
+                        "candidate_page_count": len(candidate_ids),
+                        "candidate_document_count": len(document_ids),
+                    },
+                }
+            )
         self._pending_knowledge_message = message if isinstance(message, dict) else None
         warning = str(payload.get("warning") or "")
         if warning:
@@ -1616,4 +1684,7 @@ class MainWindow(QMainWindow):
             except KiaRuntimeError:
                 pass
             self._kia_runtime_client = None
+        if self._kia_memory_store is not None:
+            self._kia_memory_store.close()
+            self._kia_memory_store = None
         event.accept()

@@ -83,3 +83,15 @@ O RAG atual continua recuperando chunks lexical/vetorialmente e validando a inte
 ## Validação
 
 Os testes cobrem sumarização extrativa, candidatos lexicais, contratos de entidade opcional, preservação de seções e hashes, busca/persistência FTS5, filtros, reingestão, exclusão, integração de ingestão e resiliência à falha de embeddings. A validação operacional no Arch Linux permanece separada da CI.
+
+
+## Integração progressiva com Knowledge na K.IA 0.4
+
+Quando o RAG é habilitado, NeSA participa como primeira camada de navegação:
+1. consulta `search_semantic_pages` no FTS5;
+2. agrupa candidatos por document_id;
+3. busca chunks lexical/vetorialmente dentro dos documentos candidatos;
+4. quando a primeira camada retorna menos resultados que o limite pedido, expande a busca para todos os documentos e deduplica por chunk_id;
+5. ContextComposer cria Evidence/citações somente dos chunks originais.
+
+O worker do Chat envia ao Cognitive Inspector apenas page_id/document_id/rank/score e contagens. Resumo, conceitos e conteúdo da ficha não são inseridos automaticamente no prompt. A ficha serve para priorizar navegação, não para substituir o trecho original. Score BM25/FTS continua sendo sinal de ordenação, não probabilidade ou evidência factual.

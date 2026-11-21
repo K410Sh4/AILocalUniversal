@@ -228,3 +228,21 @@ CognitiveFeedback contém capability_id, component_id, outcome e validation_ref.
 
 ### Chat response validation
 ValidationLayer.validate_chat_response devolve presença, completude ponderada de requisitos declarados, gate para todos os requisitos obrigatórios e factual_status. Sem requisitos estruturados, completude é not_assessed. Respostas de LLM permanecem not_independently_verified.
+
+
+## K.IA 0.4 — Persisted Cognitive Network
+
+### CognitiveNetworkSnapshot
+Snapshot local versionado da AdaptiveCognitiveNetwork. Contém maps de capacidades/componentes, relações tipadas, pesos/contadores e feedback avaliado. Não inclui ResourceSnapshot, ResourceBudget, IDs de executores ativos, mensagens, prompts ou conteúdo de documentos. O hash SHA-256 é calculado sobre JSON UTF-8 canônico (chaves ordenadas, sem NaN).
+
+### CognitiveMemoryEvent
+Evento local com ID único, namespace, tipo (network_synced/feedback_applied/network_restored), versão da rede, hash e metadados agregados. O event log retém no máximo 10.000 entradas por banco/namespace. Não armazena texto livre do usuário. O campo livre notes de CognitiveFeedback é apagado (null) no snapshot persistido. Snapshot e evento de atualização são gravados na mesma transação SQLite.
+
+### RestoreLearning / ExportNetwork
+Comandos do protocolo JSONL v2. restore_learning aceita apenas AdaptiveCognitiveNetwork validada e só antes de replace_state. ExportNetwork devolve somente a rede atual, sem hardware, budget ou executores. O replace_state seguinte aplica carry_learning_from sobre conexões com mesma identidade tipada.
+
+### Knowledge Memory Provider
+NeuralComponent ID memory-knowledge-library, kind memory, capability retrieval, alvo CPU, adaptador python_knowledge_retrieval_worker. Só existe no grafo se knowledge_enabled=true. O CognitiveRequest exige retrieval e generation: o primeiro seleciona a biblioteca; o segundo mantém um modelo de linguagem para síntese. O texto da pergunta continua fora do payload Rust (somente task_id).
+
+### NeSA Candidate Page
+Candidato de navegação derivado de SemanticPageRecord e FTS5: page_id, document_id, page_index, rank e score lexical. Não é Evidence citável. A recuperação de chunks continua a autoridade para compor Evidence com hash, origem, página e offsets.

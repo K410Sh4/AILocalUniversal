@@ -278,3 +278,10 @@ O primeiro incremento ainda não roteia RAG/NeSA nem faz offload GPU/híbrido; n
 O código e os materiais originais do AILocal Universal são proprietários e reservados ao titular identificado como `K410Sh4`. Consulte [LICENSE](LICENSE), [NOTICE.md](NOTICE.md), [política de licenciamento](docs/LICENSING.md) e [registro de ativos originais](docs/PROJECT_IP_REGISTER.md).
 
 Bibliotecas, frameworks, motores, modelos, pesos, datasets e conteúdo de terceiros não são relicenciados por este projeto. Consulte [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) antes de distribuir ou integrar componentes.
+
+
+## K.IA 0.4 — Persistent Cognitive Memory & NeSA
+
+K.IA 0.4 adiciona snapshots da rede cognitiva em SQLite local, SHA-256, event log e restauração validada pelo host Rust. Recursos e executores são sempre reconstruídos a cada início; o disco preserva apenas plasticidade operacional e grafo compatível. A memória não armazena prompts, respostas ou conteúdo documental.
+
+Com o RAG habilitado, o planner inclui o provedor Knowledge/NeSA. O catálogo por página orienta a seleção inicial de documentos e a busca progressiva continua recuperando chunks originais como evidências citáveis. Veja [docs/KIA_COGNITIVE_MEMORY.md](docs/KIA_COGNITIVE_MEMORY.md).

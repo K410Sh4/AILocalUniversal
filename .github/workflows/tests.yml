@@ -15,6 +15,7 @@ on:
       - feature/kia-rust-cognitive-runtime-v0.1
       - feature/kia-runtime-host-bridge-v0.2
       - feature/kia-acca-vertical-flow-v0.3
+      - feature/kia-persistent-semantic-memory-v0.4
   pull_request:
     branches:
       - main
@@ -29,6 +30,7 @@ on:
       - feature/kia-rust-cognitive-runtime-v0.1
       - feature/kia-runtime-host-bridge-v0.2
       - feature/kia-acca-vertical-flow-v0.3
+      - feature/kia-persistent-semantic-memory-v0.4
 
 jobs:
   unit-tests:

@@ -206,12 +206,23 @@ A NeSA organiza conhecimento e recupera evidências. A NAPA decide quando consul
 - [ ] Ampliar seleção para GPU/híbrido após telemetria real de placement do backend.
 - [ ] Validar o fluxo no Arch Linux com Ollama e modelos instalados.
 
-### K.IA 0.4–0.6 — evolução planejada
-- [ ] K.IA 0.4 — Persistência versionada/event log, exportação/importação da rede e recuperação após reinício.
+### K.IA 0.4 — Persistent Cognitive Memory & Semantic Integration
+- [x] Evoluir o protocolo local para v2 com restore_learning e export_network.
+- [x] Restaurar apenas a rede cognitiva validada antes do primeiro replace_state; sempre reconstruir hardware, budgets e executores.
+- [x] Persistir snapshots e event log em SQLite com transação, SHA-256, esquema versionado e permissões privadas.
+- [x] Limitar o histórico persistido de eventos e preservar somente contagens/IDs/feedback avaliado; sem prompts, respostas ou conteúdo documental.
+- [x] Integrar Knowledge Library + NeSA como componente de memória selecionável pelo planner Rust somente quando o RAG estiver habilitado.
+- [x] Usar fichas NeSA/FTS5 como candidatos de documentos, restringir a busca inicial de chunks e expandir globalmente quando a cobertura for insuficiente.
+- [x] Manter chunks originais como evidências citáveis; fichas de página são pistas de navegação, não evidência factual substituta.
+- [x] Registrar IDs e contagens de candidatos NeSA no trace cognitivo sem copiar resumos ou conteúdo documental.
+- [x] Testar persistência/restauração, integridade de hash, permissões e seleção do provedor de memória.
+- [ ] Validar no Arch Linux o reinício do host, recuperação da plasticidade, busca NeSA progressiva e RAG no Chat.
+
+### K.IA 0.5–0.8 — evolução planejada
 - [ ] K.IA 0.5 — Adaptadores reais adicionais (llama.cpp), filas limitadas, timeout por tarefa, cancelamento e leases.
-- [ ] K.IA 0.6 — Semantic Engine com embeddings, CSR top-k/ANN, associação tipada do NeSA e expansão por incerteza.
-- [ ] K.IA 0.7 — Evidências com linhagem/dependência, Completeness Engine e Cognitive Termination integrado ao executor.
-- [ ] K.IA 0.8 — Benchmark A/B/C da ACCA, calibração dos parâmetros de relevância e avaliação de custo/qualidade.
+- [ ] K.IA 0.6 — Semantic Engine com embeddings de capacidades, CSR top-k/ANN e expansão por incerteza.
+- [ ] K.IA 0.7 — Relações tipadas do NeSA com proveniência, dependência de fontes e resolução explícita de contradições.
+- [ ] K.IA 0.8 — Cognitive Termination Controller no executor multi-etapas e benchmark A/B/C da ACCA com qualidade equivalente.
 
 ### Neural Plasticity & Development
 - [ ] Plasticity 0.2 — benchmark de rotas, shadow mode, A/B, limiares e rollback.

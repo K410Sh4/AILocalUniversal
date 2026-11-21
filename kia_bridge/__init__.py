@@ -24,10 +24,17 @@ from kia_bridge.flow import (
     execute_deterministic_selection,
     record_validated_deterministic_feedback,
 )
+from kia_bridge.memory import (
+    KiaMemoryError,
+    KiaMemoryStore,
+    default_kia_memory_path,
+)
 
 __all__ = [
     "HOST_PROTOCOL_VERSION",
     "KiaExecutionCoordinator",
+    "KiaMemoryError",
+    "KiaMemoryStore",
     "KiaFlowError",
     "KiaPlanDecision",
     "KiaRuntimeClient",
@@ -44,4 +51,5 @@ __all__ = [
     "record_validated_deterministic_feedback",
     "resource_budget_from_profile",
     "resource_snapshot_from_hardware",
+    "default_kia_memory_path",
 ]

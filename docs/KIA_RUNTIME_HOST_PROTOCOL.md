@@ -1,4 +1,4 @@
-# K.IA Runtime Host — JSONL Protocol v1
+# K.IA Runtime Host — JSONL Protocol v2
 
 ## Transporte
 
@@ -8,14 +8,14 @@
 - O stdout é reservado ao protocolo. Logs/debug devem usar stderr.
 - Limite de entrada por mensagem: 4 MiB.
 - A aplicação inicia o processo sem shell, mantém stdin/stdout abertos e encerra com `shutdown` ou EOF.
-- Cada mensagem exige `protocol_version=1` e um `request_id` ASCII estável.
+- Cada mensagem exige `protocol_version=2` e um `request_id` ASCII estável.
 - O host não persiste payloads e não registra prompts nem documentos.
 
 ## Envelope de solicitação
 
 ```json
 {
-  "protocol_version": 1,
+  "protocol_version": 2,
   "request_id": "req-0001",
   "command": { "type": "health" }
 }
@@ -24,7 +24,9 @@
 As variantes de `command.type` são:
 
 - `health`: versão do host, protocolo e versão de schema dos contratos.
-- `replace_state`: substitui atomicamente a visão em memória do grafo, snapshot, budget e IDs de executores disponíveis.
+- `restore_learning`: valida e importa um snapshot anterior de plasticidade operacional antes do primeiro estado da sessão.
+- `replace_state`: substitui atomicamente a visão em memória do grafo, snapshot, budget e IDs de executores disponíveis, preservando pesos e feedback compatíveis.
+- `export_network`: devolve somente a rede cognitiva serializada, sem recursos operacionais nem conteúdo de solicitações, para persistência local pelo cliente Python.
 - `plan`: recebe um CognitiveRequest e devolve ExecutionPlan.
 - `record_feedback`: registra feedback avaliado e atualiza a prioridade da conexão.
 - `inspect`: devolve contagens, IDs, versão, budget e executores.
@@ -34,7 +36,7 @@ Comandos com payload usam `command.payload`, por exemplo:
 
 ```json
 {
-  "protocol_version": 1,
+  "protocol_version": 2,
   "request_id": "plan-1",
   "command": {
     "type": "plan",
@@ -59,7 +61,7 @@ Sucesso:
 
 ```json
 {
-  "protocol_version": 1,
+  "protocol_version": 2,
   "request_id": "plan-1",
   "ok": true,
   "result": {
@@ -75,7 +77,7 @@ Falha:
 
 ```json
 {
-  "protocol_version": 1,
+  "protocol_version": 2,
   "request_id": "plan-1",
   "ok": false,
   "error": {
@@ -96,13 +98,15 @@ Falha:
 - As chamadas do cliente Python são serializadas por lock; uma instância do cliente mantém um único processo e uma sequência de requisições.
 - O encerramento usa `shutdown`; a aplicação também encerra o processo em caso de falha de comunicação.
 
-## Limites da v1
+## Persistência v2
+
+O protocolo permite que o cliente Python restaure um snapshot previamente persistido antes do primeiro `replace_state` e exporte a rede após sincronização/feedback. O host Rust valida o snapshot com as regras do grafo e combina pesos somente para conexões com identidade tipada compatível. O cliente persiste a rede e um event log em SQLite local, com hash SHA-256, transação e permissões privadas. Recursos e executores são sempre reconstruídos a cada início; snapshots antigos não restauram budgets ou adaptadores ativos.
+
+## Limites da v2
 
 O host é síncrono e atende uma solicitação por vez. Não há execução concorrente, streaming de token, filas, timeout por componente, leases, transporte de payload binário ou conexão de rede. O protocolo é IPC local e não deve ser exposto como endpoint TCP sem autenticação e autorização adicionais.
 
 
-## Sincronização e plasticidade em memória
+## Preservação de plasticidade
 
-Quando replace_state recebe um novo snapshot no mesmo processo, o host preserva pesos, contadores e referências de feedback das conexões com a mesma identidade tipada que continuam válidas no novo grafo. O histórico de feedback preservado é limitado às 4.096 entradas mais recentes. Conexões removidas ou incompatíveis não são transferidas.
-
-Esse mecanismo mantém a plasticidade operacional entre turnos da sessão, mas não é persistência em disco. Encerrar/reiniciar kia-runtime-host reinicia a rede para os pesos enviados pelo lado Python até que a persistência versionada seja implementada.
+Ao sincronizar um novo estado, o host mantém pesos, contadores e referências de feedback das conexões com identidade tipada compatível. O histórico preservado é limitado às 4.096 entradas mais recentes. O comando restore_learning permite importar um snapshot cognitivo validado antes do primeiro replace_state; export_network devolve somente a rede atual. A persistência em disco é responsabilidade do cliente local Python/SQLite, não do host Rust.

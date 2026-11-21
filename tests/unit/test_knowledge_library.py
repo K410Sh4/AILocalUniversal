@@ -142,3 +142,53 @@ def test_library_falls_back_to_lexical_search_when_embedding_service_fails(
 
     assert "núcleo cognitivo" in bundle.text
     assert "Busca vetorial indisponível" in library.last_search_warning
+
+
+def test_library_uses_nesa_page_candidates_to_scope_progressive_chunk_search(
+    tmp_path: Path,
+) -> None:
+    primary = tmp_path / "architecture.md"
+    secondary = tmp_path / "notes.txt"
+    primary.write_text(
+        "# Cognitive Runtime\n\nA cognitive runtime coordinates capabilities and resources.\n",
+        encoding="utf-8",
+    )
+    secondary.write_text(
+        "The local project tracks unrelated artwork and colors.\n",
+        encoding="utf-8",
+    )
+
+    with KnowledgeLibrary(tmp_path / "data") as library:
+        result = library.ingest_files([primary, secondary])
+        assert result["indexed"] == 2
+
+        bundle = library.search("cognitive runtime capabilities", limit=8)
+
+        assert bundle.evidence
+        assert any("cognitive runtime" in item.content.casefold() for item in bundle.evidence)
+        assert library.last_semantic_page_hits
+        candidate_documents = {
+            hit.page.document_id for hit in library.last_semantic_page_hits
+        }
+        primary_document = next(
+            item for item in library.list_documents()
+            if item["title"] == "architecture.md"
+        )
+        assert primary_document["document_id"] in candidate_documents
+        assert library.index.list_chunks(primary_document["document_id"])
+
+
+def test_library_clears_nesa_candidates_for_empty_queries(tmp_path: Path) -> None:
+    source = tmp_path / "architecture.md"
+    source.write_text(
+        "# Runtime\n\nA cognitive runtime coordinates local capabilities.\n",
+        encoding="utf-8",
+    )
+    with KnowledgeLibrary(tmp_path / "data") as library:
+        library.ingest_files([source])
+        library.search("cognitive runtime")
+        assert library.last_semantic_page_hits
+        empty = library.search(" ")
+        assert empty.text == ""
+        assert library.last_semantic_page_hits == ()
+        assert library.last_search_warning is None

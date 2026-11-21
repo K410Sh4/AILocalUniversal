@@ -267,3 +267,57 @@ async def test_high_risk_task_does_not_advertise_deterministic_executors(tmp_pat
     assert client.state["network"]["components"][calculator_id]["enabled"] is False
     assert calculator_id not in client.state["available_executors"]
     assert decision.deterministic_selections() == []
+
+
+@pytest.mark.asyncio
+async def test_kia_planner_selects_knowledge_memory_provider_only_when_enabled(tmp_path) -> None:
+    task = await analyze_request(
+        "Explique como funcionam as integrais definidas.",
+        execute_deterministic=False,
+    )
+    client = FakeRuntimeClient()
+    coordinator = KiaExecutionCoordinator(client)
+
+    decision = coordinator.plan_task(
+        task,
+        model_registry=model_registry(tmp_path),
+        resource_manager=FakeResourceManager(),
+        hardware=hardware_profile(),
+        engine_names=("ollama",),
+        resource_profile="medium",
+        preferred_model="qwen3:4b",
+        model_references=("qwen3:4b",),
+        knowledge_enabled=True,
+    )
+
+    assert len(decision.model_selections()) == 1
+    assert len(decision.memory_selections()) == 1
+    memory = decision.memory_selections()[0]["component"]
+    assert memory["id"] == "memory-knowledge-library"
+    assert memory["metadata"]["provider"] == "knowledge_library"
+    assert "retrieval" in client.request["required_capabilities"]
+    assert client.request["input"] == {"task_id": task.task_id}
+
+
+@pytest.mark.asyncio
+async def test_kia_planner_does_not_publish_knowledge_provider_when_disabled(tmp_path) -> None:
+    task = await analyze_request(
+        "Explique como funcionam as integrais definidas.",
+        execute_deterministic=False,
+    )
+    client = FakeRuntimeClient()
+    coordinator = KiaExecutionCoordinator(client)
+
+    decision = coordinator.plan_task(
+        task,
+        model_registry=model_registry(tmp_path),
+        resource_manager=FakeResourceManager(),
+        hardware=hardware_profile(),
+        engine_names=("ollama",),
+        resource_profile="medium",
+        model_references=("qwen3:4b",),
+        knowledge_enabled=False,
+    )
+
+    assert decision.memory_selections() == []
+    assert "retrieval" not in client.request["required_capabilities"]

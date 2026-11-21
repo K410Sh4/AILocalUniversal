@@ -89,6 +89,15 @@ class KiaPlanDecision:
             if item["component"].get("kind") == "language_model"
         ]
 
+    def memory_selections(self) -> list[dict[str, Any]]:
+        return [
+            item
+            for item in self.selected_components()
+            if item["component"].get("kind") == "memory"
+            and item["component"].get("metadata", {}).get("provider")
+            == "knowledge_library"
+        ]
+
 
 def _classification_from_task(
     task: CognitiveTask,
@@ -258,6 +267,53 @@ def execute_deterministic_selection(
     return result
 
 
+def _add_knowledge_component(network_payload: dict[str, Any]) -> None:
+    """Publica Knowledge/NeSA como provedor somente quando a aplicação habilitou RAG."""
+    network = network_payload["network"]
+    capabilities = network["capabilities"]
+    if "retrieval" not in capabilities:
+        raise KiaFlowError("A NAPA não declarou a capacidade retrieval.")
+    component_id = "memory-knowledge-library"
+    component = {
+        "id": component_id,
+        "name": "Knowledge Library + NeSA",
+        "kind": "memory",
+        "supported_capabilities": ["retrieval"],
+        "context_tags": ["local_documents", "semantic_page_index"],
+        "execution_target": "cpu",
+        "estimated_cost": {
+            "cpu_millis": 100,
+            "ram_bytes": 4 * MIB,
+            "gpu_millis": 0,
+            "vram_bytes": 0,
+            "npu_units": 0,
+        },
+        "resource_estimate_available": True,
+        "baseline_quality": 0.75,
+        "enabled": True,
+        "metadata": {
+            "provider": "knowledge_library",
+            "retrieval": "hybrid_chunks_with_nesa_page_candidates",
+            "adapter": "python_knowledge_retrieval_worker",
+            "resource_estimate_source": "static_logical_reservation_v1",
+        },
+    }
+    network["components"][component_id] = component
+    network["connections"].append(
+        {
+            "from": {"node_type": "capability", "id": "retrieval"},
+            "to": {"node_type": "component", "id": component_id},
+            "kind": "supports",
+            "weight": 0.85,
+            "observations": 0,
+            "successes": 0,
+        }
+    )
+    executor_ids = set(network_payload["available_executors"])
+    executor_ids.add(component_id)
+    network_payload["available_executors"] = sorted(executor_ids)
+
+
 def append_kia_plan_to_task(
     task: CognitiveTask,
     decision: KiaPlanDecision,
@@ -367,6 +423,7 @@ class KiaExecutionCoordinator:
         model_references: tuple[str, ...] | None = None,
         context_tokens: int | None = None,
         local_engine_endpoint: bool = True,
+        knowledge_enabled: bool = False,
         max_components: int = 8,
     ) -> KiaPlanDecision:
         if not task.intent:
@@ -471,6 +528,8 @@ class KiaExecutionCoordinator:
             intent=task.intent,
             risk=task.risk,
         )
+        if knowledge_enabled:
+            _add_knowledge_component(network_payload)
 
         model_available = bool(registered_model_executors)
         targets = ("cpu", "remote") if model_available else ("cpu",)
@@ -500,6 +559,18 @@ class KiaExecutionCoordinator:
             context_tags=context_tags,
             max_components=max(1, min(max_components, len(classification.active_area_ids))),
         )
+        if knowledge_enabled:
+            required = set(request["required_capabilities"])
+            required.add("retrieval")
+            # Knowledge retrieval é um estágio de entrada; o modelo continua
+            # necessário para sintetizar a resposta a partir das evidências.
+            if "generation" in self.napa_registry.area_ids:
+                required.add("generation")
+            request["required_capabilities"] = sorted(required)
+            request["max_components"] = min(
+                8,
+                max(int(request["max_components"]), len(required)),
+            )
         self.client.replace_state(state)
         plan = self.client.plan(request)
         decision = KiaPlanDecision(
