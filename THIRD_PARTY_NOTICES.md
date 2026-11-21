@@ -64,3 +64,13 @@ Before a public binary release or commercial distribution:
 - [Ollama license](https://github.com/ollama/ollama/blob/main/LICENSE)
 
 This is an inventory of the declared direct dependencies, not a certification of every transitive package. Exact versions and license terms can change.
+
+
+## Rust Cognitive Runtime
+
+| Component | Declared use | License / terms | Project relationship |
+|---|---|---|---|
+| serde | Serialization and deserialization for Rust runtime contracts | MIT OR Apache-2.0 | External dependency; not relicensed by this project |
+| serde_json | JSON serialization for runtime contracts and executor payloads | MIT OR Apache-2.0 | External dependency; not relicensed by this project |
+
+The exact resolved versions and transitive dependencies must be reviewed from cargo metadata / the generated lockfile before a release. Rust dependency licenses do not change the proprietary status of original AILocal Universal or K.IA code.

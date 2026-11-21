@@ -169,6 +169,33 @@ A NAPA coordena Cognitive Core, NeuralModel Hub, NeuralMap, Knowledge/RAG, Adapt
 
 A NeSA organiza conhecimento e recupera evidências. A NAPA decide quando consultá-la; o RAG mantém a proveniência e a validação de evidências. O NeuralMap poderá visualizar os grafos, sem duplicar a propriedade dos dados do Atlas.
 
+## K.IA — Artificial Brain
+
+### K.IA 0.1 — Rust Cognitive Runtime
+- [x] Crate Rust independente com contratos serializáveis e IDs tipados.
+- [x] Adaptive Cognitive Network em memória com nós, relações tipadas e integridade de referências.
+- [x] Planner seletivo por capacidade, intenção, contexto, disponibilidade de executor e orçamento.
+- [x] Orçamento lógico para CPU, RAM, GPU, VRAM e NPU; perfis 33%, 66% e 95% aplicados somente ao teto lógico de CPU.
+- [x] ComponentExecutor para integrar motores sem acoplar o core ao Ollama ou llama.cpp.
+- [x] Execução sequencial, eventos de telemetria sem payload do usuário e relatório de falhas.
+- [x] Plasticidade operacional inicial por feedback avaliado e referenciado.
+- [x] Testes Rust e CI com fmt, clippy e cargo test.
+
+**Limites:** sem adaptadores reais, persistência, Tokio, coleta física de hardware, concorrência/cancelamento, treinamento paramétrico ou plasticidade estrutural. Reserva de hardware é lógica, não quota real do kernel. Consulte docs/KIA_ARCHITECTURE.md.
+
+### K.IA 0.2–0.5 — evolução planejada
+- [ ] K.IA 0.2 — Persistência versionada, event log, idempotência e restauração da rede.
+- [ ] K.IA 0.3 — Adaptadores locais Ollama e llama.cpp, com protocolo e capacidades declaradas.
+- [ ] K.IA 0.4 — Hardware providers, execução concorrente limitada, timeout, cancelamento e leases.
+- [ ] K.IA 0.5 — Sincronização de NAPA, NeSA, NeuralModel Hub, NEE e Knowledge/RAG na Adaptive Cognitive Network.
+
+### Neural Plasticity & Development
+- [ ] Plasticity 0.2 — benchmark de rotas, shadow mode, A/B, limiares e rollback.
+- [ ] Neural Specialist Development — gerar e avaliar ferramentas e especialistas candidatos.
+- [ ] Parametric Plasticity — LoRA/adaptadores treinados offline e versionados.
+- [ ] Structural Plasticity — experimentos isolados em arquiteturas abertas, com snapshots e regressão.
+- [ ] Autonomous Neural Development — propostas de evolução supervisionadas e auditáveis.
+
 ## Fase 6 — Agentes especialistas e autoengenharia
 
 - [ ] System Analyst em modo somente leitura.

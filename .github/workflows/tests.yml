@@ -12,6 +12,7 @@ on:
       - feature/neural-elastic-simulator-v1
       - feature/napa-cognitive-area-registry-v1
       - feature/nesa-semantic-page-indexer-v0.1
+      - feature/kia-rust-cognitive-runtime-v0.1
   pull_request:
     branches:
       - main
@@ -23,6 +24,7 @@ on:
       - feature/neural-elastic-simulator-v1
       - feature/napa-cognitive-area-registry-v1
       - feature/nesa-semantic-page-indexer-v0.1
+      - feature/kia-rust-cognitive-runtime-v0.1
 
 jobs:
   unit-tests:
@@ -47,3 +49,22 @@ jobs:
         run: python -m ruff check .
       - name: Run unit tests
         run: python -m pytest -q
+
+  kia-rust-runtime:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: kia
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up stable Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - name: Check formatting
+        run: cargo fmt --all -- --check
+      - name: Lint
+        run: cargo clippy --all-targets --all-features -- -D warnings
+      - name: Run Rust tests
+        run: cargo test --all-targets

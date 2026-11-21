@@ -176,3 +176,31 @@ Cada página não vazia ingesta pode produzir uma ficha persistente:
 O método padrão usa seleção extrativa de sentenças e n-gramas lexicais; não chama LLM nem presume conhecimento factual. `entities` fica vazio com `entity_method=not_configured` até um extrator explícito ser injetado. Os candidatos lexicais não são ontologia validada.
 
 As fichas ficam em `semantic_pages`, com FTS5 separado `semantic_pages_fts`, no mesmo banco e transação dos documentos/chunks. `delete_document` remove ambas as estruturas; a reingestão da mesma origem substitui a versão anterior. Busca do catálogo retorna `SemanticPageHit`, com score lexical de ordenação, não probabilidade. A recuperação híbrida de chunks e a validação de evidências não são alteradas.
+
+
+## K.IA — contratos iniciais do Rust Cognitive Runtime
+
+A crate kia-cognitive-runtime é a implementação de referência dos contratos iniciais.
+
+### CognitiveCapability
+ID tipado, nome, domínio, tags de intenção/contexto e estado habilitado. Tags são declarativas, não classificações probabilísticas.
+
+### NeuralComponent
+ID, nome, classe (modelo, ferramenta, especialista, adaptador, memória ou pré-processador), capacidades providas, contexto, alvo de execução, custo estimado disponível, prior de avaliação e metadados. Um custo desconhecido nunca é convertido em vetor zero para fins de seleção.
+
+### CognitiveConnection
+Relação tipada entre capacidade e componente ou entre componentes: supports, requires, delegates_to, complements, fallback_to e produces_input_for. Peso de 0 a 1 expressa prioridade operacional, não probabilidade. Na versão 0.1, somente supports Capability -> Component influencia o planner.
+
+### CognitiveRequest
+Envelope com schema_version, ID, intenção, tags de contexto, capacidades requeridas, payload e limite de componentes. O payload é entregue ao executor e não é copiado para eventos de telemetria.
+
+### ResourceSnapshot e ResourceBudget
+Snapshot separa capacidade total de disponibilidade declarada e alvos físicos ativos. Budget representa reserva lógica cumulativa. CPU usa millicores; memória e VRAM usam bytes. Perfil de processamento regula somente o teto lógico de CPU nesta versão.
+
+### CognitiveFeedback
+Referência a avaliação independente, capability/component IDs e resultado success/partial/failure. A rede atualiza o peso da conexão por média móvel exponencial com taxa de aprendizado configurável. Um feedback sem referência não pode alterar a plasticidade.
+
+### ExecutionPlan e ExecutionReport
+Plano contém versão da rede, seleções, scores heurísticos e recursos reservados. Relatório registra outputs, falhas, duração, status e custos estimados sem copiar entrada ou documentos.
+
+Esses contratos não afirmam veracidade de conteúdo nem controlam diretamente o sistema operacional. Adaptadores devem declarar capacidades, custos e alvos suportados; o snapshot precisa ser atualizado por um provider de hardware confiável.
