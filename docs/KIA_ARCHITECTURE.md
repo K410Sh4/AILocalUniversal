@@ -145,6 +145,24 @@ O processo Rust é dono da decisão de roteamento. Os motores e ferramentas cont
 
 No modo sequencial, a reserva é o pico por dimensão. Não utilizar essa política para planos paralelos. O caminho novo de modelos aceita somente placement CPU com estimativa completa em RAM e endpoint local confirmado; GPU/híbrido usa o fallback do seletor anterior até o provider conhecer a colocação real do Ollama.
 
-O host mantém pesos e contadores compatíveis quando recebe novo replace_state durante o mesmo processo. Ainda não persiste rede entre reinícios. O feedback só é enviado quando a ValidationLayer reproduz um resultado determinístico; saídas LLM não fortalecem rotas automaticamente.
+O host mantém pesos e contadores compatíveis quando recebe novo replace_state durante o mesmo processo. A 0.4 acrescenta restore_learning/export_network e snapshot SQLite para recuperar a plasticidade entre reinícios. O feedback só é enviado quando a ValidationLayer reproduz um resultado determinístico; saídas LLM não fortalecem rotas automaticamente.
 
 A ValidationLayer separa presença, cobertura de requisitos estruturados, completude ponderada e estado factual. Sem requisitos estruturados, completude fica como not_assessed; conteúdo LLM permanece not_independently_verified. Consulte docs/ACCA_MATHEMATICAL_MODEL.md.
+
+
+## K.IA 0.4 — Memória cognitiva persistente
+
+O cliente Python coordena a recuperação entre processos sem transferir o controle de execução do app:
+1. Na primeira sincronização da sessão, lê o snapshot da rede em SQLite e o envia ao host como restore_learning.
+2. Rust valida IDs, referências, pesos, feedback e relações. O próximo replace_state aplica pesos e contadores somente às conexões tipadas ainda compatíveis.
+3. O cliente solicita export_network e persiste a rede após replace_state e record_feedback.
+4. HardwareSnapshot, ResourceBudget e available_executors nunca são recuperados do disco; são reconstruídos a cada inicialização.
+5. A gravação de snapshot e do evento é transacional; o hash SHA-256 protege contra alteração silenciosa do payload. O host Rust continua sendo a autoridade de validação semântica do grafo.
+
+O banco padrão é `$XDG_DATA_HOME/ailocal-universal/kia/cognitive-memory.sqlite3` (fallback em `~/.local/share`). O diretório da aplicação é 0700, o subdiretório Kia é 0700 e o arquivo SQLite é 0600. Não há criptografia implementada. O snapshot armazena somente a rede cognitiva e não deve receber prompts, conteúdo de chat ou documentos.
+
+## Integração NeSA + Knowledge
+
+Quando `AppConfig.knowledge_enabled` está ativo, a rede inclui o provedor `memory-knowledge-library` e a solicitação exige `retrieval` e `generation`. Rust decide se esse provedor participa do plano; a execução continua na camada Python via KnowledgeRetrievalWorker. As fichas de página NeSA reduzem o conjunto inicial de documentos candidatos. A recuperação lexical/vetorial continua operando sobre chunks originais, com expansão global quando o candidato inicial não preenche o limite. Somente esses chunks são anexados como Evidence e podem ser citados.
+
+A camada de memória não absorve automaticamente o conteúdo documental ou mensagens de usuário como fatos paramétricos. Plasticidade operacional recebe somente feedback avaliado com referência independente.

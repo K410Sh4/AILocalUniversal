@@ -79,6 +79,7 @@ class KnowledgeLibrary:
         )
         self.composer = ContextComposer()
         self.last_search_warning: str | None = None
+        self.last_semantic_page_hits: tuple[SemanticPageHit, ...] = ()
 
     def _embedding_provider(self) -> OllamaEmbeddingProvider:
         if not self.embedding_model:
@@ -244,6 +245,8 @@ class KnowledgeLibrary:
         max_chars: int = 6000,
         limit: int = 8,
     ) -> ContextBundle:
+        self.last_search_warning = None
+        self.last_semantic_page_hits = ()
         if not query.strip():
             return self.composer.compose([], max_chars=max_chars)
 
@@ -257,23 +260,57 @@ class KnowledgeLibrary:
                 self.vector_store,
                 self.index,
             )
-        self.last_search_warning = None
+        try:
+            self.last_semantic_page_hits = tuple(
+                self.index.search_semantic_pages(
+                    query,
+                    limit=max(12, min(32, limit * 3)),
+                )
+            )
+        except Exception as exc:
+            # O catálogo NeSA é uma fonte de candidatos, não uma dependência dura
+            # da recuperação por chunks.
+            self.last_search_warning = (
+                "Catálogo de páginas NeSA indisponível; busca global de chunks: "
+                + str(exc)
+            )
+
+        candidate_document_ids = {
+            hit.page.document_id for hit in self.last_semantic_page_hits
+        }
         retriever = HybridRetriever(
             self.index,
             vector_backend=vector_backend,
         )
+
+        def progressive_search(active_retriever: HybridRetriever):
+            if not candidate_document_ids:
+                return active_retriever.search(query, limit=limit)
+            scoped = active_retriever.search(
+                query,
+                limit=limit,
+                document_ids=candidate_document_ids,
+            )
+            if len(scoped) >= limit:
+                return scoped
+            # Expande a busca quando a primeira camada do Atlas não cobre o
+            # orçamento de resultados. O chunk continua sendo a evidência citável.
+            global_hits = active_retriever.search(query, limit=limit)
+            merged = {hit.chunk.chunk_id: hit for hit in scoped}
+            for hit in global_hits:
+                merged.setdefault(hit.chunk.chunk_id, hit)
+            return sorted(merged.values(), key=lambda hit: hit.score, reverse=True)[:limit]
+
         try:
-            hits = retriever.search(query, limit=limit)
+            hits = progressive_search(retriever)
         except Exception as exc:
             if vector_backend is None:
                 raise
-            # Mantém a biblioteca consultável mesmo quando o serviço de embeddings
-            # está indisponível; a interface recebe um aviso explícito.
+            # Mantém a biblioteca consultável quando o serviço de embeddings falha.
             self.last_search_warning = (
-                "Busca vetorial indisponível; exibindo apenas resultados lexicais: "
-                + str(exc)
+                "Busca vetorial indisponível; exibindo resultados lexicais: " + str(exc)
             )
-            hits = HybridRetriever(self.index).search(query, limit=limit)
+            hits = progressive_search(HybridRetriever(self.index))
         return self.composer.compose(hits, max_chars=max_chars)
 
     def close(self) -> None:

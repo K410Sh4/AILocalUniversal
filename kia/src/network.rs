@@ -401,6 +401,10 @@ impl AdaptiveCognitiveNetwork {
             });
         }
         self.feedback_history.push(feedback);
+        if self.feedback_history.len() > 4096 {
+            let overflow = self.feedback_history.len() - 4096;
+            self.feedback_history.drain(0..overflow);
+        }
         self.version += 1;
         let observations = self
             .connections

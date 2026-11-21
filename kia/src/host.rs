@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use std::collections::BTreeSet;
 
-pub const HOST_PROTOCOL_VERSION: u16 = 1;
+pub const HOST_PROTOCOL_VERSION: u16 = 2;
 pub const MAX_REQUEST_BYTES: usize = 4 * 1024 * 1024;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -64,6 +64,10 @@ pub enum HostCommand {
     ReplaceState {
         state: HostState,
     },
+    RestoreLearning {
+        network: AdaptiveCognitiveNetwork,
+    },
+    ExportNetwork,
     Plan {
         request: CognitiveRequest,
     },
@@ -126,6 +130,7 @@ impl HostResponse {
 #[derive(Default)]
 pub struct RuntimeHost {
     state: Option<HostState>,
+    restored_learning: Option<AdaptiveCognitiveNetwork>,
 }
 
 impl RuntimeHost {
@@ -205,8 +210,13 @@ impl RuntimeHost {
                     return (HostResponse::failure(request_id, error), false);
                 }
                 let mut state = state;
-                if let Some(previous) = self.state.as_ref() {
-                    if let Err(error) = state.network.carry_learning_from(&previous.network) {
+                let previous_network = self
+                    .state
+                    .as_ref()
+                    .map(|previous| &previous.network)
+                    .or(self.restored_learning.as_ref());
+                if let Some(previous) = previous_network {
+                    if let Err(error) = state.network.carry_learning_from(previous) {
                         return (
                             HostResponse::failure(
                                 request_id,
@@ -216,6 +226,7 @@ impl RuntimeHost {
                         );
                     }
                 }
+                self.restored_learning = None;
                 let result = json!({
                     "network_version": state.network.version(),
                     "capability_count": state.network.capabilities().len(),
@@ -226,6 +237,63 @@ impl RuntimeHost {
                 });
                 self.state = Some(state);
                 (HostResponse::success(request_id, result), false)
+            }
+            HostCommand::RestoreLearning { network } => {
+                if self.state.is_some() || self.restored_learning.is_some() {
+                    return (
+                        HostResponse::failure(
+                            request_id,
+                            HostError::new(
+                                "learning_already_initialized",
+                                "A rede já foi inicializada nesta sessão.",
+                            ),
+                        ),
+                        false,
+                    );
+                }
+                if let Err(error) = network.validate() {
+                    return (
+                        HostResponse::failure(
+                            request_id,
+                            HostError::new("invalid_learning_snapshot", error.to_string()),
+                        ),
+                        false,
+                    );
+                }
+                let result = json!({
+                    "network_version": network.version(),
+                    "connection_count": network.connections().len(),
+                    "feedback_count": network.feedback_history().len()
+                });
+                self.restored_learning = Some(network);
+                (HostResponse::success(request_id, result), false)
+            }
+            HostCommand::ExportNetwork => {
+                let Some(state) = self.state.as_ref() else {
+                    return (
+                        HostResponse::failure(
+                            request_id,
+                            HostError::new(
+                                "state_not_configured",
+                                "Envie replace_state antes de export_network.",
+                            ),
+                        ),
+                        false,
+                    );
+                };
+                match serde_json::to_value(&state.network) {
+                    Ok(network) => (
+                        HostResponse::success(request_id, json!({"network": network})),
+                        false,
+                    ),
+                    Err(error) => (
+                        HostResponse::failure(
+                            request_id,
+                            HostError::new("network_export_failed", error.to_string()),
+                        ),
+                        false,
+                    ),
+                }
             }
             HostCommand::Plan { request } => {
                 let Some(state) = self.state.as_ref() else {

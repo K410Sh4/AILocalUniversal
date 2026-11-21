@@ -353,3 +353,32 @@ fn sequential_plan_reserves_peak_resources_instead_of_summing_components() {
     assert_eq!(plan.reserved_resources.cpu_millis, 300);
     assert_eq!(plan.reserved_resources.ram_bytes, 2_000_000_000);
 }
+
+#[test]
+fn feedback_history_is_bounded_to_recent_4096_evaluations() {
+    let mut network = network();
+    for index in 0..4097 {
+        network
+            .record_evaluated_feedback(
+                CognitiveFeedback {
+                    capability_id: "mathematics".into(),
+                    component_id: "local-calculator".into(),
+                    outcome: FeedbackOutcome::Success,
+                    validation_ref: format!("validation-{index}"),
+                    notes: Some("resultado determinístico reproduzido".to_owned()),
+                },
+                0.05,
+            )
+            .unwrap();
+    }
+
+    assert_eq!(network.feedback_history().len(), 4096);
+    assert_eq!(
+        network.feedback_history().first().unwrap().validation_ref,
+        "validation-1"
+    );
+    assert_eq!(
+        network.feedback_history().last().unwrap().validation_ref,
+        "validation-4096"
+    );
+}

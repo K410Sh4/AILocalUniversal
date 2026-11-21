@@ -96,6 +96,16 @@ class KnowledgeLibraryWorker(QThread):
                         ],
                         "skipped_count": len(bundle.skipped_chunk_ids),
                         "warning": library.last_search_warning,
+                        "semantic_page_candidates": [
+                            {
+                                "page_id": hit.page.page_id,
+                                "document_id": hit.page.document_id,
+                                "page_index": hit.page.page_index,
+                                "rank": hit.rank,
+                                "score": hit.score,
+                            }
+                            for hit in library.last_semantic_page_hits
+                        ],
                     }
             self.completed.emit(payload)
         except Exception as exc:

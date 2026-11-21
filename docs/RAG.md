@@ -149,3 +149,12 @@ Compare os modelos com as mesmas consultas:
 ~~~
 
 O script também pode executar o baseline lexical sem `--model`. Os resultados servem como microbenchmark reproduzível, não como evidência de qualidade em corpus real ou de veracidade factual. Os números dos modelos devem ser comparados pelas métricas de ranking, não pelos scores cosseno brutos entre espaços vetoriais diferentes.
+
+
+## NeSA + recuperação progressiva (K.IA 0.4)
+
+A busca da KnowledgeLibrary agora usa o catálogo NeSA como camada de candidatos. O FTS5 por página fornece até um conjunto limitado de document_ids; a busca híbrida dos chunks começa nesse subconjunto. Caso o conjunto não forneça resultados suficientes para o limite pedido, a recuperação é expandida globalmente e deduplicada por chunk_id. Essa política reduz o universo inicial sem tornar a busca dependente do catálogo: falhas no NeSA ainda permitem consulta de chunks.
+
+As fichas e seus resumos não substituem evidência nem são automaticamente injetados no contexto. O ContextComposer mantém os chunks originais, identificadores [E#], hash, offsets e localizadores. O payload do worker inclui somente IDs e scores das páginas candidatas para telemetria do Cognitive Inspector. Score FTS/BM25 continua não probabilístico.
+
+Na K.IA 0.4, quando o usuário ativa explicitamente o conhecimento local, o planner Rust recebe um NeuralComponent `memory-knowledge-library` e inclui `retrieval` + `generation` nas capacidades obrigatórias. Python executa a recuperação real em KnowledgeRetrievalWorker; o componente Rust é o provedor/plano, não uma implementação paralela do índice.

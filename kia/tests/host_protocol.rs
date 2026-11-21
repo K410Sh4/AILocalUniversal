@@ -106,7 +106,7 @@ fn host_process_handles_health_state_sync_plan_and_shutdown_over_jsonl() {
     send(
         &mut input,
         json!({
-            "protocol_version": 1,
+            "protocol_version": 2,
             "request_id": "health-1",
             "command": {"type": "health"}
         }),
@@ -115,12 +115,13 @@ fn host_process_handles_health_state_sync_plan_and_shutdown_over_jsonl() {
     assert_eq!(health["ok"], true);
     assert_eq!(health["request_id"], "health-1");
     assert_eq!(health["result"]["service"], "kia-cognitive-runtime");
+    assert_eq!(health["result"]["protocol_version"], 2);
 
     let state = serde_json::to_value(state()).unwrap();
     send(
         &mut input,
         json!({
-            "protocol_version": 1,
+            "protocol_version": 2,
             "request_id": "state-1",
             "command": {
                 "type": "replace_state",
@@ -136,7 +137,7 @@ fn host_process_handles_health_state_sync_plan_and_shutdown_over_jsonl() {
     send(
         &mut input,
         json!({
-            "protocol_version": 1,
+            "protocol_version": 2,
             "request_id": "plan-1",
             "command": {
                 "type": "plan",
@@ -164,7 +165,7 @@ fn host_process_handles_health_state_sync_plan_and_shutdown_over_jsonl() {
     send(
         &mut input,
         json!({
-            "protocol_version": 1,
+            "protocol_version": 2,
             "request_id": "feedback-1",
             "command": {
                 "type": "record_feedback",
@@ -188,7 +189,7 @@ fn host_process_handles_health_state_sync_plan_and_shutdown_over_jsonl() {
     send(
         &mut input,
         json!({
-            "protocol_version": 1,
+            "protocol_version": 2,
             "request_id": "inspect-1",
             "command": {"type": "inspect"}
         }),
@@ -201,7 +202,7 @@ fn host_process_handles_health_state_sync_plan_and_shutdown_over_jsonl() {
     send(
         &mut input,
         json!({
-            "protocol_version": 1,
+            "protocol_version": 2,
             "request_id": "state-2",
             "command": {
                 "type": "replace_state",
@@ -217,7 +218,7 @@ fn host_process_handles_health_state_sync_plan_and_shutdown_over_jsonl() {
     send(
         &mut input,
         json!({
-            "protocol_version": 1,
+            "protocol_version": 2,
             "request_id": "plan-2",
             "command": {
                 "type": "plan",
@@ -249,7 +250,7 @@ fn host_process_handles_health_state_sync_plan_and_shutdown_over_jsonl() {
     send(
         &mut input,
         json!({
-            "protocol_version": 1,
+            "protocol_version": 2,
             "request_id": "shutdown-1",
             "command": {"type": "shutdown"}
         }),
@@ -286,8 +287,109 @@ fn host_rejects_unsupported_protocol_versions() {
     send(
         &mut input,
         json!({
-            "protocol_version": 1,
+            "protocol_version": 2,
             "request_id": "shutdown-2",
+            "command": {"type": "shutdown"}
+        }),
+    );
+    let _ = read(&mut output);
+    drop(input);
+    assert!(child.wait().unwrap().success());
+}
+
+#[test]
+fn host_restores_persisted_learning_before_fresh_resource_state_and_exports_it() {
+    use kia_cognitive_runtime::{CognitiveFeedback, FeedbackOutcome};
+
+    let mut persisted_network = state().network;
+    persisted_network
+        .record_evaluated_feedback(
+            CognitiveFeedback {
+                capability_id: "mathematics".into(),
+                component_id: "local-calculator".into(),
+                outcome: FeedbackOutcome::Success,
+                validation_ref: "persisted-validation-1".to_owned(),
+                notes: None,
+            },
+            0.5,
+        )
+        .unwrap();
+    let persisted = serde_json::to_value(persisted_network).unwrap();
+
+    let mut child = Command::new(env!("CARGO_BIN_EXE_kia-runtime-host"))
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::null())
+        .spawn()
+        .unwrap();
+    let mut input = child.stdin.take().unwrap();
+    let mut output = BufReader::new(child.stdout.take().unwrap());
+
+    send(
+        &mut input,
+        json!({
+            "protocol_version": 2,
+            "request_id": "restore-1",
+            "command": {
+                "type": "restore_learning",
+                "payload": {"network": persisted}
+            }
+        }),
+    );
+    let restored = read(&mut output);
+    assert_eq!(restored["ok"], true);
+    assert_eq!(restored["result"]["feedback_count"], 1);
+
+    // O estado operacional novo substitui recursos/executores, mas conserva a
+    // prioridade e a avaliação já persistidas no snapshot cognitivo.
+    send(
+        &mut input,
+        json!({
+            "protocol_version": 2,
+            "request_id": "replace-1",
+            "command": {
+                "type": "replace_state",
+                "payload": {"state": serde_json::to_value(state()).unwrap()}
+            }
+        }),
+    );
+    let replaced = read(&mut output);
+    assert_eq!(replaced["ok"], true);
+    assert_eq!(replaced["result"]["feedback_count"], 1);
+
+    send(
+        &mut input,
+        json!({
+            "protocol_version": 2,
+            "request_id": "export-1",
+            "command": {"type": "export_network"}
+        }),
+    );
+    let exported = read(&mut output);
+    assert_eq!(exported["ok"], true);
+    assert_eq!(
+        exported["result"]["network"]["feedback_history"]
+            .as_array()
+            .unwrap()
+            .len(),
+        1
+    );
+    assert!(
+        exported["result"]["network"]["connections"][0]["weight"]
+            .as_f64()
+            .unwrap()
+            > 0.8
+    );
+    assert_eq!(
+        exported["result"]["network"]["connections"][0]["observations"],
+        5
+    );
+
+    send(
+        &mut input,
+        json!({
+            "protocol_version": 2,
+            "request_id": "shutdown-restore",
             "command": {"type": "shutdown"}
         }),
     );

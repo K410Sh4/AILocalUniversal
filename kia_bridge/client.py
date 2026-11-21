@@ -11,7 +11,7 @@ from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
 
-HOST_PROTOCOL_VERSION = 1
+HOST_PROTOCOL_VERSION = 2
 
 
 class KiaRuntimeError(RuntimeError):
@@ -69,10 +69,13 @@ class KiaRuntimeClient:
         command: str | Path | Sequence[str] | None = None,
         *,
         timeout_seconds: float = 15.0,
+        memory_store: Any | None = None,
     ) -> None:
         if timeout_seconds <= 0:
             raise ValueError("timeout_seconds precisa ser positivo.")
         self.timeout_seconds = float(timeout_seconds)
+        self._memory_store = memory_store
+        self._memory_restored = False
         self._lock = threading.Lock()
         self._responses: queue.Queue[str | None] = queue.Queue()
         self._sequence = 0
@@ -211,10 +214,41 @@ class KiaRuntimeClient:
         with self._lock:
             return self._request("health")
 
+    def _persist_network(self, event_type: str) -> None:
+        if self._memory_store is None:
+            return
+        try:
+            exported = self._request("export_network")
+            network = exported.get("network")
+            if not isinstance(network, dict):
+                raise ValueError("export_network não retornou uma rede.")
+            self._memory_store.save_network(network, event_type=event_type)
+        except Exception as exc:
+            raise KiaRuntimeError(
+                f"Não foi possível persistir a memória cognitiva: {exc}",
+                code="memory_persistence_failed",
+            ) from exc
+
     def replace_state(self, state: dict[str, Any]) -> dict[str, Any]:
-        """Substitui a rede, snapshot, budget e lista de executores disponíveis."""
+        """Restaura plasticidade persistida e sincroniza o estado atual de hardware."""
         with self._lock:
-            return self._request("replace_state", {"state": state})
+            if self._memory_store is not None and not self._memory_restored:
+                try:
+                    previous_network = self._memory_store.load_network()
+                    if previous_network is not None:
+                        self._request(
+                            "restore_learning",
+                            {"network": previous_network},
+                        )
+                except Exception as exc:
+                    raise KiaRuntimeError(
+                        f"Não foi possível restaurar a memória cognitiva: {exc}",
+                        code="memory_restore_failed",
+                    ) from exc
+                self._memory_restored = True
+            result = self._request("replace_state", {"state": state})
+            self._persist_network("network_synced")
+            return result
 
     def plan(self, request: dict[str, Any]) -> dict[str, Any]:
         """Solicita um plano Rust; não executa inferência nem ferramentas."""
@@ -228,10 +262,12 @@ class KiaRuntimeClient:
         learning_rate: float = 0.1,
     ) -> dict[str, Any]:
         with self._lock:
-            return self._request(
+            result = self._request(
                 "record_feedback",
                 {"feedback": feedback, "learning_rate": learning_rate},
             )
+            self._persist_network("feedback_applied")
+            return result
 
     def inspect(self) -> dict[str, Any]:
         with self._lock:

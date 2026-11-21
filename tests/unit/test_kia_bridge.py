@@ -30,7 +30,7 @@ for line in sys.stdin:
     request = json.loads(line)
     kind = request["command"]["type"]
     if kind == "health":
-        result = {"service": "kia-cognitive-runtime", "version": "0.2.0"}
+        result = {"service": "kia-cognitive-runtime", "version": "0.4.0"}
     elif kind == "shutdown":
         result = {"shutdown": True}
     elif kind == "inspect":
@@ -40,7 +40,7 @@ for line in sys.stdin:
     else:
         result = None
     print(json.dumps({
-        "protocol_version": 1,
+        "protocol_version": 2,
         "request_id": request["request_id"],
         "ok": True,
         "result": result
