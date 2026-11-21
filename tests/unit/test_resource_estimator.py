@@ -1,7 +1,7 @@
-from resources.contracts import EstimateConfidence, ResourcePlacement
-from resources.estimator import ResourceEstimator
 from model_hub.contracts import ModelArtifact, ModelRecord
 from model_hub.hardware import AcceleratorInfo, HardwareProfile
+from resources.contracts import EstimateConfidence, ResourcePlacement
+from resources.estimator import ResourceEstimator
 
 
 def hardware_profile(
@@ -161,6 +161,7 @@ def test_estimator_uses_total_parameters_for_moe_weight_memory() -> None:
     assert result.weight_bytes is not None
     assert result.weight_bytes > 40 * 1024**3
     assert result.placement is ResourcePlacement.DOES_NOT_FIT
+
 
 def test_estimator_blocks_oversized_weights_even_when_kv_metadata_is_missing() -> None:
     result = ResourceEstimator().estimate(
