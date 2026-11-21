@@ -114,6 +114,8 @@ class AdaptiveResourceManager:
         task_category: str | None = None,
         hardware: HardwareProfile | None = None,
         resource_profile: str | ResourceProfile = ResourceProfile.MEDIUM,
+        running_models: list[RunningModelSnapshot] | None = None,
+        concurrent_requests: int = 1,
     ) -> ModelSelectionResult:
         profile = hardware or self.snapshot()
         records = {
@@ -128,4 +130,6 @@ class AdaptiveResourceManager:
             context_tokens=context_tokens,
             task_category=task_category,
             resource_profile=normalize_resource_profile(resource_profile),
+            running_models=running_models,
+            concurrent_requests=concurrent_requests,
         )
