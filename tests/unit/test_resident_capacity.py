@@ -1,3 +1,5 @@
+from datetime import UTC, datetime, timedelta
+
 from engines.base import RunningModelSnapshot
 from model_hub.contracts import ModelArtifact, ModelRecord
 from model_hub.registry import ModelRegistry
@@ -32,6 +34,7 @@ def _snapshot(
     vram: int | None = 3 * 1024**3,
     context: int | None = 8192,
 ):
+    observed = datetime.now(UTC)
     return RunningModelSnapshot(
         name="qwen3:4b",
         model="qwen3:4b",
@@ -39,6 +42,8 @@ def _snapshot(
         size_bytes=size,
         size_vram_bytes=vram,
         context_length=context,
+        expires_at=(observed + timedelta(minutes=5)).isoformat(),
+        observed_at=observed.isoformat(),
     )
 
 
@@ -147,3 +152,47 @@ def test_resource_manager_exposes_resident_capacity_assessment(tmp_path) -> None
 
     assert result.status is ResidentCapacityStatus.REUSE_READY
     assert result.incremental_runner_bytes == 0
+
+
+
+def test_resident_capacity_rejects_stale_snapshot() -> None:
+    now = datetime(2030, 1, 1, tzinfo=UTC)
+    snapshot = _snapshot(
+        observed_at=(now - timedelta(seconds=31)).isoformat(),
+        expires_at=(now + timedelta(minutes=5)).isoformat(),
+    )
+    result = assess_resident_capacity(
+        _record(),
+        [snapshot],
+        context_tokens=4096,
+        now=now,
+    )
+
+    assert result.status is ResidentCapacityStatus.SNAPSHOT_STALE
+    assert result.incremental_runner_bytes is None
+
+
+def test_resident_capacity_rejects_expired_or_near_expiry_snapshot() -> None:
+    now = datetime(2030, 1, 1, tzinfo=UTC)
+    snapshot = _snapshot(
+        observed_at=now.isoformat(),
+        expires_at=(now + timedelta(seconds=1)).isoformat(),
+    )
+    result = assess_resident_capacity(
+        _record(),
+        [snapshot],
+        context_tokens=4096,
+        now=now,
+    )
+
+    assert result.status is ResidentCapacityStatus.RESIDENCY_EXPIRED
+
+
+def test_resident_capacity_requires_observation_and_expiry_timestamps() -> None:
+    result = assess_resident_capacity(
+        _record(),
+        [_snapshot(expires_at=None)],
+        context_tokens=4096,
+    )
+
+    assert result.status is ResidentCapacityStatus.EXPIRY_UNVERIFIED
