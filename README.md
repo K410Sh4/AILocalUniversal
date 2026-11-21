@@ -300,7 +300,7 @@ A linha de desenvolvimento inclui:
 
 A infraestrutura de imagem define um adaptador, mas a geração real depende de um backend registrado e validado. A integração da resposta estruturada do NeuralMap ao Chat e a execução paralela segura de nós independentes são evoluções pendentes.
 
-Documentação: [NeuralMap](docs/NEURALMAP.md).
+Documentação: [NeuralMap](https://github.com/K410Sh4/AILocalUniversal/blob/feature/neuralmap-v1/docs/NEURALMAP.md).
 
 ---
 
@@ -325,7 +325,7 @@ Um checksum detecta alterações em relação ao valor esperado, mas não prova 
 
 **Estado:** a NIP 0.1.0 é uma especificação proposta. Não se deve presumir que leitor, instalador, assinatura e motor completo estejam implementados apenas porque o formato está documentado.
 
-Documentação: [NeuralPlugin](docs/NEURALPLUGIN.md), [NIP 0.1.0](docs/NEURALINJECTOR_NIP_0.1.0.md), [Adaptive Hardware](docs/NEURALINJECTOR_ADAPTIVE_HARDWARE.md).
+Documentação: [NeuralPlugin](https://github.com/K410Sh4/AILocalUniversal/blob/feature/neuralmap-v1/docs/NEURALPLUGIN.md), [NIP 0.1.0](https://github.com/K410Sh4/AILocalUniversal/blob/proposal/neuralinjector-nip-0.1.0/docs/NEURALINJECTOR_NIP_0.1.0.md), [Adaptive Hardware](https://github.com/K410Sh4/AILocalUniversal/blob/feature/neuralmap-v1/docs/NEURALINJECTOR_ADAPTIVE_HARDWARE.md).
 
 ---
 
