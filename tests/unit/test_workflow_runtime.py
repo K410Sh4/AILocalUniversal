@@ -3,7 +3,6 @@ import pytest
 from workflows.graph import WorkflowGraph
 from workflows.runtime import GraphRuntime, HandlerRegistry
 
-
 TEMPLATE = "workflows/templates/multi_specialist.pipeline.graph.json"
 
 
