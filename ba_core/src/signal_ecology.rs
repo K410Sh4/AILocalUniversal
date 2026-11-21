@@ -86,9 +86,7 @@ impl SignalEcology {
         let mut pairs = std::collections::BTreeSet::new();
         let mut loads = vec![0.0_f64; self.regions.len()];
         for edge in &self.edges {
-            if !nonnegative_finite(edge.conductance)
-                || !(edge.conductance * dt).is_finite()
-            {
+            if !nonnegative_finite(edge.conductance) || !(edge.conductance * dt).is_finite() {
                 return Err(SignalError::InvalidValue("conductance"));
             }
             let a = self
@@ -110,9 +108,7 @@ impl SignalEcology {
         }
         for (index, load) in loads.iter().enumerate() {
             if !load.is_finite() || *load > 1.0 + 1e-12 {
-                return Err(SignalError::UnstableTransport(
-                    self.regions[index].id,
-                ));
+                return Err(SignalError::UnstableTransport(self.regions[index].id));
             }
         }
         Ok(())
@@ -165,20 +161,18 @@ impl SignalEcology {
                 let x = total_rate * dt;
                 let one_minus_decay = -(-x).exp_m1();
                 let source_integral = if x < 1e-3 {
-                    dt * (x / 2.0 - x * x / 6.0 + x.powi(3) / 24.0
-                        - x.powi(4) / 120.0
+                    dt * (x / 2.0 - x * x / 6.0 + x.powi(3) / 24.0 - x.powi(4) / 120.0
                         + x.powi(5) / 720.0)
                 } else {
                     dt - one_minus_decay / total_rate
                 };
 
-                let removed = (initial_concentration * one_minus_decay
-                    + source * source_integral)
+                let removed = (initial_concentration * one_minus_decay + source * source_integral)
                     * region.volume;
                 uptake_mass += removed * uptake / total_rate;
                 degraded_mass += removed * degradation / total_rate;
-                region.concentration = initial_concentration * (-x).exp()
-                    + source * one_minus_decay / total_rate;
+                region.concentration =
+                    initial_concentration * (-x).exp() + source * one_minus_decay / total_rate;
             }
 
             if !nonnegative_finite(region.concentration) {
@@ -194,8 +188,7 @@ impl SignalEcology {
         {
             return Err(SignalError::NumericalFailure);
         }
-        let residual =
-            initial_mass + produced_mass - uptake_mass - degraded_mass - final_mass;
+        let residual = initial_mass + produced_mass - uptake_mass - degraded_mass - final_mass;
         if !residual.is_finite() {
             return Err(SignalError::NumericalFailure);
         }
@@ -243,8 +236,7 @@ impl SignalReceptor {
             return Ok(0.0);
         }
 
-        let log_ratio = self.cooperativity
-            * (concentration.ln() - self.half_saturation.ln());
+        let log_ratio = self.cooperativity * (concentration.ln() - self.half_saturation.ln());
         let occupancy = if log_ratio >= 0.0 {
             1.0 / (1.0 + (-log_ratio).exp())
         } else {
@@ -341,10 +333,7 @@ mod tests {
         for _ in 0..10 {
             divided.step(0.1).unwrap();
         }
-        assert!(
-            (whole.regions[0].concentration - divided.regions[0].concentration).abs()
-                < 1e-12
-        );
+        assert!((whole.regions[0].concentration - divided.regions[0].concentration).abs() < 1e-12);
     }
 
     #[test]
@@ -399,13 +388,7 @@ mod tests {
     fn transport_conserves_amount_across_spatial_sizes_and_topologies() {
         for count in [1_usize, 2, 4, 8, 16] {
             let regions = (0..count)
-                .map(|index| {
-                    region(
-                        index as u32,
-                        0.5 + index as f64 * 0.1,
-                        (index % 3) as f64,
-                    )
-                })
+                .map(|index| region(index as u32, 0.5 + index as f64 * 0.1, (index % 3) as f64))
                 .collect::<Vec<_>>();
             let mut edges = Vec::new();
             for index in 1..count {
