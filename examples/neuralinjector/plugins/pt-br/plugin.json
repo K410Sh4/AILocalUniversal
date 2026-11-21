@@ -1,0 +1,31 @@
+{
+  "plugin_format_version": "0.1.0",
+  "id": "org.ailocal.language.pt-br",
+  "name": "Português brasileiro",
+  "version": "1.0.0",
+  "kind": "rules",
+  "description": "Define idioma padrão e estilo de comunicação em português brasileiro.",
+  "priority": 20,
+  "enabled_by_default": true,
+  "targets": {
+    "model_refs": [
+      "qwen3-4b"
+    ],
+    "capabilities": [
+      "chat"
+    ],
+    "engines": [
+      "ollama"
+    ]
+  },
+  "rules": {
+    "system_prompt": "rules/system.md",
+    "merge_strategy": "compose_by_sections"
+  },
+  "dependencies": [],
+  "permissions": [],
+  "authors": [
+    "K410Sh4"
+  ],
+  "license": "LicenseRef-AILocal-Universal-Proprietary"
+}
