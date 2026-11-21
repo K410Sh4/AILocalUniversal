@@ -233,6 +233,17 @@ def compare_process_memory(
         or after.rss_bytes is None
     ):
         return None
+    try:
+        before_time = datetime.fromisoformat(before.observed_at.replace("Z", "+00:00"))
+        after_time = datetime.fromisoformat(after.observed_at.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    if (
+        before_time.tzinfo is None
+        or after_time.tzinfo is None
+        or after_time <= before_time
+    ):
+        return None
     return ProcessMemoryDelta(
         pss_delta_bytes=after.pss_bytes - before.pss_bytes,
         rss_delta_bytes=after.rss_bytes - before.rss_bytes,
