@@ -119,6 +119,10 @@ O estimador atual calcula `pesos + cache KV + overhead` como requisito total e c
 
 **Limite deliberado:** `size` e `size_vram` são preservados como medidas reportadas separadas. Não são convertidos em RAM total, nem subtraídos automaticamente do estimador. A documentação do endpoint descreve modelos carregados e esses campos, mas não define uma decomposição completa da memória do processo em pesos, KV, buffers e overhead. O digest é a chave para futura reconciliação exata da versão do artefato; nomes/tags isolados não bastam.
 
+**Etapa 2 implementada — reconciliação de identidade:** o módulo `resources.residency` compara o artefato instalado com o snapshot residente usando referência exata e digest. O `AdaptiveResourceManager.reconcile_residency()` expõe a consulta. Os estados são `confirmed`, `digest_missing`, `digest_mismatch`, `ambiguous`, `not_resident` e `artifact_missing`. Só a combinação única de referência instalada e digest coincidente recebe `confirmed`.
+
+Esta etapa é deliberadamente informativa: mesmo quando a identidade é confirmada, o estimador e o seletor continuam usando o caminho conservador de memória fria. O endpoint não fornece decomposição suficiente para calcular com segurança o custo incremental de pesos, KV e buffers. Assim, nenhuma memória é subtraída e nenhum candidato passa a ser considerado viável apenas por estar residente.
+
 **Próxima etapa — contabilização residente segura:**
 
 1. Reconciliar o digest de `RunningModelSnapshot` com o digest do artefato instalado. Divergência ou digest ausente mantém o caminho frio/conservador.
