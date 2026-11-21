@@ -3,7 +3,7 @@
 Copyright © 2026 K410Sh4. All rights reserved.  
 SPDX-License-Identifier: LicenseRef-AILocal-Universal-Proprietary
 
-> **Status: pre-implementation design and mathematical validation plan.** No signal-field runtime or BA integration is implemented in this document.
+> **Status: isolated signal-field primitive implemented with numerical tests.** No adaptation policy, NeuralStem integration, or BA runtime integration is implemented.
 
 ## 1. Why 0.8 follows 0.7
 
@@ -88,6 +88,7 @@ The diffusion operator must not create negative concentrations or artificial sig
 
 - Use symmetric edge conductances.
 - Use adaptive substeps such that `Δt · D · max_i(Σ_j g_ij) ≤ 0.45` for the explicit diffusion update.
+- Enforce a configurable maximum substep budget and reject parameter combinations that exceed it.
 - Apply exact exponential decay.
 - Cap saturable uptake at available concentration.
 - Add production only after the transport/removal update.
@@ -156,7 +157,7 @@ A signal-induced temporary response must not be mislabeled as genetic evolution.
 
 ## 9. Decision gate
 
-Implement the 0.8 benchmark only after the numerical invariants above are covered by tests. Do not integrate signal fields into NeuralStem or the Brain Artificial runtime until the model beats the 0.7 baselines across matched environmental regimes and the improvement remains after accounting for transport, uptake, calibration, and computation costs.
+The isolated 0.8 field primitive now implements symmetric graph diffusion, adaptive stable substeps, exact first-order decay, bounded saturable uptake, Hill-like receiver response, and exposure memory. Its tests must establish the numerical invariants above. This primitive is not yet a regional adaptation policy. Do not integrate signal fields into NeuralStem or the Brain Artificial runtime until a separate environmental benchmark beats the 0.7 baselines across matched regimes and the improvement remains after accounting for transport, uptake, calibration, and computation costs.
 
 The Brain Artificial (BA) remains a distinct artificial developmental and adaptive system, not conventional AI. K.IA remains a separate coordination runtime. External AI models are optional tools and do not define BA's internal architecture.
 
