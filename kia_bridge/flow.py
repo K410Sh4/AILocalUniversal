@@ -123,7 +123,9 @@ def _classification_from_task(
             raise KiaFlowError("A classificação NAPA contém uma ativação inválida.")
         area_id = item.get("area_id")
         if not isinstance(area_id, str) or not area_id or area_id in by_id:
-            raise KiaFlowError("A classificação NAPA contém IDs de ativação inválidos ou duplicados.")
+            raise KiaFlowError(
+                "A classificação NAPA contém IDs de ativação inválidos ou duplicados."
+            )
         by_id[area_id] = item
 
     if set(by_id) != set(active_ids):
