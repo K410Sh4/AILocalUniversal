@@ -10,6 +10,7 @@ O pacote `resources/` contém a primeira implementação do Adaptive Resource Ma
 - `manager.py`: fachada para snapshot de hardware, estimativas por registro, seleção automática e avaliação de capacidade residente.
 - `residency.py`: reconciliação por digest e verificação conservadora de reutilização do runner sem dupla contagem de alocações já existentes.
 - `leases.py`: leases de uso e mutação, impedindo pull/remoção de modelos protegidos por uma execução ativa.
+- `telemetry.py`: probe Linux PSS/RSS da árvore `ollama serve` e comparação de amostras completas, sem confundir RSS com memória física exclusiva.
 - `OllamaStatusWorker`: atualiza o inventário e os snapshots `/api/ps` em background; o Chat renova a observação após cada execução.
 
 A pesquisa e o mapeamento dos princípios de homeostase, memória esparsa, consolidação e poda seletiva estão em [NEURAL_RESOURCE_HOMEOSTASIS.md](../docs/NEURAL_RESOURCE_HOMEOSTASIS.md).
@@ -37,5 +38,5 @@ Os perfis não são aplicados como quotas de RAM/VRAM; a seleção continua usan
 - Validar estimativas contra medições locais no Arch e dados do `ollama ps`.
 - Registrar benchmark frio/quente de RAM, VRAM, latência, throughput, qualidade e estabilidade.
 - Contexto configurável e políticas por tarefa.
-- Telemetria contínua, leases, concorrência e ciclo de vida de modelos.
+- Integrar o probe PSS com sessões de medição fria/quente, VRAM e calibração robusta.
 - Integração progressiva com backends além do Ollama.
