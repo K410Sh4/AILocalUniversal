@@ -168,7 +168,6 @@ A hipótese estrutural é que regiões devem manter autonomia quando seus nichos
 
 Documentação experimental: [NeuralDNA 0.7 — Spatial Communication](docs/NEURALDNA_SPATIAL_COMMUNICATION_V0.7.md).
 
-### 3.3. Organização conceitual proposta
 
 ### 3.4. Ativação seletiva e armazenamento hierárquico
 
