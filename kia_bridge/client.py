@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Any
 
 HOST_PROTOCOL_VERSION = 2
+MAX_REQUEST_BYTES = 4 * 1024 * 1024
 
 
 class KiaRuntimeError(RuntimeError):
@@ -143,7 +144,6 @@ class KiaRuntimeClient:
             "command": command_envelope,
         }
 
-        assert self._process.stdin is not None
         try:
             encoded = json.dumps(
                 envelope,
@@ -151,6 +151,21 @@ class KiaRuntimeClient:
                 separators=(",", ":"),
                 allow_nan=False,
             )
+        except (TypeError, ValueError) as exc:
+            raise KiaRuntimeError(
+                f"Payload do comando K.IA não é serializável em JSON: {exc}",
+                code="invalid_request_payload",
+            ) from exc
+
+        encoded_size = len(encoded.encode("utf-8"))
+        if encoded_size > MAX_REQUEST_BYTES:
+            raise KiaRuntimeError(
+                f"Solicitação excede o limite JSONL de {MAX_REQUEST_BYTES} bytes.",
+                code="request_too_large",
+            )
+
+        assert self._process.stdin is not None
+        try:
             self._process.stdin.write(encoded + "\n")
             self._process.stdin.flush()
         except (BrokenPipeError, OSError, ValueError) as exc:
