@@ -62,16 +62,31 @@ As fases são entregas progressivas. Uma funcionalidade só é considerada concl
 - [ ] Validar medições na RX 5700 XT e em ambiente sem GPU dedicada.
 - [ ] Ampliar probes por plataforma/runtime; fabricante e driver não comprovam Vulkan/ROCm/CUDA.
 
-### 4.3 — Adaptive Model Selector (planejado)
+### 4.3 — Catálogo remoto por categorias (implementado nesta branch; validação pendente)
 
-- [ ] Catálogo curado e fontes externas com procedência por campo e licença por versão/artefato.
+- [x] Manifesto JSON versionado, remoto com fallback local empacotado.
+- [x] Categorias, busca textual, fichas, variantes Ollama e fontes oficiais.
+- [x] Limites de tamanho, validação de esquema, procedência e nomes de modelo.
+- [x] Variantes com plataforma incompatível aparecem sem ação de instalação.
+- [ ] Ampliar o catálogo e revisar periodicamente as fichas/licenças.
+
+### 4.4 — Download, instalação e gerenciamento (implementação nesta branch; validação pendente)
+
+- [x] Confirmação explícita com modelo/tag, tamanho publicado e situação da licença.
+- [x] Pull pelo endpoint Ollama em worker Qt, progresso NDJSON e cancelamento cooperativo.
+- [x] Verificação do evento final de sucesso do runtime.
+- [x] Remoção por API com confirmação e atualização do inventário.
+- [ ] Validar download, cancelamento, retomada e remoção no Arch Linux.
+- [ ] Adicionar verificação pós-download de digest quando o runtime expuser uma fonte confiável.
+
+### 4.5 — Adaptive Model Selector (planejado)
+
 - [ ] Requisitos de memória por modelo, quantização, runtime, contexto e offload, baseados em evidência ou medição.
 - [ ] Benchmark local de qualidade, latência, RAM/VRAM e estabilidade.
 - [ ] Seleção por tarefa, recursos, preferência, qualidade medida e fallback explicável.
 - [ ] Políticas de carregamento, descarregamento, leases e concorrência integradas ao Resource Manager.
-- [ ] Download/instalação somente com consentimento, licença, integridade e espaço em disco verificados.
 
-**Saída:** descoberta e seleção de modelos explicáveis, conservadoras e adaptadas ao hardware real.
+**Saída:** descoberta, instalação e seleção de modelos explicáveis, conservadoras e adaptadas ao hardware real.
 
 ## Fase 5 — Agentes especialistas e autoengenharia
 
