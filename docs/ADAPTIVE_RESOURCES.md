@@ -127,10 +127,14 @@ Esta etapa é deliberadamente informativa: mesmo quando a identidade é confirma
 
 O zero representa somente nova alocação do runner; não significa consumo zero do processo ou do sistema. A avaliação não subtrai `size` de RAM/VRAM livre, não infere decomposição de memória e não aprova slots concorrentes. Digest ausente/divergente, telemetria incompleta, contexto maior ou concorrência não comprovada retornam estados de fallback. O método está integrado ao `AdaptiveModelSelector` e ao modo Automático do Chat. `OllamaStatusWorker` atualiza snapshots em segundo plano; após cada execução, o Chat atualiza novamente a telemetria. O `KiaExecutionCoordinator` também recebe esses snapshots e permite que o planner Rust considere um modelo residente com custo incremental de RAM zero, sem contornar a verificação de identidade/contexto. O modo Manual permanece inalterado. O seletor dá preferência à residência confirmada quando a categoria da tarefa não indicar uma alternativa mais adequada.
 
-**Próxima etapa — concorrência, leases e validação empírica:**
+**Etapa 4 implementada — leases de ciclo de vida da aplicação:** `resources.leases.ModelLifecycleLeaseManager` oferece leases de uso compartilháveis e leases exclusivos de mutação por runtime/referência. O Chat mantém uma lease durante toda a execução; pull e remoção são recusados enquanto o modelo estiver em uso, e uma execução nova é recusada enquanto pull/remoção estiverem ativos. As leases são liberadas no sinal `finished`, inclusive após falha ou cancelamento.
 
-1. Integrar slots reais de concorrência, fila, cancelamento e leases; mais de uma solicitação permanece no caminho conservador até haver telemetria confiável.
-2. Manter reservas de residência separadas dos leases temporários por tarefa. A reserva só é liberada após confirmação de unload/expiração.
+**Limite explícito:** essas leases coordenam somente operações iniciadas pela aplicação. Não reservam RAM/VRAM do kernel, não impedem unload feito externamente por CLI/outro cliente e ainda não compartilham o `ExecutionLeaseManager` Rust com o ciclo de vida Ollama.
+
+**Próxima etapa — concorrência, leases de runtime e validação empírica:**
+
+1. Conectar leases de ciclo de vida ao unload/expiração do Ollama e ao `ExecutionLeaseManager` Rust; mais de uma solicitação permanece no caminho conservador até haver telemetria confiável.
+2. Separar reservas persistentes de residência dos leases temporários por tarefa e liberar somente após confirmação de unload.
 3. Coletar medições frias/quentes simultâneas de RAM/VRAM, tamanho do runner, contexto, latência e throughput no Arch Linux.
 4. Calibrar previsões por modelo, quantização, backend e hardware com traces reproduzíveis e rollback.
 
