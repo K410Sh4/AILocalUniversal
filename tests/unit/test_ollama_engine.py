@@ -200,18 +200,20 @@ async def test_list_running_models_normalizes_ollama_ps_snapshot() -> None:
     engine = OllamaEngine(transport=httpx.MockTransport(handler))
     models = await engine.list_running_models()
 
-    assert models == [
-        RunningModelSnapshot(
-            name="qwen3:4b",
-            model="qwen3:4b",
-            digest="a" * 64,
-            size_bytes=3_000_000_000,
-            size_vram_bytes=2_000_000_000,
-            context_length=8192,
-            expires_at="2026-11-21T12:00:00Z",
-            details={"family": "qwen3", "quantization_level": "Q4_K_M"},
-        )
-    ]
+    assert len(models) == 1
+    snapshot = models[0]
+    assert snapshot.name == "qwen3:4b"
+    assert snapshot.model == "qwen3:4b"
+    assert snapshot.digest == "a" * 64
+    assert snapshot.size_bytes == 3_000_000_000
+    assert snapshot.size_vram_bytes == 2_000_000_000
+    assert snapshot.context_length == 8192
+    assert snapshot.expires_at == "2026-11-21T12:00:00Z"
+    assert snapshot.details == {
+        "family": "qwen3",
+        "quantization_level": "Q4_K_M",
+    }
+    assert snapshot.observed_at is not None
 
 
 @pytest.mark.asyncio
