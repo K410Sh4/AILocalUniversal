@@ -292,10 +292,15 @@ class MainWindow(QMainWindow):
         models = payload.get("models", [])
         self.models = models if isinstance(models, list) else []
         running_models = payload.get("running_models", [])
-        self.running_models = [
-            item for item in running_models
-            if isinstance(item, RunningModelSnapshot)
-        ] if isinstance(running_models, list) else []
+        self.running_models = (
+            [
+                item for item in running_models
+                if isinstance(item, RunningModelSnapshot)
+            ]
+            if isinstance(running_models, list)
+            else []
+        )
+        residency_error = payload.get("residency_error")
         chat_models = [
             model
             for model in self.models
@@ -343,6 +348,11 @@ class MainWindow(QMainWindow):
                 message = (
                     "Ollama conectado, mas nenhum modelo compatível com chat foi encontrado. "
                     "Instale um modelo de geração."
+                )
+            if residency_error:
+                message += (
+                    " Snapshot de residência indisponível; a seleção usará "
+                    "a estimativa de carregamento frio."
                 )
             self.chat_view.set_status(message)
             self.statusBar().showMessage(message)
