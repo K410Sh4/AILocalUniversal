@@ -103,6 +103,7 @@ class AdaptiveModelSelector:
                     ResourcePlacement.HYBRID: 2,
                     ResourcePlacement.CPU: 1,
                 }
+
                 def rank(item):
                     model, estimate, record = item
                     category_match = int(
