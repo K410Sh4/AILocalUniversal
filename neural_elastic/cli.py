@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+from math import isfinite
 from pathlib import Path
 from typing import Sequence
 
@@ -64,16 +65,16 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     try:
-        if args.capacity_mib <= 0:
-            raise ValueError("--capacity-mib precisa ser positivo.")
+        if not isfinite(args.capacity_mib) or args.capacity_mib <= 0:
+            raise ValueError("--capacity-mib precisa ser positivo e finito.")
         capacity_bytes = int(args.capacity_mib * MIB)
 
         if args.trace is not None:
             trace = AccessTrace.from_jsonl(args.trace.read_text(encoding="utf-8"))
             source_label = str(args.trace)
         else:
-            if args.expert_mib <= 0:
-                raise ValueError("--expert-mib precisa ser positivo.")
+            if not isfinite(args.expert_mib) or args.expert_mib <= 0:
+                raise ValueError("--expert-mib precisa ser positivo e finito.")
             trace = generate_synthetic_trace(
                 args.tokens,
                 args.experts,
