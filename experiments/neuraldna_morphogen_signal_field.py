@@ -8,7 +8,6 @@ SPDX-License-Identifier: LicenseRef-AILocal-Universal-Proprietary
 from __future__ import annotations
 
 import math
-import statistics
 from dataclasses import dataclass
 
 
@@ -171,7 +170,14 @@ class SignalField:
         sub_dt = dt / substeps
 
         # Symmetric edge fluxes preserve total mass during closed-boundary diffusion.
+        # Split production around each substep to reduce timestep-ordering bias.
         for _ in range(substeps):
+            for region in range(self.region_count):
+                for signal in range(self.signal_classes):
+                    self._concentrations[region][signal] += (
+                        production[region][signal] * sub_dt * 0.5
+                    )
+
             delta = [
                 [0.0] * self.signal_classes for _ in range(self.region_count)
             ]
@@ -192,31 +198,35 @@ class SignalField:
                         + delta[region][signal],
                     )
 
-        # Apply exact first-order degradation, saturable uptake, then production.
-        for region in range(self.region_count):
-            decay_factor = math.exp(-self.degradation[region] * dt)
-            for signal in range(self.signal_classes):
-                concentration = self._concentrations[region][signal] * decay_factor
-                uptake = (
-                    self.uptake_vmax[region]
-                    * dt
-                    * concentration
-                    / (self.uptake_km[region] + concentration)
-                )
-                concentration = max(0.0, concentration - min(concentration, uptake))
-                concentration += production[region][signal] * dt
-                self._concentrations[region][signal] = concentration
+            # Exact first-order degradation and bounded saturable uptake.
+            for region in range(self.region_count):
+                decay_factor = math.exp(-self.degradation[region] * sub_dt)
+                for signal in range(self.signal_classes):
+                    concentration = (
+                        self._concentrations[region][signal] * decay_factor
+                    )
+                    uptake = (
+                        self.uptake_vmax[region]
+                        * sub_dt
+                        * concentration
+                        / (self.uptake_km[region] + concentration)
+                    )
+                    concentration = max(
+                        0.0, concentration - min(concentration, uptake)
+                    )
+                    concentration += production[region][signal] * sub_dt * 0.5
+                    self._concentrations[region][signal] = concentration
 
-                response = _hill_response(
-                    concentration,
-                    self.sensitivity_kd[region],
-                    self.hill_coefficient[region],
-                )
-                self._exposures[region][signal] = (
-                    self._exposures[region][signal]
-                    * math.exp(-self.exposure_clearance[region] * dt)
-                    + response * dt
-                )
+                    response = _hill_response(
+                        concentration,
+                        self.sensitivity_kd[region],
+                        self.hill_coefficient[region],
+                    )
+                    self._exposures[region][signal] = (
+                        self._exposures[region][signal]
+                        * math.exp(-self.exposure_clearance[region] * sub_dt)
+                        + response * sub_dt
+                    )
 
         self._step_count += 1
         return self.snapshot(substeps)
