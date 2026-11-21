@@ -3,7 +3,7 @@ from workflows.graph import WorkflowGraph
 from workflows.runtime import GraphRuntime, HandlerRegistry
 
 
-TEMPLATE = "examples/workflows/multi_specialist.pipeline.graph.json"
+TEMPLATE = "workflows/templates/multi_specialist.pipeline.graph.json"
 
 
 @pytest.mark.asyncio
