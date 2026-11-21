@@ -142,10 +142,13 @@ class AdaptiveModelSelector:
         unknown = [
             item for item in evaluated
             if item[1].placement is ResourcePlacement.UNKNOWN
-            or item[1].confidence in {
-                EstimateConfidence.PARTIAL,
-                EstimateConfidence.UNKNOWN,
-            }
+            or (
+                item[1].confidence in {
+                    EstimateConfidence.PARTIAL,
+                    EstimateConfidence.UNKNOWN,
+                }
+                and item[1].placement is not ResourcePlacement.DOES_NOT_FIT
+            )
         ]
         if unknown:
             chosen = next(
