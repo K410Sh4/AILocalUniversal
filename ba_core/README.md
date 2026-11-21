@@ -27,4 +27,4 @@ cargo clippy --all-targets --all-features -- -D warnings
 cargo test --all-targets
 ```
 
-See [the validation protocol](../docs/BA_CORE_V0.1_VALIDATION.md) for experimental gates and interpretation limits.
+See [the validation protocol](../docs/BA_CORE_V0.1_VALIDATION.md) and [the 0.2 benchmark matrix](../docs/BA_CORE_V0.2_BENCHMARK_MATRIX.md) for experimental gates and interpretation limits.

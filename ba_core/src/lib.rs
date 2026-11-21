@@ -225,6 +225,54 @@ impl World {
     }
 }
 
+/// Side-by-side metrics for local adaptation and a shared-global-environment baseline.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct AdaptationComparison {
+    pub region_count: usize,
+    pub local_mean_fitness: f64,
+    pub local_worst_region_fitness: f64,
+    pub shared_global_mean_fitness: f64,
+    pub shared_global_worst_region_fitness: f64,
+}
+
+/// Compare local adaptation with a baseline where every unit receives the same
+/// region-averaged environmental conditions. Both start from identical states.
+pub fn compare_local_to_shared_global(
+    initial: &World,
+    steps: usize,
+) -> Result<AdaptationComparison, ValidationError> {
+    initial.validate()?;
+    let mut local = initial.clone();
+    let mut shared = initial.clone();
+
+    let mut global_conditions = [0.0; 2];
+    for region in &initial.regions {
+        for (axis, value) in region.environment.conditions.iter().enumerate() {
+            global_conditions[axis] += *value;
+        }
+    }
+    for value in &mut global_conditions {
+        *value /= initial.regions.len() as f64;
+    }
+
+    for _ in 0..steps {
+        local.adapt_locally()?;
+        for region in &mut shared.regions {
+            for unit in &mut region.units {
+                unit.adapt_toward(global_conditions);
+            }
+        }
+    }
+
+    Ok(AdaptationComparison {
+        region_count: initial.regions.len(),
+        local_mean_fitness: local.mean_local_fitness(),
+        local_worst_region_fitness: local.worst_region_fitness(),
+        shared_global_mean_fitness: shared.mean_local_fitness(),
+        shared_global_worst_region_fitness: shared.worst_region_fitness(),
+    })
+}
+
 fn valid_unit_interval(value: f64) -> bool {
     value.is_finite() && (0.0..=1.0).contains(&value)
 }
@@ -290,6 +338,99 @@ mod tests {
 
         assert!(local.mean_local_fitness() > shared.mean_local_fitness() + 0.20);
         assert!(local.worst_region_fitness() > shared.worst_region_fitness());
+    }
+
+    fn matrix_world(region_count: usize) -> World {
+        let mut regions = Vec::with_capacity(region_count);
+        let mut connections = Vec::with_capacity(region_count.saturating_sub(1));
+        for index in 0..region_count {
+            let conditions = if index % 2 == 0 {
+                [0.0, 0.0]
+            } else {
+                [1.0, 1.0]
+            };
+            regions.push(region(
+                index as u32 + 1,
+                index as u32 + 100,
+                conditions,
+                (index % 2) as f64,
+                index as u64 + 1,
+            ));
+            if index > 0 {
+                connections.push(Connection {
+                    a: index as u32,
+                    b: index as u32 + 1,
+                    permeability: 0.2,
+                });
+            }
+        }
+        World {
+            regions,
+            connections,
+            diffusion_rate: 0.2,
+        }
+    }
+
+    #[test]
+    fn local_adaptation_matrix_covers_one_to_sixteen_regions() {
+        for region_count in [1, 2, 4, 8, 16] {
+            let report = compare_local_to_shared_global(&matrix_world(region_count), 30).unwrap();
+            assert_eq!(report.region_count, region_count);
+            if region_count == 1 {
+                assert!(
+                    (report.local_mean_fitness - report.shared_global_mean_fitness).abs() < 1e-12
+                );
+            } else {
+                assert!(report.local_mean_fitness > report.shared_global_mean_fitness);
+                assert!(
+                    report.local_worst_region_fitness > report.shared_global_worst_region_fitness
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn local_adaptation_improves_monotonically_across_learning_rate_sweep() {
+        let mut previous = 0.0;
+        for learning_rate in [0.05, 0.2, 0.5, 1.0] {
+            let mut world = matrix_world(2);
+            for region in &mut world.regions {
+                region.units[0].learning_rate = learning_rate;
+            }
+            let report = compare_local_to_shared_global(&world, 10).unwrap();
+            assert!(report.local_mean_fitness >= previous);
+            previous = report.local_mean_fitness;
+        }
+    }
+
+    #[test]
+    fn signal_transport_remains_conservative_across_spatial_topologies() {
+        let topologies = vec![
+            vec![(1, 2), (2, 3), (3, 4)],
+            vec![(1, 2), (2, 3), (3, 4), (4, 1)],
+            vec![(1, 2), (1, 3), (2, 4), (3, 4)],
+            vec![(1, 2), (1, 3), (1, 4)],
+            vec![(1, 2), (3, 4)],
+        ];
+        for topology in topologies {
+            let mut world = matrix_world(4);
+            world.connections = topology
+                .into_iter()
+                .map(|(a, b)| Connection {
+                    a,
+                    b,
+                    permeability: 0.2,
+                })
+                .collect();
+            let before: f64 = world.regions.iter().map(|region| region.signal).sum();
+            world.transport_signals().unwrap();
+            let after: f64 = world.regions.iter().map(|region| region.signal).sum();
+            assert!((before - after).abs() < 1e-12);
+            assert!(world
+                .regions
+                .iter()
+                .all(|region| (0.0..=1.0).contains(&region.signal)));
+        }
     }
 
     #[test]
