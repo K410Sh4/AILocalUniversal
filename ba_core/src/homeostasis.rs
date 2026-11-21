@@ -315,10 +315,9 @@ mod tests {
         let mut r = region(1, 2.0);
         r.state = 1.9;
         let report = r.step(0.5, 1.0, 0.0).unwrap();
-        let reconstructed = report.state_before
-            + report.disturbance_amount
-            + report.correction_amount
-            - report.boundary_exchange;
+        let reconstructed =
+            report.state_before + report.disturbance_amount + report.correction_amount
+                - report.boundary_exchange;
         assert!((reconstructed - report.state_after).abs() < 1e-12);
         assert!(report.boundary_exchange > 0.0);
         assert_eq!(report.state_after, 2.0);
@@ -328,7 +327,10 @@ mod tests {
     fn unstable_or_invalid_steps_are_rejected_before_mutation() {
         let mut r = region(1, 1.0);
         let before = r.clone();
-        assert_eq!(r.step(3.0, 0.0, 0.1), Err(HomeostasisError::UnstableStep(1)));
+        assert_eq!(
+            r.step(3.0, 0.0, 0.1),
+            Err(HomeostasisError::UnstableStep(1))
+        );
         assert_eq!(r, before);
         assert!(matches!(
             r.step(f64::NAN, 0.0, 0.1),
@@ -349,7 +351,9 @@ mod tests {
 
     #[test]
     fn duplicate_and_unknown_disturbance_regions_are_rejected() {
-        let mut system = HomeostasisSystem { regions: vec![region(1, 0.0)] };
+        let mut system = HomeostasisSystem {
+            regions: vec![region(1, 0.0)],
+        };
         assert_eq!(
             system.step(0.1, &[(1, 0.1), (1, 0.2)], 0.0),
             Err(HomeostasisError::DuplicateDisturbance(1))
@@ -370,7 +374,9 @@ mod tests {
         second.state = -1.0e308;
         second.target = 1.0e308;
         let before_second = second.clone();
-        let mut system = HomeostasisSystem { regions: vec![first, second] };
+        let mut system = HomeostasisSystem {
+            regions: vec![first, second],
+        };
 
         assert_eq!(
             system.step(0.1, &[], 0.0),
@@ -382,7 +388,9 @@ mod tests {
 
     #[test]
     fn deterministic_replay_produces_identical_states_and_reports() {
-        let mut a = HomeostasisSystem { regions: vec![region(1, 0.4), region(2, -0.3)] };
+        let mut a = HomeostasisSystem {
+            regions: vec![region(1, 0.4), region(2, -0.3)],
+        };
         let mut b = a.clone();
         for _ in 0..20 {
             let ra = a.step(0.1, &[(1, 0.2), (2, -0.1)], 0.01).unwrap();
