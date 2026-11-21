@@ -9,7 +9,14 @@ from typing import Any
 
 import httpx
 
-from engines.base import EngineAdapter, EngineCapabilities, EngineEvent, EngineRequest, ModelInfo
+from engines.base import (
+    EngineAdapter,
+    EngineCapabilities,
+    EngineEvent,
+    EngineRequest,
+    ModelInfo,
+    RunningModelSnapshot,
+)
 from model_hub.catalog import validate_model_reference
 
 
@@ -216,6 +223,70 @@ class OllamaEngine(EngineAdapter):
             raise OllamaConnectionError(f"Falha HTTP ao consultar Ollama: {exc}") from exc
         except ValueError as exc:
             raise OllamaProtocolError("Ollama retornou JSON inválido em /api/tags.") from exc
+
+    async def list_running_models(self) -> list[RunningModelSnapshot]:
+        """Consulta /api/ps sem converter telemetria de VRAM em RAM total."""
+        try:
+            async with self._client() as client:
+                response = await client.get("/api/ps")
+                if not response.is_success:
+                    raise OllamaError(self._error_message(response))
+                payload = response.json()
+
+            if not isinstance(payload, dict):
+                raise OllamaProtocolError("Resposta /api/ps deve ser um objeto JSON.")
+            raw_models = payload.get("models")
+            if not isinstance(raw_models, list):
+                raise OllamaProtocolError("Resposta /api/ps sem uma lista 'models'.")
+
+            def optional_int(value: object, *, positive: bool = False) -> int | None:
+                minimum = 1 if positive else 0
+                if isinstance(value, int) and not isinstance(value, bool) and value >= minimum:
+                    return value
+                return None
+
+            snapshots: list[RunningModelSnapshot] = []
+            for item in raw_models:
+                if not isinstance(item, dict):
+                    continue
+                name = item.get("name")
+                if not isinstance(name, str) or not name.strip():
+                    name = item.get("model")
+                if not isinstance(name, str) or not name.strip():
+                    continue
+
+                model = item.get("model")
+                digest = item.get("digest")
+                expires_at = item.get("expires_at")
+                details = item.get("details")
+                snapshots.append(
+                    RunningModelSnapshot(
+                        name=name,
+                        model=model if isinstance(model, str) and model.strip() else None,
+                        digest=digest if isinstance(digest, str) and digest.strip() else None,
+                        size_bytes=optional_int(item.get("size")),
+                        size_vram_bytes=optional_int(item.get("size_vram")),
+                        context_length=optional_int(item.get("context_length"), positive=True),
+                        expires_at=(
+                            expires_at
+                            if isinstance(expires_at, str) and expires_at.strip()
+                            else None
+                        ),
+                        details=details if isinstance(details, dict) else {},
+                    )
+                )
+            return snapshots
+        except httpx.ConnectError as exc:
+            raise OllamaConnectionError(
+                f"Não foi possível conectar ao Ollama em {self.base_url}. "
+                "Confirme se o serviço está ativo."
+            ) from exc
+        except httpx.TimeoutException as exc:
+            raise OllamaConnectionError("Tempo limite ao consultar modelos residentes no Ollama.") from exc
+        except httpx.HTTPError as exc:
+            raise OllamaConnectionError(f"Falha HTTP ao consultar modelos residentes: {exc}") from exc
+        except ValueError as exc:
+            raise OllamaProtocolError("Ollama retornou JSON inválido em /api/ps.") from exc
 
     async def pull_model(self, model_name: str) -> AsyncIterator[dict[str, Any]]:
         """Baixa uma referência validada do catálogo e transmite progresso NDJSON.
