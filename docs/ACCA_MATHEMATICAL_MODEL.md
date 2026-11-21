@@ -29,7 +29,7 @@ sigma(z)=rac{1}{1+e^{-z}}
 
 Os coeficientes (w,b) são parâmetros versionados e calibráveis. Treinamento futuro deve usar rótulos de relevância, divisão temporal/por usuário quando aplicável e métricas de calibração, além de precisão/recall. Scores não são probabilidades até essa calibração ser demonstrada.
 
-**Implementação atual:** NAPA fornece intenção, afinidades e tags explicáveis. O runtime Rust combina qualidade-base, prioridade da conexão, afinidade lexical de intenção e tags de contexto. Ainda não há encoder semântico ligado ao Cognitive Router, vetor de entidades ou parâmetros de relevância treinados.
+**Implementação atual:** NAPA fornece áreas ativas, afinidades heurísticas e sinais explicáveis. O contrato `CognitiveRequest` recebe atualmente as áreas ativas como `required_capabilities`, mas não transporta os valores de `AreaActivation.affinity`. Portanto, a afinidade calculada pela NAPA ainda não participa diretamente do ranking Rust. O planner combina qualidade-base, prioridade da conexão, afinidade lexical derivada de `request.intent` e tags de contexto. As âncoras NAPA são copiadas para `intent_tags`, mas só influenciam esse score quando seus tokens também aparecem na intenção categórica recebida pelo Rust. Ainda não há encoder semântico ligado ao Cognitive Router, vetor de entidades ou parâmetros de relevância treinados.
 
 ## 2. Cognitive Sparse Routing (CSR)
 
@@ -43,7 +43,7 @@ CSR trabalha sobre o grafo cognitivo, não sobre tokens dentro de um Transformer
 
 Uma busca exaustiva em (N) vetores de dimensão (d) custa (O(Nd)); índice ANN pode reduzir o custo médio, com compromisso explícito de recall. O grafo limita o trabalho ao subgrafo visitado. Não devemos fazer hard gate a uma única área lexical inicial: recall e cobertura de requisitos são medidos.
 
-**Implementação atual:** NAPA fornece 13 áreas; Rust percorre somente capacidades ativadas e componentes associados. Ainda não há busca ANN de capacidades nem expansão semântica por embeddings.
+**Implementação atual e limite importante:** NAPA fornece 13 áreas; Rust percorre as capacidades ativadas e seus componentes associados. O planner atual é uma cobertura gulosa por capacidade: para cada `required_capability`, ordena provedores elegíveis e escolhe o primeiro que cabe no orçamento e possui executor/alvo disponíveis. Ele não calcula ainda a cobertura global mínima nem expande dependências transitivas. Embora o grafo valide relações `Requires`, `DelegatesTo`, `Complements`, `FallbackTo` e `ProducesInputFor`, somente `Supports` influencia a seleção. Essas relações não devem ser interpretadas como roteamento operacional nesta versão. Ainda não há busca ANN de capacidades nem expansão semântica por embeddings.
 
 ## 3. Seleção constrained e custo
 
