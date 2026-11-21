@@ -42,8 +42,12 @@ class ModelResourceEstimate:
     def __post_init__(self) -> None:
         if not self.model_id.strip():
             raise ValueError("model_id não pode ser vazio.")
-        if isinstance(self.context_tokens, bool) or self.context_tokens <= 0:
-            raise ValueError("context_tokens precisa ser positivo.")
+        if (
+            isinstance(self.context_tokens, bool)
+            or not isinstance(self.context_tokens, int)
+            or self.context_tokens <= 0
+        ):
+            raise ValueError("context_tokens precisa ser um inteiro positivo.")
         for name in (
             "weight_bytes",
             "kv_cache_bytes",
