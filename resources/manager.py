@@ -7,12 +7,12 @@ from model_hub.hardware import HardwareProfile, HardwareProfiler
 from model_hub.registry import ModelRegistry
 from resources.contracts import ModelResourceEstimate
 from resources.estimator import ResourceEstimator
-from resources.residency import ModelResidency, reconcile_model_residency
 from resources.profiles import (
     ResourceProfile,
     cpu_thread_budget,
     normalize_resource_profile,
 )
+from resources.residency import ModelResidency, reconcile_model_residency
 from resources.selector import AdaptiveModelSelector, ModelSelectionResult
 
 
