@@ -163,7 +163,7 @@ Cada decisão deve registrar a evidência, a política aplicada e a razão do fa
 - **Fase A — identidade residente:** concluída; referência exata + digest.
 - **Fase B — capacidade residente:** implementada como avaliação pura e testável; ainda não conectada ao seletor principal nem ao ciclo de vida da UI.
 - **Fase C — integração do seletor:** concluída; snapshots do Engine Adapter alimentam a seleção Automática, com fallback frio e modo Manual preservado.
-- **Fase D — leases e concorrência:** integrar slots reais, fila, cancelamento e liberação confirmada.
+- **Fase D — leases e concorrência:** integrar slots reais, fila, cancelamento e liberação confirmada. Snapshots só podem habilitar reutilização se a observação tiver até 30 segundos e a expiração estiver a mais de 2 segundos.
 - **Fase E — calibração empírica:** coletar medições frias/quentes no Arch Linux e comparar previsões com RAM/VRAM e logs do runner.
 - **Fase F — homeostase adaptativa:** calibrar prioridade, retenção, descarregamento e consolidação com traces reproduzíveis e rollback.
 
