@@ -12,7 +12,7 @@ A NeuralInjector Package Specification (NIP) define um contêiner portátil para
 
 O pacote é independente dos pesos completos do modelo-base, mas pode depender de um modelo previamente instalado. Essa independência não significa compatibilidade universal: o manifesto deve declarar modelos, arquiteturas, digests e capacidades de runtime necessários.
 
-A NIP 0.1.0 é uma especificação documental proposta. Ela não afirma que já existe um leitor, instalador ou runtime funcional.
+A NIP 0.1.0 é uma especificação documental proposta. Esta branch implementa apenas um subconjunto de leitura/escrita de grafos e perfis; o leitor completo de pacotes, instalador, runtime de componentes e NeuralPlugin Manager ainda não estão implementados.
 
 ## 2. Identidade e nomes
 
