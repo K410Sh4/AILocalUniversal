@@ -66,9 +66,10 @@ def test_belady_min_is_an_offline_lower_miss_reference() -> None:
     lru = simulate_trace(trace, 2, CachePolicy.LRU)
     belady = simulate_trace(trace, 2, CachePolicy.BELADY_MIN)
 
+    assert lru.cache_misses == 5
     assert belady.cache_misses == 4
     assert belady.cache_hits == 2
-    assert belady.cache_misses <= lru.cache_misses
+    assert belady.cache_misses < lru.cache_misses
 
 
 def test_belady_min_rejects_variable_size_experts() -> None:
@@ -257,12 +258,61 @@ def test_uniform_workload_can_be_compared_with_belady() -> None:
         {"token_count": 10, "expert_count": 0},
         {"token_count": 10, "expert_count": 8, "top_k": 9},
         {"token_count": 10, "expert_count": 8, "hot_set_size": 1, "top_k": 2},
+        {"token_count": 10, "expert_count": 8, "hot_set_size": 0, "top_k": 2},
         {"token_count": 10, "expert_count": 8, "workload": "unknown"},
     ],
 )
 def test_synthetic_trace_rejects_invalid_parameters(kwargs: dict) -> None:
     with pytest.raises(ValueError):
         generate_synthetic_trace(**kwargs)
+
+
+def test_lru_evicts_multiple_items_for_a_larger_expert() -> None:
+    trace = AccessTrace(
+        (
+            ExpertAccess(0, "A", 4),
+            ExpertAccess(1, "B", 4),
+            ExpertAccess(2, "C", 7),
+        )
+    )
+
+    result = simulate_trace(trace, 10, CachePolicy.LRU)
+
+    assert result.evictions == 2
+    assert result.final_resident_bytes == 7
+    assert result.peak_resident_bytes == 8
+
+
+def test_cli_emits_machine_readable_comparison(capsys) -> None:
+    from neural_elastic.cli import main
+
+    exit_code = main(
+        [
+            "--synthetic",
+            "--tokens",
+            "20",
+            "--experts",
+            "8",
+            "--top-k",
+            "2",
+            "--expert-mib",
+            "1",
+            "--capacity-mib",
+            "4",
+            "--json",
+        ]
+    )
+
+    payload = json.loads(capsys.readouterr().out)
+
+    assert exit_code == 0
+    assert payload["trace"]["tokens"] == 20
+    assert [item["policy"] for item in payload["results"]] == [
+        "lru",
+        "lfu",
+        "statistical",
+        "belady_min",
+    ]
 
 
 def test_empty_trace_has_zero_rates() -> None:
