@@ -42,6 +42,11 @@ from model_hub.compatibility import CompatibilityEngine
 from model_hub.contracts import ModelArtifact, ModelRecord
 from model_hub.hardware import HardwareProfiler
 from model_hub.registry import ModelRegistry, ModelRegistryError
+from resources.leases import (
+    ModelLeaseConflict,
+    ModelLifecycleLease,
+    ModelLifecycleLeaseManager,
+)
 from resources.manager import AdaptiveResourceManager
 from storage.configuration import AppConfig, ConfigurationError, ConfigurationStore
 from storage.conversations import Conversation, ConversationStore
@@ -86,11 +91,14 @@ class MainWindow(QMainWindow):
         self.model_hub_registry = ModelRegistry()
         self.hardware_profiler = HardwareProfiler()
         self.resource_manager = AdaptiveResourceManager(self.hardware_profiler)
+        self.model_lifecycle_leases = ModelLifecycleLeaseManager()
         self.model_catalog_client = ModelCatalogClient()
         self._catalog_document: CatalogDocument | None = None
         self._catalog_worker: ModelCatalogWorker | None = None
         self._pull_worker: OllamaPullWorker | None = None
+        self._pull_model_lease: ModelLifecycleLease | None = None
         self._delete_worker: OllamaDeleteWorker | None = None
+        self._delete_model_lease: ModelLifecycleLease | None = None
         self._status_worker: OllamaStatusWorker | None = None
         self._knowledge_worker: KnowledgeRetrievalWorker | None = None
         self._pending_knowledge_text: str | None = None
@@ -98,6 +106,7 @@ class MainWindow(QMainWindow):
         self._pending_knowledge_message: dict[str, str] | None = None
         self._active_knowledge_bundle = None
         self._chat_worker: OllamaChatWorker | OllamaTaskExecutorWorker | None = None
+        self._chat_model_lease: ModelLifecycleLease | None = None
         self._neuralmap_worker: NeuralMapWorker | None = None
         self._current_assistant_index: int | None = None
         self.last_cognitive_task: CognitiveTask | None = None
@@ -558,6 +567,13 @@ class MainWindow(QMainWindow):
         )
         if answer != QMessageBox.StandardButton.Yes:
             return
+        try:
+            self._pull_model_lease = self.model_lifecycle_leases.acquire_mutation(
+                "ollama", model_reference
+            )
+        except ModelLeaseConflict as exc:
+            QMessageBox.information(self, "Modelo em uso", str(exc))
+            return
 
         worker = OllamaPullWorker(self.engine, model_reference, self)
         self._pull_worker = worker
@@ -600,6 +616,9 @@ class MainWindow(QMainWindow):
     def _pull_worker_finished(self, worker: OllamaPullWorker) -> None:
         if self._pull_worker is worker:
             self._pull_worker = None
+        if self._pull_model_lease is not None:
+            self._pull_model_lease.release()
+            self._pull_model_lease = None
         worker.deleteLater()
 
     def _confirm_model_delete(self, model_reference: str) -> None:
@@ -618,6 +637,13 @@ class MainWindow(QMainWindow):
             QMessageBox.StandardButton.No,
         )
         if answer != QMessageBox.StandardButton.Yes:
+            return
+        try:
+            self._delete_model_lease = self.model_lifecycle_leases.acquire_mutation(
+                "ollama", model_reference
+            )
+        except ModelLeaseConflict as exc:
+            QMessageBox.information(self, "Modelo em uso", str(exc))
             return
         worker = OllamaDeleteWorker(self.engine, model_reference, self)
         self._delete_worker = worker
@@ -639,6 +665,9 @@ class MainWindow(QMainWindow):
     def _delete_worker_finished(self, worker: OllamaDeleteWorker) -> None:
         if self._delete_worker is worker:
             self._delete_worker = None
+        if self._delete_model_lease is not None:
+            self._delete_model_lease.release()
+            self._delete_model_lease = None
         worker.deleteLater()
 
     def _save_config(self) -> None:
@@ -1397,6 +1426,14 @@ class MainWindow(QMainWindow):
             messages=messages,
             options=request_options,
         )
+        try:
+            self._chat_model_lease = self.model_lifecycle_leases.acquire_use(
+                "ollama", model
+            )
+        except ModelLeaseConflict as exc:
+            QMessageBox.information(self, "Modelo em alteração", str(exc))
+            return
+
         cognitive_task.status = TaskStatus.RUNNING
         self.cognitive_view.set_task(cognitive_task)
         if subtask_count > 1:
@@ -1774,6 +1811,9 @@ class MainWindow(QMainWindow):
             self._chat_worker = None
             self._current_assistant_index = None
             self.chat_view.set_busy(False)
+            if self._chat_model_lease is not None:
+                self._chat_model_lease.release()
+                self._chat_model_lease = None
         worker.deleteLater()
         self.refresh_backend()
 
