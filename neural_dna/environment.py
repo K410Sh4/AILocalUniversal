@@ -77,7 +77,7 @@ class ReactionExpression:
 
 @dataclass(frozen=True, slots=True)
 class ReactionNorm:
-    """Genetically encoded mapping from assessed cues to developmental strategy."""
+    """Candidate heritable mapping; population inheritance/selection is not implemented yet."""
 
     base_plasticity: float = 0.1
     max_plasticity: float = 1.0
