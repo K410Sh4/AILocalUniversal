@@ -209,7 +209,10 @@ fn bounded_wait_queue_rejects_new_work_when_full() {
 
     wait_for_waiter(&manager);
     assert_eq!(
-        manager.acquire(ResourceVector::default(), &control).err().unwrap(),
+        manager
+            .acquire(ResourceVector::default(), &control)
+            .err()
+            .unwrap(),
         kia_cognitive_runtime::LeaseError::QueueFull
     );
     control.cancel();
