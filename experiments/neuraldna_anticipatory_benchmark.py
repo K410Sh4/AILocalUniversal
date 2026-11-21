@@ -347,7 +347,7 @@ def run() -> None:
                 f"  {strategy:22s} "
                 f"fitness={statistics.fmean(r.geometric_mean_fitness for r in results):.4f} "
                 f"cue={statistics.fmean(r.cue_accuracy_at_response for r in results):.3f} "
-                f"history={statistics.fmean(r.history_forecast_accuracy for r in results):.3f} "
+                f"history={statistics.fmean(\n                    r.history_forecast_accuracy for r in results\n                ):.3f} "
                 f"plasticity={statistics.fmean(r.mean_plasticity for r in results):.3f} "
                 f"reserve={statistics.fmean(r.mean_diversity_reserve for r in results):.3f} "
                 f"forecast_uncertainty={statistics.fmean(r.mean_forecast_uncertainty for r in results):.3f} "
