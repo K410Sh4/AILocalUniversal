@@ -58,13 +58,13 @@ The cycle process can change at every step while having near-zero conditional tr
 
 A bounded Markov transition estimator learns from observed transitions. It is an **acquired environmental state**, not inherited genotype and not an epigenetic mutation.
 
-The estimator forecasts the state at the response horizon. Its normalized forecast entropy is used as an uncertainty indicator. Decayed transition evidence allows old environmental patterns to gradually lose influence after a regime change.
+The estimator forecasts the state at the response horizon. Its normalized forecast entropy is retained as a diagnostic. Separately, both the cue and history predictors are calibrated against the realized state at the response horizon. The adaptive controller favors the cue only when its measured predictive skill exceeds the acquired history forecast; diversity reserve responds to uncertainty remaining after the strongest calibrated predictor. Decayed transition evidence allows old environmental patterns to gradually lose influence after a regime change.
 
 ### Cue calibration
 
-The cue tracker evaluates predictions against the environment at the response time. It uses a three-state chance baseline of 1/3, rather than assuming binary random-guess accuracy of 1/2.
+The cue and history trackers evaluate predictions against the environment at the response time. Both use a three-state chance baseline of 1/3, rather than assuming binary random-guess accuracy of 1/2. Predictive skill is discounted by evidence volume. The controller measures the cue's advantage over the history model instead of assuming that any accurate cue is better than an already stronger environmental forecast.
 
-Cue skill is discounted by evidence volume. This experimental controller is not a replacement for the existing CueCalibration API.
+The cue generator uses the future trace only to synthesize a signal with a controlled predictive relationship. The decision policy receives the cue token, current environmental observation, and acquired transition model; the future state is used only by the evaluator to score the result. This is a synthetic experimental setup, not privileged future access in the agent.
 
 ## 4. Compared strategies
 
@@ -78,7 +78,7 @@ Cue skill is discounted by evidence volume. This experimental controller is not 
 
 The synthetic fitness function exposes the trade-off between a matching specialist, a mismatched specialist, a generalist, and a diversified population. Plasticity and reserve costs are explicit.
 
-The benchmark reports geometric-mean fitness, cue accuracy at response, history forecast accuracy, mean plasticity, mean reserve, environmental change rate, and transition entropy.
+The benchmark reports geometric-mean fitness, cue accuracy at response, history forecast accuracy, mean plasticity, mean reserve, forecast-distribution uncertainty, environmental change rate, and transition entropy.
 
 ## 5. Hypotheses
 
@@ -92,7 +92,7 @@ The benchmark reports geometric-mean fitness, cue accuracy at response, history 
 
 ## 6. Validation and limits
 
-Automated tests cover determinism, bounded outputs, horizon/latency alignment, the volatility-versus-entropy distinction, and reserve response to forecast uncertainty.
+Automated tests cover determinism, bounded outputs, horizon/latency alignment, the volatility-versus-entropy distinction, reserve response to residual uncertainty, and whether adaptive plasticity follows the predictor with greater measured skill.
 
 The benchmark is synthetic and deliberately small. It does not yet model cue identity, multiple or correlated cues, individual differences in perception, continuous environmental variables, sensitive developmental windows, reversibility, migration, inter-regional communication, multi-generation inheritance, mutation, recombination, or natural selection.
 
