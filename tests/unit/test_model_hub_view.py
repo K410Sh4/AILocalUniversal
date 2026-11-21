@@ -4,6 +4,7 @@ from app.views.model_hub_view import ModelHubView
 from model_hub.compatibility import CompatibilityResult, CompatibilityStatus
 from model_hub.contracts import ModelArtifact, ModelRecord
 from model_hub.hardware import AcceleratorInfo, HardwareProfile
+from resources.contracts import EstimateConfidence, ModelResourceEstimate, ResourcePlacement
 
 
 def test_model_hub_view_displays_models_and_unknown_metadata() -> None:
@@ -53,6 +54,20 @@ def test_model_hub_view_displays_models_and_unknown_metadata() -> None:
             )
         },
         runtime_available={"ollama"},
+        resource_estimates={
+            record.record_id: ModelResourceEstimate(
+                model_id=record.record_id,
+                context_tokens=4096,
+                quantization=None,
+                weight_bytes=2 * 1024**3,
+                kv_cache_bytes=None,
+                runtime_overhead_bytes=768 * 1024**2,
+                total_required_bytes=None,
+                placement=ResourcePlacement.UNKNOWN,
+                confidence=EstimateConfidence.PARTIAL,
+                reasons=("Cache KV não estimado.",),
+            )
+        },
     )
 
     assert view.table.rowCount() == 1
@@ -62,6 +77,9 @@ def test_model_hub_view_displays_models_and_unknown_metadata() -> None:
     assert "id: ollama:qwen3:4b" in details
     assert "não verificada" in details
     assert "não há requisitos" in details
+    assert "estimativa de inferência" in details
+    assert "cache kv: —" in details
+    assert "confiança: partial" in details
     assert "radeon test gpu" in view.hardware_label.text().casefold()
     view.set_resource_recommendation("Seletor adaptativo: qwen3:4b")
     assert "seletor adaptativo" in view.resource_label.text().casefold()
