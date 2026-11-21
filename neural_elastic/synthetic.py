@@ -48,7 +48,11 @@ def generate_synthetic_trace(
     if workload not in {"stationary", "phased", "uniform"}:
         raise ValueError("workload deve ser stationary, phased ou uniform.")
 
-    selected_hot_size = hot_set_size or min(expert_count, max(top_k, 8))
+    selected_hot_size = (
+        hot_set_size
+        if hot_set_size is not None
+        else min(expert_count, max(top_k, 8))
+    )
     if (
         isinstance(selected_hot_size, bool)
         or not isinstance(selected_hot_size, int)
