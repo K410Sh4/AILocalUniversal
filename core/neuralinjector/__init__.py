@@ -1,7 +1,7 @@
 from .monitor import ResourceMonitor
 from .resources import (
     CANONICAL_PROFILES,
-    AdaptiveResourceManager,
+    AdaptiveHardwarePolicy,
     BenchmarkMode,
     CompatibilityReport,
     DynamicResourceDecision,
@@ -21,7 +21,7 @@ from .resources import (
 )
 
 __all__ = [
-    "AdaptiveResourceManager",
+    "AdaptiveHardwarePolicy",
     "BenchmarkMode",
     "CANONICAL_PROFILES",
     "CompatibilityReport",
