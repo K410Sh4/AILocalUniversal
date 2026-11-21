@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass
-from typing import Iterable
+from collections.abc import Iterable
 
 
 class TraceFormatError(ValueError):
