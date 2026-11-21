@@ -16,6 +16,7 @@ on:
       - feature/kia-runtime-host-bridge-v0.2
       - feature/kia-acca-vertical-flow-v0.3
       - feature/kia-persistent-semantic-memory-v0.4
+      - feature/kia-execution-safety-v0.5
   pull_request:
     branches:
       - main
@@ -31,6 +32,7 @@ on:
       - feature/kia-runtime-host-bridge-v0.2
       - feature/kia-acca-vertical-flow-v0.3
       - feature/kia-persistent-semantic-memory-v0.4
+      - feature/kia-execution-safety-v0.5
 
 jobs:
   unit-tests:

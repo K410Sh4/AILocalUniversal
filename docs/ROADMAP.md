@@ -279,3 +279,16 @@ A especificação matemática, limitações e metodologia de benchmark estão em
 - Toda tarefa distribuída exige autenticação, autorização, timeout, integridade e cancelamento.
 - Benchmarks registram hardware, modelo, quantização, contexto e estado quente/frio.
 - main só recebe uma fase depois de revisão, CI aprovado e validação de aceitação no ambiente-alvo.
+
+
+## K.IA 0.5 — Execution Safety Core (incremento inicial)
+
+Implementado na branch feature/kia-execution-safety-v0.5:
+- controle compartilhável por tarefa com cancelamento e deadline absoluto;
+- execução controlada em CognitiveRuntime, preservando o método sequencial anterior;
+- ComponentExecutor mantém compatibilidade, com ponto de extensão cooperativo para adaptadores que implementem polling;
+- ExecutionLeaseManager administra capacidade lógica multidimensional, limite de tarefas ativas e fila de espera limitada;
+- leases RAII liberam reservas ao sair do escopo, inclusive em retorno por erro;
+- interrupção, timeout e rejeição por admissão aparecem como estados distintos no relatório.
+
+Próximo incremento de K.IA 0.5: conectar os controles ao ciclo de vida das tarefas da aplicação/host, adaptar o cancelamento aos workers Python e adicionar adaptador llama.cpp somente após definir e testar sua interface de runtime.
