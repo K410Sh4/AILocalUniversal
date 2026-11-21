@@ -1,5 +1,3 @@
-import pytest
-
 from core.cognitive_task import CognitiveTask
 from core.deterministic_tools import DeterministicToolRegistry
 from core.validation_layer import ValidationLayer
@@ -215,3 +213,91 @@ def test_missing_subtask_validation_report_fails_final_gate() -> None:
         check["name"] == "subtask_validation" and check["status"] == "failed"
         for check in report["checks"]
     )
+
+
+def test_chat_response_reports_completeness_without_claiming_factual_verification() -> None:
+    task = CognitiveTask(
+        original_text="Explique um tema",
+        subtask_plan=[
+            {
+                "id": "s1",
+                "order": 1,
+                "text": "Definição",
+                "required": True,
+                "weight": 1.0,
+                "status": "completed",
+                "result": {"content": "Definição"},
+            },
+            {
+                "id": "s2",
+                "order": 2,
+                "text": "Aplicações",
+                "required": True,
+                "weight": 3.0,
+                "status": "completed",
+                "result": {"content": "Aplicações"},
+            },
+        ],
+    )
+
+    report = ValidationLayer().validate_chat_response(task, "Resposta completa.")
+
+    assert report["status"] == "needs_review"
+    assert report["completeness"]["status"] == "passed"
+    assert report["completeness"]["weighted_score"] == 1.0
+    assert report["factual_status"] == "not_independently_verified"
+
+
+def test_chat_response_fails_when_a_mandatory_requirement_is_missing() -> None:
+    task = CognitiveTask(
+        original_text="Explique um tema",
+        subtask_plan=[
+            {
+                "id": "s1",
+                "order": 1,
+                "text": "Definição",
+                "required": True,
+                "weight": 1.0,
+                "status": "completed",
+                "result": {"content": "Definição"},
+            },
+            {
+                "id": "s2",
+                "order": 2,
+                "text": "Aplicações",
+                "required": True,
+                "weight": 3.0,
+                "status": "pending",
+            },
+        ],
+    )
+
+    report = ValidationLayer().validate_chat_response(task, "Resposta parcial.")
+
+    assert report["status"] == "failed"
+    assert report["completeness"]["status"] == "incomplete"
+    assert report["completeness"]["weighted_score"] == 0.25
+    assert report["summary"]["checks_failed"] == 1
+
+
+def test_chat_response_without_declared_requirements_does_not_invent_completeness() -> None:
+    task = CognitiveTask(original_text="Olá")
+
+    report = ValidationLayer().validate_chat_response(task, "Olá! Como posso ajudar?")
+
+    assert report["completeness"]["status"] == "not_assessed"
+    assert report["completeness"]["weighted_score"] is None
+    assert report["factual_status"] == "not_independently_verified"
+
+
+def test_chat_response_rejects_invalid_completeness_threshold() -> None:
+    task = CognitiveTask(original_text="Olá")
+
+    import pytest
+
+    with pytest.raises(ValueError, match="completeness_threshold"):
+        ValidationLayer().validate_chat_response(
+            task,
+            "Resposta.",
+            completeness_threshold=1.1,
+        )

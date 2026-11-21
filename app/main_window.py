@@ -24,11 +24,6 @@ from engines.base import EngineAdapter, EngineRequest, ModelInfo
 from engines.model_selector import ModelSelectionError
 from engines.ollama_engine import OllamaEngine
 from engines.registry import EngineRegistry
-from model_hub.catalog import CatalogDocument, CatalogEntry, CatalogVariant, ModelCatalogClient
-from model_hub.compatibility import CompatibilityEngine
-from model_hub.contracts import ModelArtifact, ModelRecord
-from model_hub.hardware import HardwareProfiler
-from model_hub.registry import ModelRegistry, ModelRegistryError
 from kia_bridge import (
     KiaExecutionCoordinator,
     KiaFlowError,
@@ -39,6 +34,11 @@ from kia_bridge import (
     execute_deterministic_selection,
     record_validated_deterministic_feedback,
 )
+from model_hub.catalog import CatalogDocument, CatalogEntry, CatalogVariant, ModelCatalogClient
+from model_hub.compatibility import CompatibilityEngine
+from model_hub.contracts import ModelArtifact, ModelRecord
+from model_hub.hardware import HardwareProfiler
+from model_hub.registry import ModelRegistry, ModelRegistryError
 from resources.manager import AdaptiveResourceManager
 from storage.configuration import AppConfig, ConfigurationError, ConfigurationStore
 from storage.conversations import Conversation, ConversationStore
@@ -921,7 +921,13 @@ class MainWindow(QMainWindow):
                         "Não existe um plano K.IA executável para esta solicitação; "
                         "será utilizado o pipeline compatível."
                     )
-            except (KiaRuntimeError, KiaFlowError, ModelSelectionError, ValueError, KeyError) as exc:
+            except (
+                KiaRuntimeError,
+                KiaFlowError,
+                ModelSelectionError,
+                ValueError,
+                KeyError,
+            ) as exc:
                 if isinstance(exc, KiaRuntimeUnavailable) or getattr(kia_client, "_closed", False):
                     try:
                         kia_client.close()
