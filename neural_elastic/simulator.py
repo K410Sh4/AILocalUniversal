@@ -10,7 +10,6 @@ from bisect import bisect_right
 from dataclasses import dataclass
 from enum import StrEnum
 from math import isfinite
-from typing import Literal
 
 from neural_elastic.contracts import AccessTrace
 
