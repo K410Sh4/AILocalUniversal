@@ -195,6 +195,11 @@ The parameter sweep in the committed test enumerates **373,248** combinations, n
 9. Add bounded mutation-rate adaptation and mutational-neighborhood analysis.
 10. Integrate successful mechanisms with BA/K.IA; keep runtime adaptation, acquired memory and heritable genotype as separate state domains.
 
+
+## 10. First synthetic evidence
+
+The 0.3 branch includes `experiments/neuraldna_reaction_norm_sweep.py` and a report in `docs/NEURALDNA_ENVIRONMENTAL_ASSESSMENT_V0.3.md`. In a three-state toy environment, cue-assessed plasticity plus a diversity reserve substantially reduced the collapse seen with fixed plasticity under noisy/adversarial cues, while remaining below fixed plasticity when cues were perfectly reliable. It did not dominate the fixed baseline in every scenario. This is exactly why cue reliability, volatility and strategy costs must be measured instead of hard-coded as universal rules. The experiment is synthetic and does not yet test NeuralStem development or multi-generation genetic evolution.
+
 ## 11. Scientific references
 
 - Hill, Pfennig & Pfennig (2024), *Assessment and the regulation of adaptive phenotypic plasticity*, Development 151(20), dev203101. https://doi.org/10.1242/dev.203101
