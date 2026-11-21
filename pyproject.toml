@@ -21,10 +21,11 @@ documents = ["pypdf>=7.1.1,<8"]
 
 [project.scripts]
 ailocal = "app.main:main"
+neural-elastic-sim = "neural_elastic.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["app*", "core*", "engines*", "pipeline*", "resources*", "knowledge*", "swarm*", "storage*", "workers*", "model_hub*"]
+include = ["app*", "core*", "engines*", "pipeline*", "resources*", "knowledge*", "swarm*", "storage*", "workers*", "model_hub*", "neural_elastic*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

@@ -22,6 +22,7 @@ Este documento diferencia código integrado, cobertura automatizada e validaçã
 | RAG / Context Composer | Base lexical/vetorial, aba Conhecimento e integração opt-in ao Chat implementadas na `feature/rag-v1`; EmbeddingGemma e Qwen3 Embedding validados no Arch; CI atual: Ruff + 155 testes Pytest (Python 3.11) | Reranker concreto, benchmark representativo de corpus, OCR, orçamento por tokenizer e verificação factual/entailment permanecem fora desta entrega |
 | NeuralModel Hub | Registro local, perfil de hardware e compatibilidade conservadora; catálogo remoto curado por categorias com fallback local; fichas e variantes Ollama com fontes; busca/filtros; pull NDJSON com progresso/cancelamento e remoção com confirmação, na branch `feature/neural-model-hub-v1` | Catálogo inicial ainda pequeno; catálogo expandido, licença/proveniência por versão/artefato, compatibilidade medida por runtime/contexto, Adaptive Model Selector e validação de cancelamento/retomada/remoção no Arch pendentes; pull e uso no Chat já validados pelo usuário |
 | Adaptive Resource Manager | Estimativa de RAM/VRAM e seleção automática conservadora na `feature/adaptive-resource-manager-v1`; Fase 4.6 acrescenta perfis persistidos e orçamento aproximado de threads CPU para Ollama | Validar no Arch; medição real, controle genérico de GPU e ciclo de vida automático continuam pendentes |
+| Neural Elastic Execution Simulator | Simulador offline de traces MoE com LRU, LFU, política estatística e Belady MIN (somente tamanhos uniformes); CLI e testes | Ainda sem traces reais de roteamento; sem modelagem de latência de SSD, prefetch ou integração com runtime |
 | Roteamento especialista | Planejado | Fase 5 |
 | Swarm P2P | Planejado | Fase 6 |
 | BitNet / RPC | Experimental futuro | Fase 7 |
@@ -197,3 +198,16 @@ Implementação inicial na branch `feature/chat-management-resource-profiles-v1`
 - a execução cognitiva em múltiplas etapas usa o mesmo orçamento de threads.
 
 Ainda exige validação manual no Arch Linux. O controle de threads é aproximado: não garante percentual exato de CPU e não limita diretamente a computação da GPU. A opção do runner pode exigir recarga do modelo já carregado. O seletor mantém estimativas independentes de RAM/VRAM e ainda não possui benchmark de custo computacional por modelo para prometer uma escolha ótima em cada perfil.
+
+
+## Fase 5.0 — Neural Elastic Execution Simulator
+
+Implementação inicial na branch `feature/neural-elastic-simulator-v1`:
+- contrato versionado por estrutura para traces JSONL: token, ID do especialista, tamanho em bytes e ordem de acesso;
+- cache limitado em bytes, com suporte a especialistas de tamanhos diferentes nas políticas online;
+- baselines LRU, LFU e política estatística baseada em frequência exponencialmente decaída e recência;
+- Belady MIN somente como oráculo offline para objetos de tamanho uniforme;
+- traces sintéticos reproduzíveis (stationary, uniform e phased), CLI e saída JSON;
+- métricas de hits, misses, bytes lidos simulados, bytes por token, evictions, bypass e ocupação.
+
+**Limites:** ainda não há trace real de IDs de especialistas capturado do Qwen/Ollama. A API de chat não expõe decisões do roteador MoE. O simulador não mede SSD, não executa kernels, não modela prefetch nem prova ganho de tokens/s. A predição neural e a validação em máquinas de 4 GB permanecem futuras. Consulte `docs/NEURAL_ELASTIC_EXECUTION.md`.

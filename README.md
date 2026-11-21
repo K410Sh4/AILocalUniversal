@@ -98,7 +98,8 @@ A Validation Layer atual é estrutural e determinística: reproduz cálculos/con
 - storage/: configurações e histórico local.
 - pipeline/: futuras etapas cognitivas.
 - knowledge/: loaders, chunking, índice lexical SQLite FTS5, recuperação híbrida extensível, composição de contexto e validação estrutural de evidências (branch `feature/rag-v1`).
-- resources/: futuro gerenciamento de recursos.
+- resources/: estimativa de recursos e seleção adaptativa de modelos.
+- neural_elastic/: simulador offline de políticas de cache de especialistas MoE (Fase 5.0).
 - swarm/: futura comunicação cooperativa P2P.
 - docs/: arquitetura, contratos, roadmap, segurança e status.
 
@@ -208,8 +209,10 @@ A suíte cobre contratos, seleção, persistência, protocolo Ollama simulado, a
 | 2 | Núcleo cognitivo e ferramentas determinísticas |
 | 3 | RAG, Context Composer e validação |
 | 4 | NeuralModel Hub, estimativa inicial de recursos e seleção adaptativa (em implementação/validação) |
-| 5 | Rede cooperativa, segurança e Map-Reduce |
-| 6 | Laboratório BitNet, RPC e otimizações multi-host |
+| 5 | Neural Elastic Execution: cache de especialistas MoE e execução elástica |
+| 6 | Agentes especialistas e autoengenharia |
+| 7 | Rede cooperativa, segurança e Map-Reduce |
+| 8 | Laboratório BitNet, RPC e otimizações multi-host |
 
 ## Segurança e privacidade
 
@@ -221,6 +224,7 @@ Consulte docs/SECURITY.md.
 
 - Arquitetura: docs/ARCHITECTURE.md
 - Roadmap: docs/ROADMAP.md
+- Neural Elastic Execution: docs/NEURAL_ELASTIC_EXECUTION.md
 - Estado da implementação: docs/IMPLEMENTATION_STATUS.md
 - Contratos de dados: docs/DATA_CONTRACTS.md
 - RAG e proveniência: docs/RAG.md
