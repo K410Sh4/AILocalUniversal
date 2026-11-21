@@ -19,6 +19,7 @@ A política cobre o material original presente no repositório, inclusive materi
 - NeuralPlugin e arquitetura do NeuralPlugin Manager;
 - NeuralInjector Engine, NeuralInjector Package Specification (NIP), documentação do formato `.neuralinjector`, manifestos e schemas;
 - adaptadores, perfis e políticas originais do Resource Manager, quando efetivamente implementados;
+- Neural Elastic Execution: contratos de traces, simulador de cache, políticas de substituição, métricas, predição e otimização originais quando efetivamente implementados;
 - componentes, protocolos, documentação e código originais de Swarm/execução cooperativa, quando efetivamente implementados;
 - documentação técnica, diagramas, templates, testes, exemplos e arquivos de configuração originais.
 
