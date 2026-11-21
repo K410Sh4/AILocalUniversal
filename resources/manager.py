@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
-from engines.base import ModelInfo
+from engines.base import ModelInfo, RunningModelSnapshot
 from model_hub.hardware import HardwareProfile, HardwareProfiler
 from model_hub.registry import ModelRegistry
 from resources.contracts import ModelResourceEstimate
 from resources.estimator import ResourceEstimator
+from resources.residency import ModelResidency, reconcile_model_residency
 from resources.profiles import (
     ResourceProfile,
     cpu_thread_budget,
@@ -61,6 +62,20 @@ class AdaptiveResourceManager:
             hardware or self.snapshot(),
             context_tokens=context_tokens,
         )
+
+    def reconcile_residency(
+        self,
+        model_id: str,
+        registry: ModelRegistry,
+        snapshots: list[RunningModelSnapshot],
+        *,
+        runtime: str = "ollama",
+    ) -> ModelResidency:
+        """Confirma identidade residente sem alterar a estimativa de memória."""
+        record = registry.get(model_id)
+        if record is None:
+            raise KeyError(f"Modelo não encontrado no registro: {model_id}")
+        return reconcile_model_residency(record, snapshots, runtime=runtime)
 
     def select_chat_model(
         self,
