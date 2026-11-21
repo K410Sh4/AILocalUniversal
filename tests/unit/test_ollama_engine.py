@@ -3,7 +3,7 @@ import json
 import httpx
 import pytest
 
-from engines.base import EngineRequest, RunningModelSnapshot
+from engines.base import EngineRequest
 from engines.ollama_engine import OllamaEngine, OllamaError, OllamaProtocolError
 
 
