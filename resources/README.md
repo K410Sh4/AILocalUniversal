@@ -9,6 +9,7 @@ O pacote `resources/` contém a primeira implementação do Adaptive Resource Ma
 - `selector.py`: seleção de modelos de chat com preferência, estimativa fria e preferência por runners residentes cuja identidade/contexto estejam confirmados.
 - `manager.py`: fachada para snapshot de hardware, estimativas por registro, seleção automática e avaliação de capacidade residente.
 - `residency.py`: reconciliação por digest e verificação conservadora de reutilização do runner sem dupla contagem de alocações já existentes.
+- `leases.py`: leases de uso e mutação, impedindo pull/remoção de modelos protegidos por uma execução ativa.
 - `OllamaStatusWorker`: atualiza o inventário e os snapshots `/api/ps` em background; o Chat renova a observação após cada execução.
 
 A pesquisa e o mapeamento dos princípios de homeostase, memória esparsa, consolidação e poda seletiva estão em [NEURAL_RESOURCE_HOMEOSTASIS.md](../docs/NEURAL_RESOURCE_HOMEOSTASIS.md).
