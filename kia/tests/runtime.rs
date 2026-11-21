@@ -383,7 +383,6 @@ fn feedback_history_is_bounded_to_recent_4096_evaluations() {
     );
 }
 
-
 #[test]
 fn network_version_overflow_is_rejected_without_mutating_state() {
     let mut value = serde_json::to_value(network()).unwrap();
