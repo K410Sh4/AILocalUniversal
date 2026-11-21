@@ -40,7 +40,11 @@ class NeuralMapWorker(QThread):
         loop = self._loop
         task = self._task
         if loop is not None and task is not None and not task.done():
-            loop.call_soon_threadsafe(task.cancel)
+            try:
+                loop.call_soon_threadsafe(task.cancel)
+            except RuntimeError:
+                # The worker may have closed its loop between the state check and call.
+                pass
 
     def run(self) -> None:
         loop = asyncio.new_event_loop()
