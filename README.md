@@ -73,7 +73,7 @@ O diagrama representa a arquitetura de referência. Nem todas as conexões e cap
 | Adaptive Resource Manager | Estimativa de recursos e seleção condicionada ao hardware |
 | NeuralMap | Editor visual e runtime de workflows declarativos |
 | NeuralPlugin | Gerenciamento de especializações e plugins |
-| NeuralInjector | Formato portátil de pacotes e motor de aplicação, em evolução |
+| NeuralInjector | Formato `.neuralinjector` e importação/exportação de grafos; instalação de plugins e ativação de componentes ainda pendentes |
 | Neural Elastic Execution | Pesquisa e simulação de políticas de cache para especialistas |
 | Validation Layer | Verificação estrutural, replay determinístico e integridade de evidências |
 | Swarm | Arquitetura futura de cooperação entre máquinas |
@@ -300,7 +300,7 @@ A linha de desenvolvimento inclui:
 
 A infraestrutura de imagem define um adaptador, mas a geração real depende de um backend registrado e validado. A integração da resposta estruturada do NeuralMap ao Chat e a execução paralela segura de nós independentes são evoluções pendentes.
 
-Documentação: [NeuralMap](https://github.com/K410Sh4/AILocalUniversal/blob/feature/neuralmap-v1/docs/NEURALMAP.md).
+Documentação: [NeuralMap](docs/NEURALMAP.md).
 
 ---
 
