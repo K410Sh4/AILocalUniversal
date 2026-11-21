@@ -115,17 +115,19 @@ A configuração antiga sem `resource_profile` é carregada como `medium`. O mod
 
 O estimador atual calcula `pesos + cache KV + overhead` como requisito total e compara esse valor com a memória disponível observada pelo sistema. Isso é conservador para um carregamento frio, mas pode contar os pesos duas vezes quando o Ollama já mantém o modelo residente: a memória disponível do sistema já foi reduzida pela carga existente, enquanto a estimativa volta a incluir os pesos completos. Em máquinas com pouca RAM, isso pode rejeitar um modelo que já está carregado e cujo custo incremental seria principalmente o contexto/cache e buffers adicionais.
 
-A integração atual consulta `/api/tags` e `/api/show`, mas ainda não consulta `/api/ps`. O endpoint de modelos em execução fornece identidade/digest, tamanho reportado, uso de VRAM, contexto e expiração da residência. Esses dados permitem construir um provider de residência, mas não devem ser tratados como medição completa de RAM/KV sem validação no backend e no hardware.
+**Etapa 1 implementada na branch de integração:** o contrato `RunningModelSnapshot` foi adicionado ao Engine Adapter e `OllamaEngine.list_running_models()` consulta `GET /api/ps`. O snapshot normaliza nome, referência, digest, tamanho reportado, VRAM reportada, contexto, expiração e detalhes. Campos ausentes ou com tipos inválidos permanecem desconhecidos; entradas sem nome utilizável são ignoradas. Adaptadores sem telemetria mantêm compatibilidade pelo método padrão que retorna lista vazia.
 
-**Correção arquitetural proposta para a próxima etapa:**
+**Limite deliberado:** `size` e `size_vram` são preservados como medidas reportadas separadas. Não são convertidos em RAM total, nem subtraídos automaticamente do estimador. A documentação do endpoint descreve modelos carregados e esses campos, mas não define uma decomposição completa da memória do processo em pesos, KV, buffers e overhead. O digest é a chave para futura reconciliação exata da versão do artefato; nomes/tags isolados não bastam.
 
-1. Adicionar um contrato `RunningModelSnapshot` ao Engine Adapter, com nome, digest, tamanho reportado, VRAM reportada, contexto e expiração quando disponíveis.
-2. Consultar `/api/ps` no adaptador Ollama e reconciliar a identidade pelo digest do artefato, não apenas pelo nome/tag.
-3. Separar custo de carregamento frio (pesos + KV + overhead) de custo incremental de uma instância já residente (KV/contexto adicional e buffers ainda não contabilizados).
-4. Manter reservas de residência do modelo separadas dos leases temporários de cada tarefa. A reserva residente só é liberada após confirmação de unload/expiração; não liberar pesos ao terminar uma única geração se o runtime mantiver o modelo carregado.
-5. Se a telemetria estiver indisponível, inconsistente ou com digest divergente, manter o caminho conservador de carregamento frio e registrar a incerteza.
+**Próxima etapa — contabilização residente segura:**
 
-O campo `context_length` reportado pelo runtime deve ser tratado inicialmente como metadado de configuração/execução, não como prova de ocupação exata do cache KV. O cálculo incremental precisa continuar conservador até ser comparado com RAM/VRAM observadas durante cargas frias e quentes.
+1. Reconciliar o digest de `RunningModelSnapshot` com o digest do artefato instalado. Divergência ou digest ausente mantém o caminho frio/conservador.
+2. Separar o custo de carregamento frio do custo incremental sem inferir uso de KV a partir apenas de `context_length`.
+3. Não contar pesos novamente como nova alocação quando a identidade residente for comprovadamente idêntica e a medição de memória disponível já refletir a residência; preservar a margem para KV adicional, buffers e overhead ainda não medidos.
+4. Manter reservas de residência separadas dos leases temporários por tarefa. A reserva só é liberada após confirmação de unload/expiração.
+5. Validar as estimativas com medições simultâneas de RAM/VRAM e estados frios/quentes no Arch Linux.
+
+O campo `context_length` reportado pelo runtime é a capacidade/configuração de contexto do runner, não prova da quantidade efetivamente ocupada no cache KV. O estimador incremental permanece pendente até haver uma política conservadora validada em cargas reais.
 
 ## Limites desta versão
 
