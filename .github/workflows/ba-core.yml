@@ -1,3 +1,5 @@
+# Copyright © 2026 K410Sh4. All rights reserved.
+# SPDX-License-Identifier: LicenseRef-AILocal-Universal-Proprietary
 name: BA Core
 
 on:
@@ -6,6 +8,7 @@ on:
       - feature/ba-core-spatial-adaptation-v0.1
   pull_request:
     branches:
+      - feature/ba-developmental-substrate-contracts-v0.1
       - integration/unified-architecture-v1
     paths:
       - "ba_core/**"
