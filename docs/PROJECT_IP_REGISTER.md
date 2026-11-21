@@ -20,7 +20,7 @@ SPDX-License-Identifier: LicenseRef-AILocal-Universal-Proprietary
 | K.IA — Runtime de coordenação | Rust Cognitive Runtime, contratos tipados, política de seleção, orçamento lógico e mecanismos de execução originais quando presentes | K.IA 0.1–0.5 em branches dedicadas |
 | Brain Artificial (BA) | Arquitetura própria de desenvolvimento e organização artificial, especialização regional, adaptação ambiental, homeostase, comunicação e evolução estrutural; distinta de IA convencional | Pesquisa conceitual e experimental; não equivale ainda a um sistema operacional completo |
 | Swarm / P2P | Contratos, identidade, autorização, protocolos e execução cooperativa originais quando codificados | Roadmap / arquitetura |
-| NeuralDNA — Artificial Heredity and Development | Genoma artificial, loci de personalidade/preferências/predisposições, epigenoma, desenvolvimento da BA, recombinação, mutação, proveniência, avaliação ambiental, ReactionNorm, predição ambiental adquirida e protocolos de integração | Especificação; NeuralStem 0.1, linhagem regional 0.2, avaliação ambiental 0.3, protocolo 0.4 e benchmarks antecipatório 0.5, nichos regionais 0.6 e comunicação espacial 0.7 em branches empilhadas |
+| NeuralDNA — Artificial Heredity and Development | Genoma artificial, loci de personalidade/preferências/predisposições, epigenoma, desenvolvimento da BA, recombinação, mutação, proveniência, avaliação ambiental, ReactionNorm, predição ambiental adquirida e protocolos de integração | Especificação; NeuralStem 0.1, linhagem regional 0.2, avaliação ambiental 0.3, protocolo 0.4 e benchmarks antecipatório 0.5, nichos regionais 0.6 e comunicação espacial 0.7 e plano de campos de sinal 0.8 em branches empilhadas |
 | Documentação e schemas | Texto técnico, diagramas, exemplos, testes e formatos originais | Evolução contínua |
 
 ## Limites de titularidade
@@ -62,6 +62,14 @@ SPDX-License-Identifier: LicenseRef-AILocal-Universal-Proprietary
 A branch `feature/neuraldna-spatial-communication-v0.7` registra código, testes, protocolo experimental e documentação originais para comparar topologias de comunicação entre regiões, fronteiras de nichos, agregação local, perda de mensagens, latência e custo de coordenação.
 
 A Brain Artificial (BA) é registrada como linha arquitetural própria, distinta de IA convencional e de modelos generativos. K.IA permanece runtime separado de coordenação. Os experimentos 0.5–0.7 não demonstram uma BA completa e não devem ser apresentados como tal.
+
+Copyright © 2026 K410Sh4. All rights reserved.  
+SPDX-License-Identifier: LicenseRef-AILocal-Universal-Proprietary
+
+
+## Addendum NeuralDNA 0.8 — campos de sinal espacial
+
+A branch `feature/neuraldna-morphogen-signal-fields-v0.8` contém a especificação original e a implementação experimental do campo de sinal com transporte em grafo, degradação, captação saturável, sensibilidade do receptor e exposição temporal. O estágio não altera genótipo, epigenoma, linhagem ou runtime da BA.
 
 Copyright © 2026 K410Sh4. All rights reserved.  
 SPDX-License-Identifier: LicenseRef-AILocal-Universal-Proprietary
