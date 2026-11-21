@@ -25,7 +25,7 @@ neural-elastic-sim = "neural_elastic.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["app*", "core*", "engines*", "pipeline*", "resources*", "knowledge*", "swarm*", "storage*", "workers*", "model_hub*", "neural_elastic*", "napa*", "kia_bridge*", "workflows*"]
+include = ["app*", "core*", "engines*", "pipeline*", "resources*", "knowledge*", "swarm*", "storage*", "workers*", "model_hub*", "neural_elastic*", "napa*", "kia_bridge*", "workflows*", "neural_dna*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -44,19 +44,8 @@ select = ["E", "F", "I", "UP", "B"]
 model_hub = ["catalog_default.json"]
 workflows = ["templates/*.json"]
 
-
 [tool.ruff.lint.isort]
 known-first-party = [
-    "app",
-    "core",
-    "engines",
-    "kia_bridge",
-    "knowledge",
-    "model_hub",
-    "napa",
-    "neural_elastic",
-    "resources",
-    "storage",
-    "workers",
-    "workflows",
+    "app", "core", "engines", "kia_bridge", "knowledge", "model_hub",
+    "napa", "neural_dna", "neural_elastic", "resources", "storage", "workers", "workflows",
 ]
