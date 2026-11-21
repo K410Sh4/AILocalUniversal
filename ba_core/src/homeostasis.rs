@@ -34,7 +34,7 @@ pub struct RegionHomeostasisReport {
     pub state_after: f64,
     pub disturbance_amount: f64,
     pub correction_amount: f64,
-    /// Positive means material was removed at the upper/lower physical boundary.
+    /// Signed exchange with the physical boundary: positive is outflow, negative inflow.
     pub boundary_exchange: f64,
     pub energy_spent: f64,
     pub energy_remaining: f64,
