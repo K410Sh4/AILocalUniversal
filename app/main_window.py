@@ -51,12 +51,12 @@ from workers.model_hub_workers import (
     OllamaDeleteWorker,
     OllamaPullWorker,
 )
+from workers.neuralmap_worker import NeuralMapWorker
 from workers.ollama_workers import (
     OllamaChatWorker,
     OllamaStatusWorker,
     OllamaTaskExecutorWorker,
 )
-from workers.neuralmap_worker import NeuralMapWorker
 from workflows.handlers import build_specialist_registry
 from workflows.runtime import GraphRunResult, GraphRuntime
 
