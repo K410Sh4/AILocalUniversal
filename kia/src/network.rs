@@ -27,6 +27,8 @@ pub enum NetworkError {
     InvalidFeedback(String),
     InvalidLearningRate,
     InvalidNetwork(String),
+    VersionOverflow,
+    CounterOverflow,
 }
 
 impl Display for NetworkError {
@@ -45,6 +47,10 @@ pub struct PlasticityUpdate {
 }
 
 impl AdaptiveCognitiveNetwork {
+    fn next_version(&self) -> Result<u64, NetworkError> {
+        self.version.checked_add(1).ok_or(NetworkError::VersionOverflow)
+    }
+
     pub fn version(&self) -> u64 {
         self.version
     }
@@ -81,8 +87,9 @@ impl AdaptiveCognitiveNetwork {
         if self.capabilities.contains_key(&id) {
             return Err(NetworkError::DuplicateCapability(id));
         }
+        let next_version = self.next_version()?;
         self.capabilities.insert(id, capability);
-        self.version += 1;
+        self.version = next_version;
         Ok(())
     }
 
@@ -106,8 +113,9 @@ impl AdaptiveCognitiveNetwork {
         if self.components.contains_key(&id) {
             return Err(NetworkError::DuplicateComponent(id));
         }
+        let next_version = self.next_version()?;
         self.components.insert(id, component);
-        self.version += 1;
+        self.version = next_version;
         Ok(())
     }
 
@@ -156,8 +164,9 @@ impl AdaptiveCognitiveNetwork {
                 "A conexão tipada já existe.".to_owned(),
             ));
         }
+        let next_version = self.next_version()?;
         self.connections.push(connection);
-        self.version += 1;
+        self.version = next_version;
         Ok(())
     }
 
@@ -280,6 +289,12 @@ impl AdaptiveCognitiveNetwork {
                 })
             });
 
+        let next_version = self
+            .version
+            .max(previous.version)
+            .checked_add(u64::from(structure_changed))
+            .ok_or(NetworkError::VersionOverflow)?;
+
         for connection in &mut self.connections {
             if let Some(old) = previous.connections.iter().find(|old| {
                 old.from == connection.from
@@ -312,7 +327,7 @@ impl AdaptiveCognitiveNetwork {
             .collect::<Vec<_>>();
         self.feedback_history.reverse();
 
-        self.version = self.version.max(previous.version) + u64::from(structure_changed);
+        self.version = next_version;
         self.validate()
     }
 
@@ -372,6 +387,25 @@ impl AdaptiveCognitiveNetwork {
                 && connection.from == from
                 && connection.to == to
         });
+        let next_version = self.next_version()?;
+        let next_counters = position
+            .map(|index| {
+                let connection = &self.connections[index];
+                let observations = connection
+                    .observations
+                    .checked_add(1)
+                    .ok_or(NetworkError::CounterOverflow)?;
+                let successes = if feedback.outcome == FeedbackOutcome::Success {
+                    connection
+                        .successes
+                        .checked_add(1)
+                        .ok_or(NetworkError::CounterOverflow)?
+                } else {
+                    connection.successes
+                };
+                Ok::<_, NetworkError>((observations, successes))
+            })
+            .transpose()?;
         let previous_weight = position
             .map(|index| self.connections[index].weight)
             .unwrap_or(0.5);
@@ -382,10 +416,10 @@ impl AdaptiveCognitiveNetwork {
         if let Some(index) = position {
             let connection = &mut self.connections[index];
             connection.weight = updated_weight;
-            connection.observations += 1;
-            if feedback.outcome == FeedbackOutcome::Success {
-                connection.successes += 1;
-            }
+            let (observations, successes) =
+                next_counters.expect("existing connection counters were validated");
+            connection.observations = observations;
+            connection.successes = successes;
         } else {
             self.connections.push(CognitiveConnection {
                 from,
@@ -405,7 +439,7 @@ impl AdaptiveCognitiveNetwork {
             let overflow = self.feedback_history.len() - 4096;
             self.feedback_history.drain(0..overflow);
         }
-        self.version += 1;
+        self.version = next_version;
         let observations = self
             .connections
             .iter()
