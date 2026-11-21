@@ -20,7 +20,7 @@ Este documento diferencia código integrado, cobertura automatizada e validaçã
 | Validation Layer | Estrutura, dependências, replay determinístico, completude e relatório | Sem verificação factual geral de texto LLM |
 | Cognitive Inspector | Mostra resultados, estados, trace e relatório de validação | Mostra apenas a última tarefa da sessão |
 | RAG / Context Composer | Base lexical/vetorial, aba Conhecimento e integração opt-in ao Chat implementadas na `feature/rag-v1`; EmbeddingGemma e Qwen3 Embedding validados no Arch; CI atual: Ruff + 155 testes Pytest (Python 3.11) | Reranker concreto, benchmark representativo de corpus, OCR, orçamento por tokenizer e verificação factual/entailment permanecem fora desta entrega |
-| NeuralModel Hub | Registro de modelos descobertos pelo Ollama, fichas e artefatos separados, perfil de hardware Linux, compatibilidade conservadora e interface inicial na branch `feature/neural-model-hub-v1` | Fontes externas curadas, licenças verificadas por versão, probes adicionais, requisitos medidos por runtime/contexto e Adaptive Model Selector ainda pendentes; aceitação visual no Arch pendente |
+| NeuralModel Hub | Registro local, perfil de hardware e compatibilidade conservadora; catálogo remoto curado por categorias com fallback local; fichas e variantes Ollama com fontes; busca/filtros; pull NDJSON com progresso/cancelamento e remoção com confirmação, na branch `feature/neural-model-hub-v1` | Catálogo inicial ainda pequeno; catálogo expandido, licença/proveniência por versão/artefato, compatibilidade medida por runtime/contexto, Adaptive Model Selector e validação operacional de download/cancelamento/remoção no Arch pendentes |
 | Adaptive Resource Manager | Planejado | Fase 4 |
 | Roteamento especialista | Planejado | Fase 5 |
 | Swarm P2P | Planejado | Fase 6 |
@@ -135,3 +135,18 @@ Validação automatizada atual: Ruff aprovado e 155 testes Pytest aprovados no C
 - A validação de citações é estrutural: não certifica que as afirmações da resposta sejam semanticamente implicadas pelas fontes.
 
 A integração aguarda CI e validação operacional no Arch. Não altera a main.
+
+
+## Fase 4.3/4.4 — catálogo online e instalação (implementação em branch; validação pendente)
+
+- Catálogo JSON versionado remoto em GitHub Raw, com manifesto local empacotado como fallback.
+- Fichas curadas por categorias, pesquisa textual, variantes/tag, quantização, tamanhos publicados e links oficiais.
+- Licença fica explicitamente não verificada quando não há fonte confirmada.
+- Variantes limitadas por plataforma; recursos com suporte macOS-only não podem ser baixados no Linux.
+- Busca e parsing em worker Qt separado da interface.
+- Instalação via API oficial Ollama `/api/pull`, stream NDJSON com progresso, cancelamento, timeout de leitura sem limite para downloads longos e validação do evento `success`.
+- Remoção via `/api/delete`, com confirmação na UI e atualização do inventário após o runtime concluir.
+- Referências são validadas como identificadores de modelo Ollama; URLs arbitrárias e caminhos não são aceitos.
+- Testes unitários para manifesto, fallback remoto, filtragem por categoria, restrições de plataforma, pull, progresso, falhas e remoção.
+
+A validação real de baixar um modelo, cancelar uma operação e remover um modelo no Arch Linux ainda precisa ser executada no ambiente-alvo. Tamanho publicado de download não representa requisito de memória de inferência ou espaço no volume configurado no Ollama.
