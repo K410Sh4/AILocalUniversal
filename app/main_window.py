@@ -661,7 +661,8 @@ class MainWindow(QMainWindow):
         answer = QMessageBox.question(
             self,
             "Excluir conversa",
-            f'Excluir "{target.title}" e todas as suas mensagens? Esta ação remove o histórico local e não pode ser desfeita.',
+            f'Excluir "{target.title}" e todas as suas mensagens? '
+            "Esta ação remove o histórico local e não pode ser desfeita.",
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
             QMessageBox.StandardButton.No,
         )
