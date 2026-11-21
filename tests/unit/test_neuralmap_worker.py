@@ -4,15 +4,9 @@ from workflows.runtime import GraphRuntime, HandlerRegistry
 
 
 def test_worker_uses_immutable_graph_snapshot() -> None:
-    graph = WorkflowGraph(
-        graph_id="snapshot-test",
-        name="Original",
-        nodes=[
-            GraphNode.create("input", "input.text", label="Original input"),
-            GraphNode.create("response", "output.response", label="Original output"),
-        ],
-        edges=[],
-    )
+    graph = WorkflowGraph.load("workflows/templates/multi_specialist.pipeline.graph.json")
+    graph.name = "Original"
+    graph.nodes[0].label = "Original input"
 
     worker = NeuralMapWorker(
         GraphRuntime(HandlerRegistry()),
@@ -38,12 +32,7 @@ def test_worker_cancel_tolerates_event_loop_shutdown_race() -> None:
         def done(self) -> bool:
             return False
 
-    graph = WorkflowGraph(
-        graph_id="cancel-race",
-        name="Cancel race",
-        nodes=[GraphNode.create("input", "input.text")],
-        edges=[],
-    )
+    graph = WorkflowGraph.load("workflows/templates/multi_specialist.pipeline.graph.json")
     worker = NeuralMapWorker(
         GraphRuntime(HandlerRegistry()),
         graph,
