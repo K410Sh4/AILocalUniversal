@@ -76,8 +76,8 @@ def test_closed_niche_boundary_preserves_local_field_signals():
         "region_clusters": (0, 0, 0, 0, 1, 1, 1, 1),
         "cue_accuracy": 0.95,
         "strategy": "field_only",
-        "diffusion": 0.80,
-        "degradation": 0.05,
+        "diffusion": 4.0,
+        "degradation": 0.005,
         "exposure_clearance": 0.4,
     }
     closed = [
@@ -102,8 +102,8 @@ def test_field_controller_reduces_use_when_field_is_uninformative():
             strategy="adaptive_field",
             region_clusters=(0, 0, 0, 0, 1, 1, 1, 1),
             cue_accuracy=0.95,
-            diffusion=0.80,
-            degradation=0.05,
+            diffusion=4.0,
+            degradation=0.005,
             boundary_permeability=1.0,
         )
         for seed in range(12)
