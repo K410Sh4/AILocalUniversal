@@ -1,17 +1,10 @@
-from pathlib import Path
-
 import pytest
 
 from workflows.graph import WorkflowGraph
 from workflows.runtime import GraphRuntime, HandlerRegistry
 
 
-TEMPLATE = (
-    Path(__file__).resolve().parents[2]
-    / "examples"
-    / "workflows"
-    / "multi_specialist.pipeline.graph.json"
-)
+TEMPLATE = "examples/workflows/multi_specialist.pipeline.graph.json"
 
 
 @pytest.mark.asyncio
