@@ -530,7 +530,7 @@ class SQLiteKnowledgeIndex:
             return []
         terms = [
             term
-            for term in re.findall(r"[\\w]+", query, flags=re.UNICODE)
+            for term in re.findall(r"[\w]+", query, flags=re.UNICODE)
             if term.casefold() not in _QUERY_STOPWORDS
         ]
         if not terms:
