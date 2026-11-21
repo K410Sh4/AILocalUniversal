@@ -1,5 +1,7 @@
 from engines.base import RunningModelSnapshot
 from model_hub.contracts import ModelArtifact, ModelRecord
+from model_hub.registry import ModelRegistry
+from resources.manager import AdaptiveResourceManager
 from resources.residency import (
     ResidentCapacityStatus,
     assess_resident_capacity,
@@ -128,3 +130,20 @@ def test_resident_capacity_validates_context_and_concurrency_inputs() -> None:
         assess_resident_capacity(_record(), [], context_tokens=True)
     with pytest.raises(ValueError):
         assess_resident_capacity(_record(), [], context_tokens=4096, concurrent_requests=0)
+
+
+
+def test_resource_manager_exposes_resident_capacity_assessment(tmp_path) -> None:
+    registry = ModelRegistry(tmp_path / "registry.json")
+    record = _record()
+    registry.upsert(record)
+
+    result = AdaptiveResourceManager().assess_resident_capacity(
+        record.record_id,
+        registry,
+        [_snapshot()],
+        context_tokens=4096,
+    )
+
+    assert result.status is ResidentCapacityStatus.REUSE_READY
+    assert result.incremental_runner_bytes == 0
