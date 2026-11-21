@@ -112,6 +112,20 @@ def _statistical_score(
     return decayed_frequency + recency_bonus
 
 
+def _next_use_index(
+    expert_id: str,
+    current_index: int,
+    positions_by_expert: dict[str, list[int]],
+) -> float | int:
+    positions = positions_by_expert.get(expert_id, [])
+    next_index = bisect_right(positions, current_index)
+    return (
+        positions[next_index]
+        if next_index < len(positions)
+        else float("inf")
+    )
+
+
 def simulate_trace(
     trace: AccessTrace,
     capacity_bytes: int,
@@ -134,7 +148,10 @@ def simulate_trace(
     if selected_policy is CachePolicy.STATISTICAL:
         if (
             isinstance(statistical_half_life, bool)
-            or type(statistical_half_life) not in (int, float)
+            or not (
+                isinstance(statistical_half_life, int)
+                or isinstance(statistical_half_life, float)
+            )
             or not isfinite(statistical_half_life)
             or statistical_half_life <= 0
         ):
@@ -220,19 +237,10 @@ def simulate_trace(
                     ),
                 )
             else:
-                def next_use(key: str) -> float | int:
-                    positions = positions_by_expert.get(key, [])
-                    next_index = bisect_right(positions, index)
-                    return (
-                        positions[next_index]
-                        if next_index < len(positions)
-                        else float("inf")
-                    )
-
                 victim = max(
                     cache,
                     key=lambda key: (
-                        next_use(key),
+                        _next_use_index(key, index, positions_by_expert),
                         -cache[key].last_access,
                         key,
                     ),
