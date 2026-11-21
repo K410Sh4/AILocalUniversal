@@ -144,9 +144,15 @@ class KiaMemoryStore:
         required = ("capabilities", "components", "connections", "feedback_history", "version")
         if any(key not in network for key in required):
             raise KiaMemoryError("Snapshot não contém todos os campos da rede cognitiva.")
-        if not isinstance(network["capabilities"], dict) or not isinstance(network["components"], dict):
+        if (
+            not isinstance(network["capabilities"], dict)
+            or not isinstance(network["components"], dict)
+        ):
             raise KiaMemoryError("Capacidades e componentes precisam ser objetos.")
-        if not isinstance(network["connections"], list) or not isinstance(network["feedback_history"], list):
+        if (
+            not isinstance(network["connections"], list)
+            or not isinstance(network["feedback_history"], list)
+        ):
             raise KiaMemoryError("Conexões e feedback precisam ser listas.")
         version = network["version"]
         if isinstance(version, bool) or not isinstance(version, int) or version < 0:
