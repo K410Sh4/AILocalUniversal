@@ -29,6 +29,7 @@ class SignalFieldConfig:
     sensitivity_kd: float | tuple[float, ...] = 1.0
     hill_coefficient: float | tuple[float, ...] = 2.0
     exposure_clearance: float | tuple[float, ...] = 0.1
+    max_substeps: int = 10000
 
 
 @dataclass(frozen=True, slots=True)
@@ -88,6 +89,8 @@ class SignalField:
             raise ValueError("time_step must be finite and positive")
         if not math.isfinite(config.diffusion) or config.diffusion < 0.0:
             raise ValueError("diffusion must be finite and non-negative")
+        if not isinstance(config.max_substeps, int) or config.max_substeps < 1:
+            raise ValueError("max_substeps must be a positive integer")
 
         self.region_count = region_count
         self.signal_classes = signal_classes
@@ -166,7 +169,11 @@ class SignalField:
 
         dt = self.config.time_step
         max_rate = self.config.diffusion * self._max_row_sum
+        if not math.isfinite(max_rate):
+            raise ValueError("diffusion stability rate overflowed")
         substeps = max(1, math.ceil(dt * max_rate / 0.45))
+        if substeps > self.config.max_substeps:
+            raise ValueError("required diffusion substeps exceed max_substeps")
         sub_dt = dt / substeps
 
         # Symmetric edge fluxes preserve total mass during closed-boundary diffusion.
