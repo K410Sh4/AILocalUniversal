@@ -68,6 +68,28 @@ def test_client_starts_persistent_process_correlates_requests_and_shuts_down(
     assert client._process.poll() == 0
 
 
+def test_client_rejects_oversized_utf8_request_without_desynchronizing_host(
+    tmp_path: Path,
+) -> None:
+    command = _fake_host(tmp_path / "bounded-host.py")
+    with KiaRuntimeClient(command, timeout_seconds=2.0) as client:
+        with pytest.raises(KiaRuntimeError) as error:
+            client._request("echo", {"value": "é" * (2 * 1024 * 1024 + 1)})
+        assert error.value.code == "request_too_large"
+        assert client._request("echo", {"value": "still-aligned"}) == {
+            "value": "still-aligned"
+        }
+
+
+def test_client_rejects_non_json_request_payload(tmp_path: Path) -> None:
+    command = _fake_host(tmp_path / "json-host.py")
+    with KiaRuntimeClient(command, timeout_seconds=2.0) as client:
+        with pytest.raises(KiaRuntimeError) as error:
+            client._request("echo", {"value": object()})
+        assert error.value.code == "invalid_request_payload"
+        assert client.health()["service"] == "kia-cognitive-runtime"
+
+
 def test_client_rejects_missing_executable() -> None:
     with pytest.raises(KiaRuntimeUnavailable):
         KiaRuntimeClient("/definitely/not/a/kia-runtime-host")
