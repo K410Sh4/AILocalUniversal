@@ -1,6 +1,7 @@
 from datetime import UTC, datetime
 from pathlib import Path
 
+from resources import telemetry
 from resources.telemetry import (
     OllamaProcessMemorySnapshot,
     ProcessMemoryProbeStatus,
@@ -148,3 +149,25 @@ def test_probe_rejects_naive_timestamp(tmp_path) -> None:
 
     with pytest.raises(ValueError):
         probe_ollama_process_memory(tmp_path, now=datetime(2030, 1, 1))
+
+
+
+def test_probe_rejects_pid_reuse_during_sampling(tmp_path, monkeypatch) -> None:
+    _process(tmp_path, 100, argv=("ollama", "serve"), parent=1)
+    original = telemetry._process_stat
+    calls = 0
+
+    def changed_process_stat(process_dir: Path):
+        nonlocal calls
+        result = original(process_dir)
+        if process_dir.name == "100":
+            calls += 1
+            if calls >= 2 and result is not None:
+                return result[0], result[1] + 1
+        return result
+
+    monkeypatch.setattr(telemetry, "_process_stat", changed_process_stat)
+    result = probe_ollama_process_memory(tmp_path)
+
+    assert result.status is ProcessMemoryProbeStatus.INCOMPLETE
+    assert result.pss_bytes is None
