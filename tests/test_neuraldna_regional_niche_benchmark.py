@@ -63,7 +63,7 @@ def test_shared_signal_aggregates_noise_in_a_common_niche():
     results = [
         trial(
             seed,
-            region_processes=("stable", "stable", "stable", "stable"),
+            region_processes=("stochastic", "stochastic", "stochastic", "stochastic"),
             strategy="global_signal",
             cue_accuracy=0.80,
         )
@@ -82,7 +82,7 @@ def test_adaptive_network_uses_shared_signal_only_when_it_adds_value():
     shared = [
         trial(
             seed,
-            region_processes=("stable", "stable", "stable", "stable"),
+            region_processes=("stochastic", "stochastic", "stochastic", "stochastic"),
         )
         for seed in range(12)
     ]
