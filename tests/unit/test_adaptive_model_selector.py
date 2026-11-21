@@ -1,4 +1,5 @@
 from dataclasses import replace
+from datetime import UTC, datetime, timedelta
 
 import pytest
 
@@ -188,6 +189,7 @@ def test_selector_prefers_confirmed_resident_runner_over_cold_load() -> None:
             ),
         ),
     )
+    observed = datetime.now(UTC)
     running = RunningModelSnapshot(
         name="resident-model",
         model="resident-model",
@@ -195,6 +197,8 @@ def test_selector_prefers_confirmed_resident_runner_over_cold_load() -> None:
         size_bytes=50 * 1024**3,
         size_vram_bytes=30 * 1024**3,
         context_length=8192,
+        expires_at=(observed + timedelta(minutes=5)).isoformat(),
+        observed_at=observed.isoformat(),
     )
 
     result = AdaptiveModelSelector().select(
@@ -233,6 +237,7 @@ def test_selector_uses_cold_estimate_when_resident_context_is_too_small() -> Non
             ),
         ),
     )
+    observed = datetime.now(UTC)
     running = RunningModelSnapshot(
         name="qwen3:4b",
         model="qwen3:4b",
@@ -240,6 +245,8 @@ def test_selector_uses_cold_estimate_when_resident_context_is_too_small() -> Non
         size_bytes=5 * 1024**3,
         size_vram_bytes=3 * 1024**3,
         context_length=2048,
+        expires_at=(observed + timedelta(minutes=5)).isoformat(),
+        observed_at=observed.isoformat(),
     )
 
     result = AdaptiveModelSelector().select(
@@ -276,6 +283,7 @@ def test_selector_falls_back_to_cold_estimate_on_digest_mismatch() -> None:
             ),
         ),
     )
+    observed = datetime.now(UTC)
     running = RunningModelSnapshot(
         name="qwen3:4b",
         model="qwen3:4b",
@@ -283,6 +291,8 @@ def test_selector_falls_back_to_cold_estimate_on_digest_mismatch() -> None:
         size_bytes=5 * 1024**3,
         size_vram_bytes=3 * 1024**3,
         context_length=8192,
+        expires_at=(observed + timedelta(minutes=5)).isoformat(),
+        observed_at=observed.isoformat(),
     )
 
     result = AdaptiveModelSelector().select(
