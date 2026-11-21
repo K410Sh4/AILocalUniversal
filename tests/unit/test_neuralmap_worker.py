@@ -26,3 +26,33 @@ def test_worker_uses_immutable_graph_snapshot() -> None:
     assert worker.graph.name == "Original"
     assert worker.graph.nodes[0].label == "Original input"
     assert worker.input_text == "Executar snapshot"
+
+
+
+def test_worker_cancel_tolerates_event_loop_shutdown_race() -> None:
+    class ClosedLoop:
+        def call_soon_threadsafe(self, _callback) -> None:
+            raise RuntimeError("event loop is closed")
+
+    class PendingTask:
+        def done(self) -> bool:
+            return False
+
+    graph = WorkflowGraph(
+        graph_id="cancel-race",
+        name="Cancel race",
+        nodes=[GraphNode.create("input", "input.text")],
+        edges=[],
+    )
+    worker = NeuralMapWorker(
+        GraphRuntime(HandlerRegistry()),
+        graph,
+        "input",
+        dry_run=True,
+    )
+    worker._loop = ClosedLoop()
+    worker._task = PendingTask()
+
+    worker.cancel()
+
+    assert worker._cancel_requested.is_set()
