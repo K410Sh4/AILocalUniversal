@@ -120,6 +120,24 @@ def test_memory_store_rejects_corrupted_snapshot_hash(tmp_path: Path) -> None:
             store.load_network()
 
 
+def test_memory_store_rejects_corrupted_event_hash(tmp_path: Path) -> None:
+    database = tmp_path / "memory.sqlite3"
+    with KiaMemoryStore(database) as store:
+        store.save_network(sample_network())
+
+    connection = sqlite3.connect(database)
+    connection.execute(
+        "UPDATE cognitive_events SET payload_sha256 = ?",
+        ("0" * 64,),
+    )
+    connection.commit()
+    connection.close()
+
+    with KiaMemoryStore(database) as store:
+        with pytest.raises(KiaMemoryError, match="Hash de evento cognitivo"):
+            store.list_events()
+
+
 def test_memory_store_rejects_invalid_network_contract(tmp_path: Path) -> None:
     with KiaMemoryStore(tmp_path / "memory.sqlite3") as store:
         with pytest.raises(KiaMemoryError, match="Snapshot não contém"):
