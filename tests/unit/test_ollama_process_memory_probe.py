@@ -112,6 +112,16 @@ def test_compare_memory_requires_same_complete_process_tree() -> None:
     assert delta.pss_delta_bytes == 4_000
     assert delta.rss_delta_bytes == 5_000
     assert compare_process_memory(before, different_root) is None
+    reversed_sample = OllamaProcessMemorySnapshot(
+        ProcessMemoryProbeStatus.AVAILABLE,
+        100,
+        (100,),
+        500,
+        1000,
+        "2029-12-31T23:59:00+00:00",
+        "older",
+    )
+    assert compare_process_memory(before, reversed_sample) is None
 
 
 def test_probe_rejects_naive_timestamp(tmp_path) -> None:
