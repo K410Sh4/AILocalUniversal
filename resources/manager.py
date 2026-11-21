@@ -12,7 +12,7 @@ from resources.profiles import (
     cpu_thread_budget,
     normalize_resource_profile,
 )
-from resources.residency import ModelResidency, reconcile_model_residency
+from resources.residency import (\n    ModelResidency,\n    ResidentCapacityAssessment,\n    assess_resident_capacity,\n    reconcile_model_residency,\n)
 from resources.selector import AdaptiveModelSelector, ModelSelectionResult
 
 
