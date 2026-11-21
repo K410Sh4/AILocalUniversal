@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from enum import StrEnum
 
 from engines.base import RunningModelSnapshot
-from model_hub.contracts import ModelRecord
+from model_hub.contracts import ModelArtifact, ModelRecord
 
 
 class ResidencyStatus(StrEnum):
@@ -60,7 +60,7 @@ def reconcile_model_residency(
             reason="Não há artefato instalado correspondente ao runtime consultado.",
         )
 
-    candidates: list[tuple[object, RunningModelSnapshot]] = []
+    candidates: list[tuple[ModelArtifact, RunningModelSnapshot]] = []
     for artifact in artifacts:
         reference = artifact.reference.casefold()
         for snapshot in snapshots:
