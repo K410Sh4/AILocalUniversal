@@ -19,7 +19,9 @@ fn read_bounded_line(reader: &mut impl BufRead) -> io::Result<Option<String>> {
         let consumed = newline.map_or(available.len(), |index| index + 1);
 
         if !oversized {
-            let remaining = MAX_REQUEST_BYTES.saturating_add(1).saturating_sub(bytes.len());
+            let remaining = MAX_REQUEST_BYTES
+                .saturating_add(1)
+                .saturating_sub(bytes.len());
             let take = chunk_len.min(remaining);
             bytes.extend_from_slice(&available[..take]);
             if bytes.len() > MAX_REQUEST_BYTES {
@@ -98,9 +100,8 @@ mod tests {
 
     #[test]
     fn bounded_reader_discards_oversized_line_and_recovers_next_request() {
-        let mut input = Cursor::new(
-            [vec![b'x'; MAX_REQUEST_BYTES + 100], b"\nnext\n".to_vec()].concat(),
-        );
+        let mut input =
+            Cursor::new([vec![b'x'; MAX_REQUEST_BYTES + 100], b"\nnext\n".to_vec()].concat());
         let oversized = read_bounded_line(&mut input).unwrap().unwrap();
         assert_eq!(oversized.len(), MAX_REQUEST_BYTES + 1);
         assert_eq!(
