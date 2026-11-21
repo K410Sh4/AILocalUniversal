@@ -71,14 +71,15 @@ def build_topology(
     if topology == "line":
         edges = ((index, index + 1) for index in range(region_count - 1))
     elif topology == "ring":
-        edges = (
-            ((index, index + 1) for index in range(region_count - 1))
-            if region_count < 3
-            else (
+        if region_count < 2:
+            edges = ()
+        elif region_count == 2:
+            edges = ((0, 1),)
+        else:
+            edges = (
                 (index, (index + 1) % region_count)
                 for index in range(region_count)
             )
-        )
     elif topology == "complete":
         edges = (
             (left, right)
@@ -91,7 +92,6 @@ def build_topology(
             for left in range(region_count)
             for right in range(left + 1, region_count)
             if region_clusters[left] == region_clusters[right]
-            and right == left + 1
         )
 
     for left, right in edges:
