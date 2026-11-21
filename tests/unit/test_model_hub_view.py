@@ -63,6 +63,8 @@ def test_model_hub_view_displays_models_and_unknown_metadata() -> None:
     assert "não verificada" in details
     assert "não há requisitos" in details
     assert "radeon test gpu" in view.hardware_label.text().casefold()
+    view.set_resource_recommendation("Seletor adaptativo: qwen3:4b")
+    assert "seletor adaptativo" in view.resource_label.text().casefold()
 
     view.close()
     app.processEvents()
