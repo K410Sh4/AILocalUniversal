@@ -349,7 +349,7 @@ mod tests {
                 index as u32 + 1,
                 index as u32 + 100,
                 conditions,
-                0.5,
+                (index % 2) as f64,
                 index as u64 + 1,
             ));
             if index > 0 {
