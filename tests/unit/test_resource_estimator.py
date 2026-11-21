@@ -72,7 +72,7 @@ def test_estimator_accounts_for_weights_kv_cache_and_runtime_reserve() -> None:
     )
     assert result.placement is ResourcePlacement.GPU
     assert result.confidence is EstimateConfidence.MEDIUM
-    assert any("artefato em disco" not in reason for reason in result.reasons)
+    assert result.weight_bytes != 2_600_000_000
 
 
 def test_estimator_suggests_hybrid_when_gpu_alone_is_too_small() -> None:
@@ -102,7 +102,7 @@ def test_estimator_rejects_context_above_declared_model_window() -> None:
 def test_estimator_does_not_convert_disk_size_into_memory_requirement() -> None:
     result = ResourceEstimator().estimate(
         qwen3_record(
-            parameter_count=0 if False else 4_000_000_000,
+            parameter_count=4_000_000_000,
             kv_bytes_per_token=None,
             quantization=None,
             artifact_size=52 * 1024**3,
