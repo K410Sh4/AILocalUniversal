@@ -19,7 +19,7 @@ SPDX-License-Identifier: LicenseRef-AILocal-Universal-Proprietary
 | NeSA — Neural Semantic Atlas | Contratos de páginas semânticas, indexador extrativo, catálogo persistente e ferramentas originais de inspeção/recuperação do Atlas quando presentes | NeSA 0.1 na branch feature/nesa-semantic-page-indexer-v0.1 |
 | K.IA / Artificial Brain | Rust Cognitive Runtime, Adaptive Cognitive Network, contratos tipados, política de seleção, orçamento lógico, conexões e mecanismos originais de plasticidade operacional quando presentes | K.IA 0.1 na branch feature/kia-rust-cognitive-runtime-v0.1 |
 | Swarm / P2P | Contratos, identidade, autorização, protocolos e execução cooperativa originais quando codificados | Roadmap / arquitetura |
-| NeuralDNA — Artificial Heredity and Development | Genoma artificial, loci de personalidade/preferências/predisposições, epigenoma, desenvolvimento da BA, recombinação, mutação, proveniência, avaliação ambiental, ReactionNorm, predição ambiental adquirida e protocolos de integração | Especificação; NeuralStem 0.1, linhagem regional 0.2, avaliação ambiental 0.3, protocolo 0.4 e benchmark antecipatório experimental 0.5 em branches empilhadas |
+| NeuralDNA — Artificial Heredity and Development | Genoma artificial, loci de personalidade/preferências/predisposições, epigenoma, desenvolvimento da BA, recombinação, mutação, proveniência, avaliação ambiental, ReactionNorm, predição ambiental adquirida e protocolos de integração | Especificação; NeuralStem 0.1, linhagem regional 0.2, avaliação ambiental 0.3, protocolo 0.4 e benchmarks antecipatório 0.5 e de nichos regionais 0.6 em branches empilhadas |
 | Documentação e schemas | Texto técnico, diagramas, exemplos, testes e formatos originais | Evolução contínua |
 
 ## Limites de titularidade
@@ -39,6 +39,18 @@ SPDX-License-Identifier: LicenseRef-AILocal-Universal-Proprietary
 A branch `feature/neuraldna-anticipatory-benchmark-v0.5` acrescenta a expressão original do benchmark de pistas antecipatórias, a comparação de estratégias, o estimador Markoviano adquirido de transições ambientais e os testes automatizados correspondentes.
 
 O registro cobre a implementação, os parâmetros sintéticos, os protocolos de avaliação, os relatórios e a documentação originais. O estimador de transições representa estado ambiental adquirido durante a execução; não é genoma herdado nem alteração epigenética. Conceitos de plasticidade antecipatória, bet-hedging, entropia e modelos de Markov permanecem conceitos científicos gerais, não reivindicados como propriedade exclusiva.
+
+Copyright © 2026 K410Sh4. All rights reserved.  
+SPDX-License-Identifier: LicenseRef-AILocal-Universal-Proprietary
+
+
+## Addendum NeuralDNA 0.6 — nichos ambientais regionais
+
+A branch `feature/neuraldna-regional-niche-benchmark-v0.6` acrescenta a implementação experimental original de múltiplos microambientes, sinais locais e compartilhados, latência de comunicação, antecipação do sinal, custo de coordenação e seleção adaptativa por região.
+
+O registro cobre código, testes, documentação, hipóteses, parâmetros e protocolo de benchmark originais. Conceitos de nicho ecológico, microambiente celular, sinalização intercelular, heterogeneidade espacial e homeostase permanecem conhecimentos científicos gerais, atribuídos às respectivas fontes.
+
+O benchmark não é uma implementação clínica, não processa sinais cerebrais humanos e não altera o genoma da BA.
 
 Copyright © 2026 K410Sh4. All rights reserved.  
 SPDX-License-Identifier: LicenseRef-AILocal-Universal-Proprietary
