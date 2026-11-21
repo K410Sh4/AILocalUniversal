@@ -215,6 +215,12 @@ class KiaMemoryStore:
             raise KiaMemoryError(
                 f"Snapshot usa esquema {schema_version}; suportado {SCHEMA_VERSION}."
             )
+        if (
+            not isinstance(expected_digest, str)
+            or len(expected_digest) != 64
+            or not isinstance(payload_json, str)
+        ):
+            raise KiaMemoryError("Metadados ou conteúdo do snapshot estão corrompidos.")
         actual_digest = hashlib.sha256(payload_json.encode("utf-8")).hexdigest()
         if not hmac.compare_digest(expected_digest, actual_digest):
             raise KiaMemoryError("Hash do snapshot cognitivo diverge; restauração bloqueada.")
@@ -320,7 +326,7 @@ class KiaMemoryStore:
                 rows = self._connection.execute(
                     """
                     SELECT sequence, event_id, event_type, network_version,
-                           payload_json, created_at
+                           payload_sha256, payload_json, created_at
                     FROM cognitive_events WHERE namespace = ?
                     ORDER BY sequence DESC LIMIT ?
                     """,
@@ -328,17 +334,35 @@ class KiaMemoryStore:
                 ).fetchall()
             except sqlite3.Error as exc:
                 raise KiaMemoryError(f"Falha ao consultar eventos cognitivos: {exc}") from exc
-        return [
-            {
-                "sequence": row[0],
-                "event_id": row[1],
-                "event_type": row[2],
-                "network_version": row[3],
-                "summary": json.loads(row[4]),
-                "created_at": row[5],
-            }
-            for row in rows
-        ]
+        events: list[dict[str, Any]] = []
+        for row in rows:
+            expected_digest, payload_json = row[4], row[5]
+            if (
+                not isinstance(expected_digest, str)
+                or len(expected_digest) != 64
+                or not isinstance(payload_json, str)
+            ):
+                raise KiaMemoryError("Metadados de evento cognitivo estão corrompidos.")
+            actual_digest = hashlib.sha256(payload_json.encode("utf-8")).hexdigest()
+            if not hmac.compare_digest(expected_digest, actual_digest):
+                raise KiaMemoryError("Hash de evento cognitivo diverge; leitura bloqueada.")
+            try:
+                summary = json.loads(payload_json)
+            except json.JSONDecodeError as exc:
+                raise KiaMemoryError("Evento cognitivo contém JSON inválido.") from exc
+            if not isinstance(summary, dict):
+                raise KiaMemoryError("Resumo de evento cognitivo não é um objeto.")
+            events.append(
+                {
+                    "sequence": row[0],
+                    "event_id": row[1],
+                    "event_type": row[2],
+                    "network_version": row[3],
+                    "summary": summary,
+                    "created_at": row[6],
+                }
+            )
+        return events
 
     def close(self) -> None:
         with self._lock:
