@@ -264,8 +264,12 @@ class KiaRuntimeClient:
             return
         try:
             if self._process.poll() is None:
-                with self._lock:
-                    self._request("shutdown")
+                try:
+                    with self._lock:
+                        self._request("shutdown")
+                except KiaRuntimeError:
+                    # O finally abaixo encerra o processo mesmo quando o protocolo falhou.
+                    pass
                 try:
                     self._process.wait(timeout=2.0)
                 except subprocess.TimeoutExpired:

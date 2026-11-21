@@ -349,3 +349,26 @@ def host_state_payload(
         "budget": resource_budget_from_profile(resource_snapshot, processing_profile),
         "available_executors": list(network_payload["available_executors"]),
     }
+
+
+def executor_ids_for_registered_engines(
+    network_payload: Mapping[str, Any],
+    engine_names: Sequence[str],
+) -> list[str]:
+    """Retorna componentes-modelo cujos runtimes têm EngineAdapter registrado.
+
+    Isso confirma a presença de um adapter por runtime, não saúde do servidor nem
+    disponibilidade atual do modelo. O inventário de artefatos instalados continua
+    sendo a segunda condição para um componente aparecer na rede.
+    """
+    known_engines = {name.casefold() for name in engine_names if name.strip()}
+    components = network_payload.get("network", {}).get("components", {})
+    if not isinstance(components, Mapping):
+        raise ValueError("network.components precisa ser um mapa.")
+    return sorted(
+        component_id
+        for component_id, component in components.items()
+        if isinstance(component, Mapping)
+        and str(component.get("metadata", {}).get("runtime", "")).casefold()
+        in known_engines
+    )

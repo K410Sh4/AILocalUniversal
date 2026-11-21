@@ -165,6 +165,42 @@ fn host_process_handles_health_state_sync_plan_and_shutdown_over_jsonl() {
         &mut input,
         json!({
             "protocol_version": 1,
+            "request_id": "feedback-1",
+            "command": {
+                "type": "record_feedback",
+                "payload": {
+                    "feedback": {
+                        "capability_id": "mathematics",
+                        "component_id": "local-calculator",
+                        "outcome": "success",
+                        "validation_ref": "independent-validation-1",
+                        "notes": null
+                    },
+                    "learning_rate": 0.2
+                }
+            }
+        }),
+    );
+    let feedback = read(&mut output);
+    assert_eq!(feedback["ok"], true);
+    assert!(feedback["result"]["updated_weight"].as_f64().unwrap() > 0.8);
+
+    send(
+        &mut input,
+        json!({
+            "protocol_version": 1,
+            "request_id": "inspect-1",
+            "command": {"type": "inspect"}
+        }),
+    );
+    let inspection = read(&mut output);
+    assert_eq!(inspection["result"]["feedback_count"], 1);
+    assert_eq!(inspection["result"]["network_version"], 4);
+
+    send(
+        &mut input,
+        json!({
+            "protocol_version": 1,
             "request_id": "shutdown-1",
             "command": {"type": "shutdown"}
         }),

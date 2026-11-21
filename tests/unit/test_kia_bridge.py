@@ -309,3 +309,30 @@ def test_resource_budget_rejects_free_memory_larger_than_total() -> None:
     }
     with pytest.raises(ValueError, match="excedem"):
         resource_budget_from_profile(snapshot)
+
+
+
+def test_engine_registry_names_select_only_matching_installed_model_artifacts() -> None:
+    from kia_bridge import executor_ids_for_registered_engines
+
+    record = ModelRecord(
+        record_id="ollama:qwen3:4b",
+        display_name="Qwen3 4B",
+        family="qwen3",
+        capabilities=("chat",),
+        artifacts=(
+            ModelArtifact("ollama", "qwen3:4b", installed=True),
+            ModelArtifact("remote-api", "qwen3:4b", installed=True),
+        ),
+    )
+    network = build_network_payload(create_default_registry(), [record])
+
+    selected = executor_ids_for_registered_engines(network, ("ollama",))
+
+    components = network["network"]["components"]
+    assert selected == [
+        component_id
+        for component_id, component in components.items()
+        if component["metadata"]["runtime"] == "ollama"
+    ]
+    assert len(selected) == 1
