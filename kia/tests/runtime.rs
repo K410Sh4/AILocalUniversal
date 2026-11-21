@@ -382,3 +382,63 @@ fn feedback_history_is_bounded_to_recent_4096_evaluations() {
         "validation-4096"
     );
 }
+
+
+#[test]
+fn network_version_overflow_is_rejected_without_mutating_state() {
+    let mut value = serde_json::to_value(network()).unwrap();
+    value["version"] = json!(u64::MAX);
+    let mut network: AdaptiveCognitiveNetwork = serde_json::from_value(value).unwrap();
+    let before = network.clone();
+
+    let mut new_capability = capability();
+    new_capability.id = "new-capability".into();
+    let result = network.add_capability(new_capability);
+
+    assert!(matches!(
+        result,
+        Err(kia_cognitive_runtime::NetworkError::VersionOverflow)
+    ));
+    assert_eq!(network, before);
+}
+
+#[test]
+fn feedback_counter_overflow_is_rejected_without_mutating_state() {
+    let mut value = serde_json::to_value(network()).unwrap();
+    value["connections"][0]["observations"] = json!(u64::MAX);
+    value["connections"][0]["successes"] = json!(u64::MAX);
+    let mut network: AdaptiveCognitiveNetwork = serde_json::from_value(value).unwrap();
+    let before = network.clone();
+    let feedback = CognitiveFeedback {
+        capability_id: "mathematics".into(),
+        component_id: "local-calculator".into(),
+        outcome: FeedbackOutcome::Success,
+        validation_ref: "overflow-validation".to_owned(),
+        notes: None,
+    };
+
+    let result = network.record_evaluated_feedback(feedback, 0.1);
+
+    assert!(matches!(
+        result,
+        Err(kia_cognitive_runtime::NetworkError::CounterOverflow)
+    ));
+    assert_eq!(network, before);
+}
+
+#[test]
+fn carrying_learning_rejects_version_overflow() {
+    let mut value = serde_json::to_value(network()).unwrap();
+    value["version"] = json!(u64::MAX);
+    let previous: AdaptiveCognitiveNetwork = serde_json::from_value(value).unwrap();
+    let mut replacement = AdaptiveCognitiveNetwork::default();
+
+    let result = replacement.carry_learning_from(&previous);
+
+    assert!(matches!(
+        result,
+        Err(kia_cognitive_runtime::NetworkError::VersionOverflow)
+    ));
+    assert!(replacement.capabilities().is_empty());
+    assert_eq!(replacement.version(), 0);
+}
