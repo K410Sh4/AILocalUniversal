@@ -202,6 +202,17 @@ impl HomeostasisSystem {
             }
         }
 
+        // Preflight on clones so an overflow or invalid region cannot leave
+        // earlier regions mutated while later regions fail.
+        let mut preflight = self.regions.clone();
+        for region in &mut preflight {
+            let disturbance = disturbances
+                .iter()
+                .find(|(id, _)| *id == region.id)
+                .map_or(0.0, |(_, rate)| *rate);
+            region.step(dt, disturbance, tolerance)?;
+        }
+
         let mut reports = Vec::with_capacity(self.regions.len());
         for region in &mut self.regions {
             let disturbance = disturbances
@@ -344,6 +355,26 @@ mod tests {
             system.step(0.1, &[(2, 0.1)], 0.0),
             Err(HomeostasisError::MissingRegion(2))
         );
+    }
+
+    #[test]
+    fn failed_region_preflight_does_not_partially_mutate_the_system() {
+        let mut first = region(1, 1.0);
+        let before_first = first.clone();
+        let mut second = region(2, 0.0);
+        second.lower_bound = -1.7e308;
+        second.upper_bound = 1.7e308;
+        second.state = -1.0e308;
+        second.target = 1.0e308;
+        let before_second = second.clone();
+        let mut system = HomeostasisSystem { regions: vec![first, second] };
+
+        assert_eq!(
+            system.step(0.1, &[], 0.0),
+            Err(HomeostasisError::InvalidValue("step_overflow"))
+        );
+        assert_eq!(system.regions[0], before_first);
+        assert_eq!(system.regions[1], before_second);
     }
 
     #[test]
