@@ -209,8 +209,10 @@ A suíte cobre contratos, seleção, persistência, protocolo Ollama simulado, a
 | 2 | Núcleo cognitivo e ferramentas determinísticas |
 | 3 | RAG, Context Composer e validação |
 | 4 | NeuralModel Hub, estimativa inicial de recursos e seleção adaptativa (em implementação/validação) |
-| 5 | Rede cooperativa, segurança e Map-Reduce |
-| 6 | Laboratório BitNet, RPC e otimizações multi-host |
+| 5 | Neural Elastic Execution: cache de especialistas MoE e execução elástica |
+| 6 | Agentes especialistas e autoengenharia |
+| 7 | Rede cooperativa, segurança e Map-Reduce |
+| 8 | Laboratório BitNet, RPC e otimizações multi-host |
 
 ## Segurança e privacidade
 
