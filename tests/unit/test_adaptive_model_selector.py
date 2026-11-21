@@ -254,3 +254,46 @@ def test_selector_uses_cold_estimate_when_resident_context_is_too_small() -> Non
     assert result.estimate.placement.value == "gpu"
     assert result.residency_assessment is not None
     assert result.residency_assessment.status.value == "context_requires_reload"
+
+
+
+def test_selector_falls_back_to_cold_estimate_on_digest_mismatch() -> None:
+    model = ModelInfo("qwen3:4b")
+    record = replace(
+        _record(
+            "qwen3:4b",
+            parameters=4_000_000_000,
+            quantization="Q4_K_M",
+            kv_bytes_per_token=147_456,
+        ),
+        artifacts=(
+            ModelArtifact(
+                runtime="ollama",
+                reference="qwen3:4b",
+                installed=True,
+                digest="sha256:installed",
+                quantization="Q4_K_M",
+            ),
+        ),
+    )
+    running = RunningModelSnapshot(
+        name="qwen3:4b",
+        model="qwen3:4b",
+        digest="sha256:stale",
+        size_bytes=5 * 1024**3,
+        size_vram_bytes=3 * 1024**3,
+        context_length=8192,
+    )
+
+    result = AdaptiveModelSelector().select(
+        [model],
+        {record.record_id: record},
+        _hardware(),
+        context_tokens=4096,
+        running_models=[running],
+    )
+
+    assert result.strategy == "adaptive"
+    assert result.estimate.placement.value == "gpu"
+    assert result.residency_assessment is not None
+    assert result.residency_assessment.status.value == "identity_unverified"
