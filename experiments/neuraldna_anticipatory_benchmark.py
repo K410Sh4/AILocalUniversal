@@ -8,10 +8,10 @@ SPDX-License-Identifier: LicenseRef-AILocal-Universal-Proprietary
 """
 from __future__ import annotations
 
-from dataclasses import dataclass
 import math
 import random
 import statistics
+from dataclasses import dataclass
 
 
 STATE_COUNT = 3
@@ -154,10 +154,10 @@ def environment_metrics(
         return 0.0, 0.0
     changes = sum(
         previous != current
-        for previous, current in zip(states, states[1:])
+        for previous, current in zip(states, states[1:], strict=False)
     )
     counts = [[0] * STATE_COUNT for _ in range(STATE_COUNT)]
-    for previous, current in zip(states, states[1:]):
+    for previous, current in zip(states, states[1:], strict=False):
         counts[previous][current] += 1
     conditional_entropy = 0.0
     for row in counts:
