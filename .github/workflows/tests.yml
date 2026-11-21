@@ -14,6 +14,7 @@ on:
       - bootstrap/project-structure
       - feature/rag-v1
       - feature/neural-model-hub-v1
+      - feature/adaptive-resource-manager-v1
 
 jobs:
   unit-tests:
