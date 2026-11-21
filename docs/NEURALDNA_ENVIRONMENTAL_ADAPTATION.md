@@ -3,7 +3,7 @@
 Copyright © 2026 K410Sh4. All rights reserved.  
 SPDX-License-Identifier: LicenseRef-AILocal-Universal-Proprietary
 
-> Research specification. This document defines the next experimental direction; it does not claim that environmental evolution is already implemented in NeuralDNA or BA.
+> Research specification. The first cue-assessment/reaction-norm primitive is implemented experimentally in `neural_dna/environment.py`; full environmental evolution and BA integration remain unimplemented.
 
 ## 1. Core design decision
 
@@ -175,7 +175,14 @@ A capacity edge case was also identified in 0.2: overflow handling could remove 
 
 The parameter sweep in the committed test enumerates **373,248** combinations, not 653,184. The documentation and PR description must use the code-derived count. The test suite defines 17 collected cases (14 test functions, one parameterized across four values); CI has not yet confirmed them.
 
-## 9. Implementation sequence
+## 9. Current repository state
+
+- NeuralStem 0.2 implements bounded regional lineage dynamics; the capacity regression correction and environmental design are in PR #16.
+- NeuralDNA Environmental Assessment 0.3 adds Beta-Bernoulli cue calibration with forgetting and a reaction norm that separates cue-supported plasticity from a volatility-sensitive diversity reserve; it is isolated in PR #17.
+- PR #17 has not yet passed repository CI. The local independent mathematical prototype checked 484 evidence/volatility combinations, but that does not substitute for executing the committed test suite.
+- No population-level evolutionary selection, crossover, mutation, multi-region communication or niche-construction feedback is implemented yet.
+
+## 10. Implementation sequence
 
 1. Stabilize and validate NeuralStem 0.2, including capacity regression and CI.
 2. Implement environmental signals and assessment as an isolated deterministic module.
@@ -188,7 +195,7 @@ The parameter sweep in the committed test enumerates **373,248** combinations, n
 9. Add bounded mutation-rate adaptation and mutational-neighborhood analysis.
 10. Integrate successful mechanisms with BA/K.IA; keep runtime adaptation, acquired memory and heritable genotype as separate state domains.
 
-## 10. Scientific references
+## 11. Scientific references
 
 - Hill, Pfennig & Pfennig (2024), *Assessment and the regulation of adaptive phenotypic plasticity*, Development 151(20), dev203101. https://doi.org/10.1242/dev.203101
 - Sekajova et al. (2025), *Evolution of phenotypic plasticity during environmental fluctuations*, Journal of Evolutionary Biology 38(9), 1246–1255. https://doi.org/10.1093/jeb/voaf078
@@ -198,7 +205,7 @@ The parameter sweep in the committed test enumerates **373,248** combinations, n
 
 Scientific findings and third-party texts remain the property of their authors and publishers. This specification and the original AILU implementation proposals are covered by the project notice below.
 
-## 11. Project ownership
+## 12. Project ownership
 
 Copyright © 2026 K410Sh4. All rights reserved.  
 SPDX-License-Identifier: LicenseRef-AILocal-Universal-Proprietary
