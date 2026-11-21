@@ -279,6 +279,7 @@ impl AdaptiveCognitiveNetwork {
     /// Somente conexões com a mesma identidade tipada e ainda válidas no novo grafo
     /// são transportadas. Assim, replace_state não zera a plasticidade a cada turno.
     pub fn carry_learning_from(&mut self, previous: &Self) -> Result<(), NetworkError> {
+        self.validate()?;
         previous.validate()?;
         let structure_changed = self.capabilities.keys().ne(previous.capabilities.keys())
             || self.components.keys().ne(previous.components.keys())
