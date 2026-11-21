@@ -131,7 +131,36 @@ The automated tests cover:
 
 CI executes Ruff, the complete Python test suite, the prior anticipatory benchmark, this spatial benchmark, and Rust tests.
 
-## 8. Known simplifications and next experiments
+## 8. Initial CI results
+
+The reproducible GitHub Actions run used 20 paired seeds, eight regions, 300 steps, and two steps each of development and communication latency. Cue anticipation matched the communication delay. All Python tests, Ruff, the 0.5 and 0.6 benchmarks, the 0.7 benchmark, and Rust tests passed on commit `25bc6b9e517dc9026babaa021dd28a3252eb7499` (run `44908128811`).
+
+| Scenario | Strategy | Fitness | Selected accuracy | Local cue | Global signal | Neighbor signal |
+|---|---|---:|---:|---:|---:|---:|
+| Shared stochastic niche, ring | Local cue | 0.5469 | 0.798 | 0.798 | 0.986 | 0.798 |
+| Shared stochastic niche, ring | Global signal | 0.9275 | 0.985 | 0.798 | 0.986 | 0.798 |
+| Shared stochastic niche, ring | Neighbor signal | 0.5310 | 0.798 | 0.798 | 0.986 | 0.798 |
+| Shared stochastic niche, ring | Adaptive network | 0.8425 | 0.980 | 0.798 | 0.986 | 0.798 |
+| Two clustered niches | Local cue | 0.8605 | 0.950 | 0.950 | 0.500 | 0.995 |
+| Two clustered niches | Global signal | 0.2188 | 0.503 | 0.950 | 0.500 | 0.995 |
+| Two clustered niches | Neighbor signal | 0.9540 | 0.994 | 0.950 | 0.500 | 0.995 |
+| Two clustered niches | Local history | 0.9741 | 0.991 | 0.950 | 0.500 | 0.995 |
+| Two clustered niches | Adaptive network | 0.8782 | 0.993 | 0.950 | 0.500 | 0.995 |
+| Clustered niches, complete graph | Neighbor signal | 0.0715 | 0.129 | 0.950 | 0.500 | 0.124 |
+| 50% message loss, ring | Neighbor signal | 0.5346 | 0.798 | 0.798 | 0.986 | 0.798 |
+
+### Interpretation
+
+1. **Topology must respect ecological boundaries.** Within-cluster messages reached 0.995 accuracy, while the global signal reached only 0.500 in two divergent niches.
+2. **All-to-all communication can invert local information.** In the complete graph, a region received more messages from the other niche than from its own; the neighbor aggregate accuracy fell to 0.124. This is worse than simply having no useful neighbor signal.
+3. **Neighborhood size matters.** In the shared stochastic ring, two neighbors were insufficient to improve on a local cue; the eight-region global aggregate reached 0.986. The model therefore does not support the simplistic rule that local communication is always better.
+4. **Acquired history can outperform communication.** In predictable clustered cycles, local transition history achieved 0.991 accuracy and 0.9741 fitness. This is runtime-acquired experience, not inherited genotype or epigenetic change.
+5. **Communication loss removes the gain.** At 50% message loss, neighbor accuracy matched the local cue (0.798); the neighbor-only strategy paid cost without gaining accuracy.
+6. **The adaptive selector is not yet a winner.** Its calibration and plasticity costs left it below the best simple local-history baseline in the clustered-cycle case. Do not integrate it into NeuralStem.
+
+These results support modular local communication with niche-aware boundaries, but they do not yet validate a physical signal-field model or a complete BA architecture.
+
+## 9. Known simplifications and next experiments
 
 This version does **not** yet model:
 - continuous physical distance;
@@ -159,7 +188,7 @@ Only after this is validated should we test adaptive rewiring. Rewiring must com
 
 **Do not integrate 0.7 into NeuralStem yet.** First obtain stable paired-seed results, parameter sweeps, and ablations.
 
-## 9. Ownership and third-party boundaries
+## 10. Ownership and third-party boundaries
 
 The original code, tests, experimental protocol, architecture, and documentation created for this benchmark are AILocal Universal project materials.
 
