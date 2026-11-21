@@ -124,9 +124,17 @@ impl World {
             if !valid_unit_interval(edge.permeability) {
                 return Err(ValidationError::InvalidValue("permeability"));
             }
-            let a = self.region_index(edge.a).ok_or(ValidationError::MissingRegion(edge.a))?;
-            let b = self.region_index(edge.b).ok_or(ValidationError::MissingRegion(edge.b))?;
-            let pair = if edge.a < edge.b { (edge.a, edge.b) } else { (edge.b, edge.a) };
+            let a = self
+                .region_index(edge.a)
+                .ok_or(ValidationError::MissingRegion(edge.a))?;
+            let b = self
+                .region_index(edge.b)
+                .ok_or(ValidationError::MissingRegion(edge.b))?;
+            let pair = if edge.a < edge.b {
+                (edge.a, edge.b)
+            } else {
+                (edge.b, edge.a)
+            };
             if !pairs.insert(pair) {
                 return Err(ValidationError::DuplicateConnection(pair.0, pair.1));
             }
@@ -185,7 +193,11 @@ impl World {
                 count += 1;
             }
         }
-        if count == 0 { 0.0 } else { total / count as f64 }
+        if count == 0 {
+            0.0
+        } else {
+            total / count as f64
+        }
     }
 
     /// Worst regional mean fitness; prevents global averages hiding local collapse.
@@ -196,7 +208,11 @@ impl World {
                 if region.units.is_empty() {
                     0.0
                 } else {
-                    region.units.iter().map(|u| u.fitness_in(region.environment)).sum::<f64>()
+                    region
+                        .units
+                        .iter()
+                        .map(|u| u.fitness_in(region.environment))
+                        .sum::<f64>()
                         / region.units.len() as f64
                 }
             })
@@ -225,7 +241,13 @@ mod tests {
         }
     }
 
-    fn region(id: RegionId, niche_id: u32, conditions: [f64; 2], signal: f64, unit_id: u64) -> Region {
+    fn region(
+        id: RegionId,
+        niche_id: u32,
+        conditions: [f64; 2],
+        signal: f64,
+        unit_id: u64,
+    ) -> Region {
         Region {
             id,
             niche_id,
@@ -241,7 +263,11 @@ mod tests {
                 region(1, 10, [0.0, 0.0], 1.0, 101),
                 region(2, 20, [1.0, 1.0], 0.0, 202),
             ],
-            connections: vec![Connection { a: 1, b: 2, permeability: 0.5 }],
+            connections: vec![Connection {
+                a: 1,
+                b: 2,
+                permeability: 0.5,
+            }],
             diffusion_rate: 0.25,
         }
     }
@@ -304,7 +330,10 @@ mod tests {
     fn invalid_non_finite_environment_is_rejected() {
         let mut world = two_niche_world();
         world.regions[0].environment.conditions[0] = f64::NAN;
-        assert_eq!(world.validate(), Err(ValidationError::InvalidValue("region_state")));
+        assert_eq!(
+            world.validate(),
+            Err(ValidationError::InvalidValue("region_state"))
+        );
     }
 
     #[test]
@@ -313,7 +342,11 @@ mod tests {
         world.regions.push(region(3, 30, [0.5, 0.5], 0.0, 303));
         world.diffusion_rate = 1.0;
         world.connections[0].permeability = 1.0;
-        world.connections.push(Connection { a: 1, b: 3, permeability: 1.0 });
+        world.connections.push(Connection {
+            a: 1,
+            b: 3,
+            permeability: 1.0,
+        });
         assert_eq!(world.validate(), Err(ValidationError::UnstableTransport(1)));
     }
 }
