@@ -1,0 +1,33 @@
+name: BA Core
+
+on:
+  push:
+    branches:
+      - feature/ba-core-spatial-adaptation-v0.1
+  pull_request:
+    branches:
+      - integration/unified-architecture-v1
+    paths:
+      - "ba_core/**"
+      - "docs/BA_CORE_V0.1_VALIDATION.md"
+      - ".github/workflows/ba-core.yml"
+
+jobs:
+  ba-core-rust:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ba_core
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up stable Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - name: Check formatting
+        run: cargo fmt --all -- --check
+      - name: Lint
+        run: cargo clippy --all-targets --all-features -- -D warnings
+      - name: Run tests
+        run: cargo test --all-targets
