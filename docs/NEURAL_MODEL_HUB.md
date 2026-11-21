@@ -48,6 +48,18 @@ Metadados ausentes permanecem não informados. Licenças não verificadas são d
 
 Fabricante e driver da GPU não comprovam suporte a CUDA, ROCm ou Vulkan. A compatibilidade só é declarada quando requisitos mínimos estiverem verificados e ligados a evidência.
 
+## Fase 4.5 — Adaptive Resource Manager e Adaptive Model Selector
+
+A implementação inicial está descrita em [ADAPTIVE_RESOURCES.md](ADAPTIVE_RESOURCES.md).
+
+- Ollama `/api/show` fornece metadados explícitos de parâmetro, arquitetura, quantização e contexto quando disponíveis.
+- O registry persiste esses metadados sem sobrescrever campos curados já preenchidos.
+- O Resource Estimator estima pesos por contagem total de parâmetros e quantização; calcula cache KV apenas para arquiteturas densas suportadas e metadados completos.
+- O Adaptive Model Selector escolhe modelos de chat elegíveis, mantém a preferência quando viável e apresenta fallback quando os metadados são insuficientes.
+- O Chat Automático usa o seletor com contexto inicial de 4.096 tokens; o modo Manual continua obedecendo à escolha do usuário.
+
+As estimativas permanecem teóricas. A reserva de runtime (768 MiB), a margem de memória (15%) e os coeficientes de quantização são premissas iniciais, não medições. A recomendação híbrida não controla o offload. O seletor ainda não implementa telemetria contínua, benchmarks, leases ou carregamento/descarregamento automático.
+
 ## Próximas entregas
 
 - Catálogo mais amplo e atualizado automaticamente, com ingestão e revisão de metadados por campo.
