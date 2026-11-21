@@ -43,11 +43,9 @@ def test_clustered_topology_does_not_cross_niche_boundaries():
     adjacency = build_topology(6, "clustered", (0, 0, 0, 1, 1, 1))
     assert adjacency == ((1, 2), (0, 2), (0, 1), (4, 5), (3, 5), (3, 4))
     assert all(
-        all(clusters_left == clusters_right for clusters_left, clusters_right in [
-            (0, 0) if index < 3 else (1, 1)
-        ])
+        (index < 3) == (neighbor < 3)
         for index, neighbors in enumerate(adjacency)
-        for _ in neighbors
+        for neighbor in neighbors
     )
 
 
