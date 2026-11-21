@@ -82,6 +82,28 @@ class AdaptiveResourceManager:
             raise KeyError(f"Modelo não encontrado no registro: {model_id}")
         return reconcile_model_residency(record, snapshots, runtime=runtime)
 
+    def assess_resident_capacity(
+        self,
+        model_id: str,
+        registry: ModelRegistry,
+        snapshots: list[RunningModelSnapshot],
+        *,
+        context_tokens: int = 4096,
+        concurrent_requests: int = 1,
+        runtime: str = "ollama",
+    ) -> ResidentCapacityAssessment:
+        """Avalia reutilização do runner sem somar novamente sua alocação."""
+        record = registry.get(model_id)
+        if record is None:
+            raise KeyError(f"Modelo não encontrado no registro: {model_id}")
+        return assess_resident_capacity(
+            record,
+            snapshots,
+            context_tokens=context_tokens,
+            concurrent_requests=concurrent_requests,
+            runtime=runtime,
+        )
+
     def select_chat_model(
         self,
         models: list[ModelInfo],
