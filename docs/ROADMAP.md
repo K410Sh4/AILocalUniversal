@@ -93,7 +93,8 @@ As fases são entregas progressivas. Uma funcionalidade só é considerada concl
 - [ ] Persistir benchmarks controlados de qualidade, latência, RAM/VRAM, estabilidade e estado quente/frio.
 - [ ] Adicionar orçamento de contexto configurável e recomendações por tarefa/capacidade com métricas de qualidade.
 - [x] Adicionar leases de ciclo de vida na aplicação: impedir pull/remoção enquanto o Chat usa o modelo e impedir início de uso durante mutação.
-- [ ] Integrar leases compartilhadas com Ollama/Rust, concorrência e telemetria contínua; automatizar carregamento/descarregamento somente após validação.
+- [x] Adicionar probe Linux de PSS/RSS para a árvore local `ollama serve`, com status explícito para ausência, ambiguidade e telemetria incompleta.
+- [ ] Integrar leases compartilhadas com Ollama/Rust, sessões de medição fria/quente, VRAM e calibração robusta; automatizar carregamento/descarregamento somente após validação.
 - [x] Expor snapshot de residência Ollama via `/api/ps` no contrato Engine Adapter (`RunningModelSnapshot`), preservando digest, tamanho, VRAM, contexto e expiração reportados.
 - [x] Reconciliar snapshots com artefatos instalados por referência exata + digest; estados ausente/divergente/ambíguo permanecem inconclusivos e não reduzem a estimativa.
 - [x] Avaliar reutilização do runner residente quando digest e contexto coincidem, sem contabilizar pesos/KV/buffers já alocados novamente para uma solicitação serial.
