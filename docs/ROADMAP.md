@@ -96,7 +96,7 @@ As fases são entregas progressivas. Uma funcionalidade só é considerada concl
 - [x] Expor snapshot de residência Ollama via `/api/ps` no contrato Engine Adapter (`RunningModelSnapshot`), preservando digest, tamanho, VRAM, contexto e expiração reportados.
 - [x] Reconciliar snapshots com artefatos instalados por referência exata + digest; estados ausente/divergente/ambíguo permanecem inconclusivos e não reduzem a estimativa.
 - [x] Avaliar reutilização do runner residente quando digest e contexto coincidem, sem contabilizar pesos/KV/buffers já alocados novamente para uma solicitação serial.
-- [x] Integrar snapshots `/api/ps` ao seletor do modo Automático; manter modo Manual inalterado e atualizar telemetria após cada execução.
+- [x] Integrar snapshots `/api/ps` ao seletor do modo Automático; manter modo Manual inalterado, carimbar observações e rejeitar snapshots com mais de 30 s ou próximos da expiração.
 - [ ] Integrar slots concorrentes reais, leases e unload confirmado; validar medições frias/quentes no Arch Linux.
 - [ ] Validar seleção quente/fria no Arch Linux, comparando estimativas com RAM/VRAM observadas e confirmando o comportamento de unload/keep-alive.
 
