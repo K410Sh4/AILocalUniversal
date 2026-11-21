@@ -145,6 +145,13 @@ def simulate_regional_trial(
             if step > 0:
                 models[region].observe(environment[step - 1], environment[step])
 
+            forecast = models[region].forecast(environment[step], development_latency)
+            history_state = max(
+                range(STATE_COUNT), key=lambda state: (forecast[state], -state)
+            )
+            history_predictions[region].append(history_state)
+
+            # Calibrate only after the forecast exists and its target is observed.
             if step >= development_latency:
                 decision_step = step - development_latency
                 local_calibrations[region].observe(
@@ -158,12 +165,6 @@ def simulate_regional_trial(
                 global_calibrations[region].observe(
                     global_signals[emitted_step] == environment[step]
                 )
-
-            forecast = models[region].forecast(environment[step], development_latency)
-            history_state = max(
-                range(STATE_COUNT), key=lambda state: (forecast[state], -state)
-            )
-            history_predictions[region].append(history_state)
 
         target_states = tuple(
             environment[step + development_latency] for environment in environments
