@@ -12,6 +12,7 @@ on:
     branches:
       - feature/ba-developmental-substrate-contracts-v0.1
       - feature/ba-core-spatial-adaptation-v0.1
+      - feature/ba-core-benchmark-matrix-v0.2
       - integration/unified-architecture-v1
     paths:
       - "ba_core/**"
