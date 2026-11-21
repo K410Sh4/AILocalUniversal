@@ -32,6 +32,7 @@ from model_hub.catalog import (
 from model_hub.compatibility import CompatibilityResult, CompatibilityStatus
 from model_hub.contracts import ModelRecord
 from model_hub.hardware import HardwareProfile
+from resources.contracts import ModelResourceEstimate
 
 
 class ModelHubView(QWidget):
@@ -175,6 +176,7 @@ class ModelHubView(QWidget):
 
         self._records: list[ModelRecord] = []
         self._compatibility: dict[str, CompatibilityResult] = {}
+        self._resource_estimates: dict[str, ModelResourceEstimate] = {}
         self._row_record_ids: list[str] = []
         self._catalog_document: CatalogDocument | None = None
         self._catalog_entries: list[CatalogEntry] = []
@@ -200,9 +202,11 @@ class ModelHubView(QWidget):
         *,
         runtime_available: set[str],
         registry_warning: str | None = None,
+        resource_estimates: dict[str, ModelResourceEstimate] | None = None,
     ) -> None:
         self._records = records
         self._compatibility = compatibility
+        self._resource_estimates = resource_estimates or {}
         ram = (
             f"{self._format_bytes(hardware.ram_available_bytes)} disponíveis de "
             f"{self._format_bytes(hardware.ram_total_bytes)}"
@@ -332,6 +336,20 @@ class ModelHubView(QWidget):
             f"quantização={item.quantization or 'não informada'}"
             for item in record.artifacts
         ) or "Nenhum artefato associado."
+        estimate = self._resource_estimates.get(record_id)
+        if estimate is None:
+            estimate_label = "Não calculada nesta atualização."
+        else:
+            estimate_label = (
+                f"Contexto: {estimate.context_tokens} tokens; "
+                f"pesos: {self._format_bytes(estimate.weight_bytes)}; "
+                f"cache KV: {self._format_bytes(estimate.kv_cache_bytes)}; "
+                f"reserva runtime: {self._format_bytes(estimate.runtime_overhead_bytes)}; "
+                f"total: {self._format_bytes(estimate.total_required_bytes)}; "
+                f"posicionamento: {estimate.placement.value}; "
+                f"confiança: {estimate.confidence.value}. "
+                f"Premissas: {'; '.join(estimate.reasons)}"
+            )
         self.details.setPlainText(
             f"ID: {record.record_id}\n"
             f"Família: {record.family}\n"
@@ -345,7 +363,8 @@ class ModelHubView(QWidget):
             f"Fonte: {record.source_url or 'não cadastrada'}\n"
             f"Artefatos:\n{artifacts}\n"
             f"Compatibilidade: {result.status.value} — {'; '.join(result.reasons)}\n"
-            f"Requisitos: {requirement_label}"
+            f"Requisitos: {requirement_label}\n"
+            f"Estimativa de inferência: {estimate_label}"
         )
 
         selected_ref = next(
