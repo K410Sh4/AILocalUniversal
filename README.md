@@ -66,6 +66,12 @@ A branch `feature/rag-v1` inclui uma biblioteca de conhecimento local e integra�
 
 **Limites:** a integração inicial ao Chat é opt-in, usa documentos como dados não confiáveis e valida a integridade estrutural das citações, sem provar verdade/entailment. A validação operacional da integração após pull no Arch, reranker concreto, benchmark de qualidade em corpus representativo, OCR e orçamento de contexto por tokenizer permanecem pendentes. Consulte [docs/RAG.md](docs/RAG.md).
  
+## K.IA 0.2 — Runtime Host & Python Bridge
+
+A branch feature/kia-runtime-host-bridge-v0.2 acrescenta o binário local kia-runtime-host e o pacote kia_bridge. O processo Rust mantém uma rede em memória, valida estado e orçamento e devolve planos seletivos por JSONL versionado. A ponte Python inicia o processo sem shell, mantém a sessão, correlaciona respostas e converte contratos da NAPA, NeuralModel Hub e HardwareProfile.
+
+O host planeja, não executa inferência nesta versão. Custos e alvos de hardware precisam ser explicitamente conhecidos; artefato instalado e tamanho em disco não são estimativas de RAM/VRAM. Consulte docs/KIA_RUNTIME_HOST_PROTOCOL.md.
+
 ## K.IA — Artificial Brain / Rust Cognitive Runtime
 
 A branch feature/kia-rust-cognitive-runtime-v0.1 inicia a construção da K.IA como uma arquitetura cognitiva modular, e não como um único modelo. A crate Rust kia-cognitive-runtime introduz contratos tipados, rede de capacidades, seleção por intenção/contexto, orçamento lógico de hardware, registro de executores e plasticidade operacional por feedback avaliado.
