@@ -84,6 +84,8 @@ jobs:
         run: python -m experiments.neuraldna_spatial_communication_benchmark
       - name: Run NeuralDNA morphogen-like signal field benchmark
         run: python -m experiments.neuraldna_morphogen_signal_field
+      - name: Run NeuralDNA field-coupled adaptation benchmark
+        run: python -m experiments.neuraldna_field_coupled_adaptation
 
   kia-rust-runtime:
     runs-on: ubuntu-latest
