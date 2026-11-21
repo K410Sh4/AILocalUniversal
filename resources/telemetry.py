@@ -203,8 +203,10 @@ def probe_ollama_process_memory(
     pss_total = 0
     rss_total = 0
     for pid in sorted(process_ids):
-        memory = _parse_smaps_rollup(root / str(pid))
-        if memory is None:
+        process_dir = root / str(pid)
+        memory = _parse_smaps_rollup(process_dir)
+        current_stat = _process_stat(process_dir)
+        if memory is None or current_stat != process_stats.get(pid):
             return OllamaProcessMemorySnapshot(
                 ProcessMemoryProbeStatus.INCOMPLETE,
                 root_pid,
@@ -212,7 +214,7 @@ def probe_ollama_process_memory(
                 None,
                 None,
                 observed_at,
-                f"smaps_rollup indisponível ou inconsistente para PID {pid}.",
+                f"PID {pid} mudou durante a leitura ou smaps_rollup está indisponível.",
             )
         pss_total += memory[0]
         rss_total += memory[1]
