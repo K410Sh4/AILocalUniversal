@@ -110,3 +110,14 @@ O host é síncrono e atende uma solicitação por vez. Não há execução conc
 ## Preservação de plasticidade
 
 Ao sincronizar um novo estado, o host mantém pesos, contadores e referências de feedback das conexões com identidade tipada compatível. O histórico preservado é limitado às 4.096 entradas mais recentes. O comando restore_learning permite importar um snapshot cognitivo validado antes do primeiro replace_state; export_network devolve somente a rede atual. A persistência em disco é responsabilidade do cliente local Python/SQLite, não do host Rust.
+
+
+## Extensões de execução K.IA 0.5
+
+O crate Rust disponibiliza primitives de execução controlada sem alterar o contrato JSONL v2:
+- ExecutionControl: cancelamento cooperativo compartilhado e deadline por tarefa;
+- ExecutionLeaseManager: admissão limitada por número de tarefas e ResourceVector;
+- CognitiveRuntime.execute_with_control: verifica o deadline/cancelamento e solicita leases por componente;
+- ComponentExecutor.execute_controlled: ponto de extensão opcional para adaptadores que possam interromper operações de forma cooperativa.
+
+Essas primitives ainda não são comandos do RuntimeHost. O host e o cliente Python continuam atendendo uma solicitação por vez; a execução real do aplicativo continua no Python/Ollama. A interrupção de um adaptador legado só pode ser observada depois que a chamada bloqueante retornar.

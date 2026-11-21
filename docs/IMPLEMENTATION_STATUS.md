@@ -308,3 +308,17 @@ Implementação em andamento na branch feature/kia-persistent-semantic-memory-v0
 - O worker devolve apenas IDs/posições/scores das páginas candidatas; o Cognitive Inspector recebe contagens e IDs, enquanto trechos citáveis continuam sendo chunks originais.
 
 **Limites:** snapshot local não é criptografado; permissões privadas e hash protegem acesso casual/integridade, não substituem criptografia em disco. Persistência é local e por namespace; não sincroniza entre dispositivos. O log mantém no máximo 10.000 eventos e a rede carrega até 4.096 feedbacks durante carry_learning_from. Fichas NeSA continuam sendo busca lexical FTS5, não embeddings semânticos, e seus scores não são probabilidades. O custo e a priorização do provedor Knowledge são valores iniciais explícitos, ainda não calibrados por benchmark. CI não substitui validação manual no Arch Linux.
+
+
+## K.IA 0.5 — Execution Safety Core (incremento inicial)
+
+Implementação proposta na branch feature/kia-execution-safety-v0.5:
+- ExecutionControl compartilha um sinal atômico de cancelamento e deadline por tarefa.
+- CognitiveRuntime.execute_with_control verifica o controle antes de despachar, durante a espera por recursos e depois do executor retornar.
+- ComponentExecutor oferece execute_controlled como extensão compatível; adaptadores antigos continuam funcionando, mas não podem ser interrompidos enquanto bloqueados.
+- ExecutionLeaseManager impõe limite de tarefas ativas, orçamento multidimensional em uso e número máximo de tarefas aguardando.
+- ExecutionLease usa RAII para devolver os recursos lógicos no fim da execução.
+- Relatório distingue completed, failed, cancelled, timed_out e admission_rejected.
+- Testes Rust cobrem deadline, cancelamento cooperativo, limite de recursos, saturação da fila e liberação de leases.
+
+**Limites desta iteração:** o RuntimeHost JSONL v2 continua síncrono e a ponte Python serializa chamadas; os novos controles estão disponíveis na API Rust embutível, mas ainda não comandam o ciclo de vida do MainWindow/Ollama. Cancelamento real exige que cada adaptador bloqueante implemente polling ou suporte nativo a abort. Nenhuma quota do kernel é aplicada. O adaptador llama.cpp não foi incluído nesta entrega.

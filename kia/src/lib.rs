@@ -4,6 +4,7 @@
 //! orçamento lógico de recursos e feedback avaliado. Motores externos são conectados
 //! por implementações de ComponentExecutor.
 
+mod execution_control;
 mod executor;
 mod host;
 mod ids;
@@ -13,6 +14,10 @@ mod resources;
 mod runtime;
 mod types;
 
+pub use execution_control::{
+    ExecutionControl, ExecutionControlError, ExecutionLease, ExecutionLeaseManager,
+    ExecutionLeaseSnapshot, LeaseError,
+};
 pub use executor::{ComponentExecutor, ExecutorRegistry};
 pub use host::{
     HostCommand, HostError, HostRequest, HostResponse, HostState, RuntimeHost,
