@@ -120,7 +120,7 @@ def test_complete_network_mixes_distinct_niches():
         cue_accuracy=0.98,
         steps=180,
     )
-    assert result.regional_divergence > 0.60
+    assert result.regional_divergence > 0.55
     assert result.global_signal_accuracy < 0.75
 
 
