@@ -204,3 +204,27 @@ Referência a avaliação independente, capability/component IDs e resultado suc
 Plano contém versão da rede, seleções, scores heurísticos e recursos reservados. Relatório registra outputs, falhas, duração, status e custos estimados sem copiar entrada ou documentos.
 
 Esses contratos não afirmam veracidade de conteúdo nem controlam diretamente o sistema operacional. Adaptadores devem declarar capacidades, custos e alvos suportados; o snapshot precisa ser atualizado por um provider de hardware confiável.
+
+
+## ACCA / K.IA 0.3 — contratos de fluxo
+
+### KiaPlanDecision
+Objeto Python efêmero que agrupa o CognitiveRequest enviado ao host, o snapshot da rede enviado por replace_state e o ExecutionPlan devolvido por Rust. Os IDs do plano só são resolvidos contra o mapa exato enviado ao host; referência inexistente bloqueia o dispatch.
+
+### Ferramentas determinísticas como NeuralComponent
+IDs estáveis tool-calculator e tool-unit-converter; tipo deterministic_tool; capacidades NAPA suportadas; alvo CPU; reserva lógica pequena e documentada; metadata contém tool_name e adapter Python. A execução valida que o resultado da ferramenta corresponde ao ID selecionado pelo Rust.
+
+### Modelos do NeuralModel Hub como NeuralComponent
+O componente aponta para record_id, runtime e referência exata do artefato instalado. Custo RAM vem do ResourceEstimator; o tamanho do arquivo em disco não é convertido em memória de inferência. O caminho K.IA 0.3 aceita somente placement CPU integralmente estimado em RAM e runtime local; GPU/híbrido continua no seletor legado até haver telemetria de placement real do Ollama.
+
+### CognitiveRequest produzido pela NAPA
+A lista required_capabilities contém as áreas ativadas pela classificação NAPA. O payload input enviado a Rust contém somente task_id; conversa, prompt e conteúdo documental não atravessam o control plane Rust.
+
+### Reserva em plano sequencial
+ExecutionPlan.reserved_resources representa o máximo por dimensão dos componentes selecionados quando o agendamento é sequencial. Uma futura execução paralela deve usar soma simultânea/leases, não esta regra de máximo.
+
+### Feedback operacional
+CognitiveFeedback contém capability_id, component_id, outcome e validation_ref. A aplicação só emite sucesso quando o replay determinístico passa e o estado factual é verified_deterministic. Feedback não é emitido automaticamente para saída LLM ou para mera integridade de citação.
+
+### Chat response validation
+ValidationLayer.validate_chat_response devolve presença, completude ponderada de requisitos declarados, gate para todos os requisitos obrigatórios e factual_status. Sem requisitos estruturados, completude é not_assessed. Respostas de LLM permanecem not_independently_verified.

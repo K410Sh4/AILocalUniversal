@@ -248,6 +248,12 @@ O processamento permanece local por padrão. Não exponha a API Ollama diretamen
 
 Consulte docs/SECURITY.md.
 
+## K.IA 0.3 — ACCA Vertical Flow
+
+Com o binário kia-runtime-host compilado e KIA_RUNTIME_HOST configurado, o Chat inicia o host Rust sob demanda. NAPA classifica a entrada; Rust escolhe entre componentes com adaptadores e estimativas de recursos explícitas; Python executa a ferramenta determinística ou o modelo Ollama selecionado; Validation Layer confere a resposta e somente resultados determinísticos reproduzidos atualizam prioridades. Se K.IA não estiver disponível ou não houver plano seguro, o Chat utiliza o pipeline anterior.
+
+O primeiro incremento ainda não roteia RAG/NeSA nem faz offload GPU/híbrido; não altera pesos de LLM e não declara reduções percentuais de custo. A especificação matemática e o plano de benchmark A/B/C estão em docs/ACCA_MATHEMATICAL_MODEL.md.
+
 ## Documentação adicional
 
 - Arquitetura: docs/ARCHITECTURE.md

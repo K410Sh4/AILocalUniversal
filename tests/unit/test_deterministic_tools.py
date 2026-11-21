@@ -64,3 +64,10 @@ def test_calculator_does_not_claim_compound_natural_language() -> None:
     result = CalculatorTool().execute("Calcule 2 + 2 e depois explique o resultado.")
 
     assert result is None
+
+
+def test_registry_exposes_registered_tool_names() -> None:
+    from core.deterministic_tools import DeterministicToolRegistry
+
+    names = DeterministicToolRegistry().tool_names()
+    assert set(names) == {"calculator", "unit_converter"}

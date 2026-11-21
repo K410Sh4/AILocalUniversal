@@ -29,6 +29,20 @@ impl ResourceVector {
             && self.npu_units <= limit.npu_units
     }
 
+    /// Pico simultâneo por dimensão para planos cuja execução é sequencial.
+    ///
+    /// Não é adequado para planos paralelos; esses precisam somar reservas ou
+    /// utilizar um scheduler com leases por janela de execução.
+    pub fn componentwise_max(&self, other: &Self) -> Self {
+        Self {
+            cpu_millis: self.cpu_millis.max(other.cpu_millis),
+            ram_bytes: self.ram_bytes.max(other.ram_bytes),
+            gpu_millis: self.gpu_millis.max(other.gpu_millis),
+            vram_bytes: self.vram_bytes.max(other.vram_bytes),
+            npu_units: self.npu_units.max(other.npu_units),
+        }
+    }
+
     pub fn checked_add(&self, other: &Self) -> Option<Self> {
         Some(Self {
             cpu_millis: self.cpu_millis.checked_add(other.cpu_millis)?,

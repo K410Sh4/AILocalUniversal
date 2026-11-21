@@ -197,6 +197,55 @@ fn host_process_handles_health_state_sync_plan_and_shutdown_over_jsonl() {
     assert_eq!(inspection["result"]["feedback_count"], 1);
     assert_eq!(inspection["result"]["network_version"], 4);
 
+    // Uma sincronização normal não pode zerar a prioridade aprendida.
+    send(
+        &mut input,
+        json!({
+            "protocol_version": 1,
+            "request_id": "state-2",
+            "command": {
+                "type": "replace_state",
+                "payload": {"state": state}
+            }
+        }),
+    );
+    let resynced = read(&mut output);
+    assert_eq!(resynced["ok"], true);
+    assert_eq!(resynced["result"]["feedback_count"], 1);
+    assert_eq!(resynced["result"]["network_version"], 4);
+
+    send(
+        &mut input,
+        json!({
+            "protocol_version": 1,
+            "request_id": "plan-2",
+            "command": {
+                "type": "plan",
+                "payload": {
+                    "request": {
+                        "schema_version": 1,
+                        "request_id": "task-2",
+                        "intent": "calculation",
+                        "context_tags": [],
+                        "required_capabilities": ["mathematics"],
+                        "input": {"number": 42},
+                        "max_components": 2
+                    }
+                }
+            }
+        }),
+    );
+    let plan_after_learning = read(&mut output);
+    assert_eq!(plan_after_learning["ok"], true);
+    assert!(
+        plan_after_learning["result"]["selections"][0]["routing_score"]
+            .as_f64()
+            .unwrap()
+            > plan["result"]["selections"][0]["routing_score"]
+                .as_f64()
+                .unwrap()
+    );
+
     send(
         &mut input,
         json!({

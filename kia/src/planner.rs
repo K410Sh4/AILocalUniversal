@@ -15,6 +15,7 @@ pub struct PlannedComponent {
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+/// Plano sequencial: reserved_resources registra o pico, não a soma dos componentes.
 pub struct ExecutionPlan {
     pub request_id: String,
     pub network_version: u64,
@@ -155,9 +156,7 @@ where
             if selections.len() >= request.max_components {
                 break;
             }
-            let Some(next_reserved) = reserved.checked_add(&estimated_cost) else {
-                continue;
-            };
+            let next_reserved = reserved.componentwise_max(&estimated_cost);
             if !next_reserved.fits_within(&budget.max)
                 || !estimated_cost.fits_within(&snapshot.available)
             {

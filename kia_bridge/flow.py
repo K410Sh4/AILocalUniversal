@@ -12,6 +12,7 @@ from kia_bridge.adapters import (
     cognitive_request_from_napa,
     executor_ids_for_registered_engines,
     host_state_payload,
+    resource_budget_from_profile,
     resource_snapshot_from_hardware,
 )
 from kia_bridge.client import KiaRuntimeClient
@@ -142,7 +143,14 @@ def _model_capability_map(
         for area in registry.areas
         if area.kind is CognitiveAreaKind.COGNITIVE_CAPABILITY
     )
-    mapping: dict[str, tuple[str, ...]] = {"chat": general, "general": general}
+    explanatory_areas = tuple(
+        area_id for area_id in ("mathematics", "conversion") if area_id in registry.area_ids
+    )
+    general_and_explanatory = tuple(dict.fromkeys((*general, *explanatory_areas)))
+    mapping: dict[str, tuple[str, ...]] = {
+        "chat": general_and_explanatory,
+        "general": general_and_explanatory,
+    }
     known = set(registry.area_ids)
     for key, area_id in (
         ("coding", "programming"),
@@ -159,17 +167,22 @@ def _add_tool_components(
     network_payload: dict[str, Any],
     *,
     tool_names: tuple[str, ...],
+    intent: str,
     risk: float | None,
 ) -> None:
     network = network_payload["network"]
     capabilities = network["capabilities"]
     components = network["components"]
     connections = network["connections"]
-    executor_ids = set(network_payload["available_executor_ids"])
+    executor_ids = set(network_payload["available_executors"])
     safe_to_run = risk is None or risk < 0.55
 
     for tool_name, supported_areas in _TOOL_AREAS.items():
         if tool_name not in tool_names:
+            continue
+        if tool_name == "calculator" and intent != "calculation":
+            continue
+        if tool_name == "unit_converter" and intent != "unit_conversion":
             continue
         supported = sorted(area for area in supported_areas if area in capabilities)
         if not supported:
@@ -206,7 +219,7 @@ def _add_tool_components(
         if safe_to_run:
             executor_ids.add(component_id)
 
-    network_payload["available_executor_ids"] = sorted(executor_ids)
+    network_payload["available_executors"] = sorted(executor_ids)
 
 
 def execute_deterministic_selection(
@@ -348,6 +361,7 @@ class KiaExecutionCoordinator:
         resource_profile: str,
         preferred_model: str | None = None,
         manual_model: str | None = None,
+        model_references: tuple[str, ...] | None = None,
         context_tokens: int | None = None,
         local_engine_endpoint: bool = True,
         max_components: int = 8,
@@ -368,6 +382,13 @@ class KiaExecutionCoordinator:
                 for artifact in record.artifacts
             )
             and (
+                model_references is None
+                or any(
+                    artifact.installed and artifact.reference in model_references
+                    for artifact in record.artifacts
+                )
+            )
+            and (
                 manual_model is None
                 or any(
                     artifact.installed and artifact.reference == manual_model
@@ -381,8 +402,21 @@ class KiaExecutionCoordinator:
         quality: dict[str, float] = {}
         estimable_records: list[ModelRecord] = []
         token_context = context_tokens or task.token_budget or 4096
+        base_snapshot = resource_snapshot_from_hardware(
+            hardware,
+            available_targets=("cpu", "remote") if local_engine_endpoint else ("cpu",),
+        )
+        base_budget = resource_budget_from_profile(base_snapshot, resource_profile)
+        thread_limit = resource_manager.cpu_thread_limit(
+            resource_profile=resource_profile,
+            hardware=hardware,
+        )
+        cpu_reservation = (
+            min(thread_limit * 1000, base_budget["max"]["cpu_millis"])
+            if thread_limit is not None else 0
+        )
 
-        if local_engine_endpoint:
+        if local_engine_endpoint and cpu_reservation > 0:
             for record in records:
                 try:
                     estimate = resource_manager.estimate_model(
@@ -401,9 +435,9 @@ class KiaExecutionCoordinator:
                 ):
                     continue
                 resource_estimates[record.record_id] = {
-                    # O backend Ollama recebe num_thread pelo ResourceManager.
-                    # Aqui reservamos RAM; CPU não é tratada como FLOPs medidos.
-                    "cpu_millis": 0,
+                    # Reserva lógica alinhada ao teto de threads do ResourceManager;
+                    # não representa FLOPs nem ocupação física medida.
+                    "cpu_millis": cpu_reservation,
                     "ram_bytes": estimate.total_required_bytes,
                 }
                 execution_targets[record.record_id] = "remote"
@@ -427,10 +461,11 @@ class KiaExecutionCoordinator:
             network_payload,
             engine_names,
         )
-        network_payload["available_executor_ids"] = registered_model_executors
+        network_payload["available_executors"] = registered_model_executors
         _add_tool_components(
             network_payload,
             tool_names=self.tools.tool_names(),
+            intent=task.intent,
             risk=task.risk,
         )
 

@@ -190,13 +190,28 @@ A NeSA organiza conhecimento e recupera evidências. A NAPA decide quando consul
 - [x] Conversores NAPA/NeuralModel Hub/HardwareProfile para os contratos Rust.
 - [x] Custos/alvos desconhecidos permanecem inelegíveis; tamanho de artefato não vira estimativa de memória.
 - [x] Testes do subprocesso JSONL Rust e da ponte Python.
-- [ ] Integrar a ponte ao fluxo do Chat e do CognitiveTaskExecutor.
 
-### K.IA 0.3–0.5 — evolução planejada
-- [ ] K.IA 0.3 — Persistência versionada, event log, idempotência e restauração da rede.
-- [ ] K.IA 0.4 — Adaptadores locais Ollama e llama.cpp, com protocolo e capacidades declaradas.
-- [ ] K.IA 0.5 — Hardware providers, execução concorrente limitada, timeout por tarefa, cancelamento e leases.
-- [ ] K.IA 0.6 — Sincronização de NeSA, Neural Elastic Execution e Knowledge/RAG na Adaptive Cognitive Network.
+### K.IA 0.3 — ACCA Vertical Flow
+- [x] Adiar a execução determinística até o planner Rust quando o host estiver disponível.
+- [x] Exportar as ativações NAPA e o inventário instalado do NeuralModel Hub para uma rede cognitiva.
+- [x] Registrar ferramentas determinísticas Python com capacidades, custo estático limitado e executor real.
+- [x] Selecionar um componente/modelo somente com adaptador registrado, estimativa de RAM e alvo de execução explícitos.
+- [x] Encaminhar modelo selecionado pelo Rust ao Ollama existente; sem reimplementar inferência.
+- [x] Reservar pico de recursos por dimensão para o fluxo sequencial; política paralela permanece separada.
+- [x] Reproduzir resultados determinísticos pela Validation Layer antes de atualizar prioridades.
+- [x] Preservar pesos/contadores das conexões compatíveis quando replace_state sincroniza o próximo turno.
+- [x] Validar resposta de LLM como estruturalmente presente, mas factual não verificada; completude não é presumida sem requisitos.
+- [x] Fallback para o pipeline anterior quando K.IA não está instalada ou não encontra plano executável.
+- [ ] Integrar RAG/NeSA como provedores selecionáveis pelo plano Rust.
+- [ ] Ampliar seleção para GPU/híbrido após telemetria real de placement do backend.
+- [ ] Validar o fluxo no Arch Linux com Ollama e modelos instalados.
+
+### K.IA 0.4–0.6 — evolução planejada
+- [ ] K.IA 0.4 — Persistência versionada/event log, exportação/importação da rede e recuperação após reinício.
+- [ ] K.IA 0.5 — Adaptadores reais adicionais (llama.cpp), filas limitadas, timeout por tarefa, cancelamento e leases.
+- [ ] K.IA 0.6 — Semantic Engine com embeddings, CSR top-k/ANN, associação tipada do NeSA e expansão por incerteza.
+- [ ] K.IA 0.7 — Evidências com linhagem/dependência, Completeness Engine e Cognitive Termination integrado ao executor.
+- [ ] K.IA 0.8 — Benchmark A/B/C da ACCA, calibração dos parâmetros de relevância e avaliação de custo/qualidade.
 
 ### Neural Plasticity & Development
 - [ ] Plasticity 0.2 — benchmark de rotas, shadow mode, A/B, limiares e rollback.
@@ -204,6 +219,17 @@ A NeSA organiza conhecimento e recupera evidências. A NAPA decide quando consul
 - [ ] Parametric Plasticity — LoRA/adaptadores treinados offline e versionados.
 - [ ] Structural Plasticity — experimentos isolados em arquiteturas abertas, com snapshots e regressão.
 - [ ] Autonomous Neural Development — propostas de evolução supervisionadas e auditáveis.
+
+## ACCA — Adaptive Cognitive Computation Architecture
+
+- [x] Especificar relevância calibrável, roteamento constrained, evidência com dependência, completude obrigatória e valor marginal de continuação.
+- [ ] Treinar/calibrar parâmetros de relevância em dataset de avaliação versionado.
+- [ ] Implementar embeddings semânticos + índice ANN e CSR com medição de recall.
+- [ ] Implementar relação evidencial que agrupe republicações e mantenha contradições explícitas.
+- [ ] Integrar termination controller ao executor de tarefas multi-etapas.
+- [ ] Executar benchmark A/B/C com qualidade equivalente e perfis warm/cold.
+
+A especificação matemática, limitações e metodologia de benchmark estão em docs/ACCA_MATHEMATICAL_MODEL.md. Os parâmetros iniciais do router não são apresentados como calibrados e nenhuma meta de economia é considerada comprovada.
 
 ## Fase 6 — Agentes especialistas e autoengenharia
 

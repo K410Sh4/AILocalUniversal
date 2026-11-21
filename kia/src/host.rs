@@ -204,11 +204,24 @@ impl RuntimeHost {
                 if let Err(error) = state.validate() {
                     return (HostResponse::failure(request_id, error), false);
                 }
+                let mut state = state;
+                if let Some(previous) = self.state.as_ref() {
+                    if let Err(error) = state.network.carry_learning_from(&previous.network) {
+                        return (
+                            HostResponse::failure(
+                                request_id,
+                                HostError::new("learning_state_rejected", error.to_string()),
+                            ),
+                            false,
+                        );
+                    }
+                }
                 let result = json!({
                     "network_version": state.network.version(),
                     "capability_count": state.network.capabilities().len(),
                     "component_count": state.network.components().len(),
                     "connection_count": state.network.connections().len(),
+                    "feedback_count": state.network.feedback_history().len(),
                     "available_executor_count": state.available_executors.len()
                 });
                 self.state = Some(state);

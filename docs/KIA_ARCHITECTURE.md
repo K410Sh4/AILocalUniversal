@@ -129,3 +129,22 @@ O pacote `kia_bridge` fornece:
 - criação de CognitiveRequest com as áreas efetivamente ativadas pela NAPA.
 
 Consulte `docs/KIA_RUNTIME_HOST_PROTOCOL.md` para o schema JSONL.
+
+
+## K.IA 0.3 — ACCA Vertical Flow
+
+O fluxo de chat com o host disponível passa por:
+1. InputProcessing e SemanticAnalysis (NAPA) sem pré-executar a ferramenta determinística;
+2. decomposição de tarefa e exportação das ativações NAPA;
+3. sincronização de modelos instalados, ferramentas Python e snapshot do Adaptive Resource Manager;
+4. seleção Rust considerando capacidades obrigatórias, executor registrado, custo explícito, alvo e budget;
+5. execução da ferramenta escolhida em Python ou encaminhamento do modelo selecionado ao OllamaEngine;
+6. ValidationLayer e, somente para resultado determinístico reproduzido, feedback operacional.
+
+O processo Rust é dono da decisão de roteamento. Os motores e ferramentas continuam adaptadores externos. O payload de entrada enviado ao comando plan contém somente task_id; conversa, prompt e conteúdo documental permanecem na camada Python/Ollama.
+
+No modo sequencial, a reserva é o pico por dimensão. Não utilizar essa política para planos paralelos. O caminho novo de modelos aceita somente placement CPU com estimativa completa em RAM e endpoint local confirmado; GPU/híbrido usa o fallback do seletor anterior até o provider conhecer a colocação real do Ollama.
+
+O host mantém pesos e contadores compatíveis quando recebe novo replace_state durante o mesmo processo. Ainda não persiste rede entre reinícios. O feedback só é enviado quando a ValidationLayer reproduz um resultado determinístico; saídas LLM não fortalecem rotas automaticamente.
+
+A ValidationLayer separa presença, cobertura de requisitos estruturados, completude ponderada e estado factual. Sem requisitos estruturados, completude fica como not_assessed; conteúdo LLM permanece not_independently_verified. Consulte docs/ACCA_MATHEMATICAL_MODEL.md.

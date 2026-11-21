@@ -25,3 +25,5 @@ Este registro organiza as famílias de materiais originais cobertas pelo aviso d
 - Dados de usuário, documentos, conversas, workflows criados pelo usuário e conteúdo de plugins externos não passam a ser propriedade do projeto por serem processados pela aplicação.
 - Cada distribuição de plugin e pacote deve declarar sua própria licença e origem.
 - O registro de software no INPI, registro de marca e eventual patente são procedimentos separados; nenhum deles foi requerido por este arquivo.
+
+| ACCA — Adaptive Cognitive Computation Architecture | Especificação matemática original de relevância, roteamento esparso, restrições, completude e terminação; implementação inicial do fluxo vertical K.IA | K.IA 0.3 na branch feature/kia-acca-vertical-flow-v0.3 |
