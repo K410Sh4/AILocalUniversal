@@ -24,6 +24,9 @@ on:
       - feature/neuraldna-environmental-integration-plan-v0.4
       - feature/neuraldna-anticipatory-benchmark-v0.5
       - feature/neuraldna-regional-niche-benchmark-v0.6
+      - feature/neuraldna-spatial-communication-v0.7
+      - feature/neuraldna-regional-niche-benchmark-v0.6
+      - feature/neuraldna-spatial-communication-v0.7
   pull_request:
     branches:
       - main
@@ -73,6 +76,8 @@ jobs:
         run: python experiments/neuraldna_anticipatory_benchmark.py
       - name: Run NeuralDNA regional niche benchmark
         run: python -m experiments.neuraldna_regional_niche_benchmark
+      - name: Run NeuralDNA spatial communication benchmark
+        run: python -m experiments.neuraldna_spatial_communication_benchmark
 
   kia-rust-runtime:
     runs-on: ubuntu-latest
