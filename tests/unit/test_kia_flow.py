@@ -7,8 +7,11 @@ import pytest
 from core.cognitive_pipeline import analyze_request
 from core.deterministic_tools import DeterministicToolRegistry
 from core.validation_layer import ValidationLayer
+from core.cognitive_task import CognitiveTask
 from kia_bridge.flow import (
     KiaExecutionCoordinator,
+    KiaFlowError,
+    _classification_from_task,
     append_kia_plan_to_task,
     execute_deterministic_selection,
     record_validated_deterministic_feedback,
@@ -321,3 +324,71 @@ async def test_kia_planner_does_not_publish_knowledge_provider_when_disabled(tmp
 
     assert decision.memory_selections() == []
     assert "retrieval" not in client.request["required_capabilities"]
+
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [
+        {
+            "active_areas": ["programming"],
+            "activations": [
+                {"area_id": "programming", "affinity": True, "signals": ["anchor:python"]}
+            ],
+        },
+        {
+            "active_areas": ["programming"],
+            "activations": [
+                {"area_id": "programming", "affinity": 0.8, "signals": "anchor:python"}
+            ],
+        },
+        {
+            "active_areas": ["programming", "programming"],
+            "activations": [
+                {"area_id": "programming", "affinity": 0.8, "signals": ["anchor:python"]}
+            ],
+        },
+        {
+            "active_areas": ["programming"],
+            "activations": [
+                {"area_id": "programming", "affinity": 0.8, "signals": ["anchor:python"]},
+                {"area_id": "reasoning", "affinity": 0.7, "signals": ["intent:planning"]},
+            ],
+        },
+        {
+            "active_areas": ["programming"],
+            "activations": [
+                {"area_id": "programming", "affinity": 0.8, "signals": ["anchor:python"]},
+                {"area_id": "programming", "affinity": 0.7, "signals": ["intent:programming"]},
+            ],
+        },
+    ],
+)
+def test_napa_task_boundary_rejects_malformed_activation_payloads(payload) -> None:
+    task = CognitiveTask(original_text="Crie uma função Python.", cognitive_areas=payload)
+
+    with pytest.raises(KiaFlowError):
+        _classification_from_task(task, create_default_registry())
+
+
+def test_napa_task_boundary_accepts_valid_activation_payload() -> None:
+    task = CognitiveTask(
+        original_text="Crie uma função Python.",
+        cognitive_areas={
+            "classifier_version": "napa-1.0",
+            "method": "lexical_capability_intent_heuristics",
+            "active_areas": ["programming"],
+            "activations": [
+                {
+                    "area_id": "programming",
+                    "affinity": 0.81,
+                    "signals": ["anchor:python"],
+                }
+            ],
+        },
+    )
+
+    result = _classification_from_task(task, create_default_registry())
+
+    assert result.active_area_ids == ("programming",)
+    assert result.activations[0].affinity == 0.81
