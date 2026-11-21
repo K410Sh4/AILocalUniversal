@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from engines.base import ModelInfo
 from model_hub.hardware import HardwareProfile, HardwareProfiler
 from model_hub.registry import ModelRegistry
 from resources.contracts import ModelResourceEstimate
@@ -45,7 +46,7 @@ class AdaptiveResourceManager:
 
     def select_chat_model(
         self,
-        models,
+        models: list[ModelInfo],
         registry: ModelRegistry,
         *,
         preferred_model: str | None = None,
