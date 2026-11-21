@@ -144,7 +144,29 @@ The eventual benchmark must compare:
 
 All comparisons use paired seeds and identical source forecasts. A future target is never passed to a receiver policy.
 
-## 8. Evolutionary boundary
+## 8. Initial CI results
+
+The first complete GitHub Actions validation passed on commit `cc52dee22eea65cce7a57f4f5e7fb6406cd3b2fd` (run `44908558276`). Ruff, the complete Python test suite, the 0.5–0.7 benchmarks, the 0.8 field benchmark, and Rust formatting/lint/tests all passed.
+
+The field benchmark used a seven-region line, one persistent source at the first region, 80 steps, and identical source strength. The observed concentration profiles were:
+
+| Scenario | Diffusion | Degradation | Uptake | Total mass | Concentration profile (source → far end) |
+|---|---:|---:|---:|---:|---|
+| Low transport | 0.05 | 0.10 | 0.00 | 10.0050 | 7.2732, 2.0220, 0.5257, 0.1365, 0.0354, 0.0092, 0.0029 |
+| Medium transport | 0.25 | 0.10 | 0.00 | 9.9987 | 4.5433, 2.5545, 1.3637, 0.7324, 0.4017, 0.2360, 0.1672 |
+| High transport | 0.80 | 0.10 | 0.00 | 9.9972 | 2.9446, 2.1766, 1.5591, 1.1390, 0.8631, 0.6966, 0.6183 |
+| High removal | 0.25 | 0.80 | 0.25 | 0.9522 | 0.8151, 0.1230, 0.0128, 0.0013, 0.0001, 0.0000, 0.0000 |
+
+### Interpretation
+
+- Raising transport spread the signal farther and flattened the gradient while total mass stayed near 10.0. This is redistribution, not signal creation.
+- Increasing degradation and uptake reduced total mass to 0.9522 and sharply localized the remaining signal.
+- The numerical tests passed for closed-system mass conservation, no-transport isolation, monotonic source gradients, permeability barriers, uptake/degradation effects, receiver sensitivity, exposure duration, time-step refinement, signal-class separation, high-transport stability, and invalid parameter rejection.
+- The high-removal case demonstrates that uptake and degradation can create a short-range field without requiring hard-coded communication cutoffs.
+
+This validates the primitive's tested numerical behavior under the benchmark's assumptions. It does not validate a BA adaptation policy, a biological tissue model, or an improvement in regional environmental fitness.
+
+## 9. Evolutionary boundary
 
 This stage models only environmental signal transport and receiver response. It does not change:
 - inherited NeuralDNA genotype;
@@ -155,13 +177,13 @@ This stage models only environmental signal transport and receiver response. It 
 
 A signal-induced temporary response must not be mislabeled as genetic evolution. Any future hereditary change requires an explicit reproduction/lineage process and multi-generation fitness evaluation.
 
-## 9. Decision gate
+## 10. Decision gate
 
 The isolated 0.8 field primitive now implements symmetric graph diffusion, adaptive stable substeps, exact first-order decay, bounded saturable uptake, Hill-like receiver response, and exposure memory. Its tests must establish the numerical invariants above. This primitive is not yet a regional adaptation policy. Do not integrate signal fields into NeuralStem or the Brain Artificial runtime until a separate environmental benchmark beats the 0.7 baselines across matched regimes and the improvement remains after accounting for transport, uptake, calibration, and computation costs.
 
 The Brain Artificial (BA) remains a distinct artificial developmental and adaptive system, not conventional AI. K.IA remains a separate coordination runtime. External AI models are optional tools and do not define BA's internal architecture.
 
-## 10. Ownership and third-party boundaries
+## 11. Ownership and third-party boundaries
 
 The original design, equations as applied to this project, parameterization, benchmark protocol, tests, code, and documentation authored for AILocal Universal are project materials.
 
