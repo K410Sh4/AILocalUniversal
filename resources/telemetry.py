@@ -59,8 +59,9 @@ def _is_ollama_server(argv: list[str] | None) -> bool:
     if not argv:
         return False
     executable = Path(argv[0]).name.casefold()
-    arguments = {item.casefold() for item in argv[1:]}
-    return executable == "ollama" and "serve" in arguments
+    # O subcomando é o primeiro argumento. Procurar "serve" em qualquer
+    # posição confunde "ollama run serve" com o daemon real.
+    return executable == "ollama" and len(argv) >= 2 and argv[1].casefold() == "serve"
 
 
 def _process_stat(process_dir: Path) -> tuple[int, int] | None:
