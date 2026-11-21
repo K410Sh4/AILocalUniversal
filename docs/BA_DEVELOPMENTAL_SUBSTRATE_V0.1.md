@@ -22,11 +22,11 @@ Proposed future Rust boundary: an independent `ba_core/` crate with deterministi
 
 ### 2.1 Morphogenesis: source, transport, removal and interpretation
 
-Developmental morphogen fields are not just broadcast messages. Spatial profiles depend on localized/distributed production, transport, removal and the receiving unit's interpretation. This motivates explicit sources, transport edges, sinks, receptor sensitivity and temporal exposure rather than a single global message.
+Developmental signaling is not just broadcast messages and not every pattern is a simple diffusion gradient. Spatial profiles can depend on localized/distributed production, diffusion or directed transport, removal, barriers, signal trapping, local feedback and the receiving unit's interpretation. Reaction-diffusion mechanisms can also produce patterns without a unit reading its absolute position. This motivates a family of signal mechanisms rather than one universal gradient model: explicit sources, transport edges, sinks, receptor sensitivity, temporal exposure, trapping and local reaction terms.
 
 Evidence:
 - Kicheva & Briscoe (2023), *Control of Tissue Development by Morphogens*, Annual Review of Cell and Developmental Biology. https://doi.org/10.1146/annurev-cellbio-020823-011522
-- *Mobile signals, patterning, and positional information in root development* (2024), Plant Physiology. https://doi.org/10.1093/plphys/kiae492
+- *Mobile signals, patterning, and positional information in root development* (2024), Plant Physiology. https://doi.org/10.1093/plphys/kiae532
 - *Diffusion barriers imposed by tissue topology shape Hedgehog morphogen gradients* (2024), PNAS. https://doi.org/10.1073/pnas.2400677121
 
 ### 2.2 Ecology: local filtering and regional dispersal
@@ -57,7 +57,7 @@ These are biological design inspirations, not proof that the proposed computatio
 | `Subregion` | ID, parent region, niche modifiers, units, local connections | Represent a finer spatial/functional scale |
 | `Unit` | ID, type, internal state, receptors, energy budget, activity range, plasticity state | Receive local stimuli, respond, learn and specialize |
 | `Connection` | endpoints, direction/type, weight, delay, bandwidth, permeability, reliability, energy cost | Carry local interactions under physical/computational constraints |
-| `SignalField` | signal class, concentration state, source map, transport topology, sinks, exposure state | Represent signals distributed through a spatial medium |
+| `SignalField` | signal class, concentration state, source map, transport topology, sinks, exposure state, optional reaction/trapping rules | Represent signals distributed through a spatial medium without assuming every pattern is a simple gradient |
 | `Receptor` | signal class, sensitivity, threshold, response curve, adaptation and recovery state | Interpret signal concentration and exposure |
 | `HomeostaticState` | target activity range, energy reserve, saturation, recovery rate, diversity floor | Keep local activity and resource use inside viable bounds |
 | `DevelopmentProgram` | stages, prerequisites, differentiation rules, maturation criteria, rollback state | Build phenotype gradually from inherited predispositions and experience |
@@ -116,7 +116,7 @@ Regional aggregation is allowed, but local evidence remains available. A global 
 | Topology | isolated, line, ring, grid, clustered, sparse irregular |
 | Environmental structure | homogeneous, clustered, gradient, patchy, rapidly changing |
 | Niche divergence | none, moderate, high |
-| Signal transport | none, local-only, neighbor, regional, global |
+| Signal mechanism | diffusion, directed transport, reaction-diffusion, trapping, local feedback, hybrid |
 | Signal loss | degradation, uptake, blocked edges, partial barriers, message loss |
 | Delay | zero, fixed latency, variable latency, stale signal |
 | Resource stress | abundant, constrained, sudden shortage, region-specific scarcity |
