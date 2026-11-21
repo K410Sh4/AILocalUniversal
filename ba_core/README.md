@@ -1,23 +1,22 @@
-# BA Core 0.3 — Spatial Signal Ecology
+# BA Core 0.4 — Adaptive Homeostasis
 
 Copyright © 2026 K410Sh4. All rights reserved.  
 SPDX-License-Identifier: LicenseRef-AILocal-Universal-Proprietary
 
 ba-core is an independent experimental substrate for the **Brain Artificial (BA)**, a distinct adaptive and developmental system. It is not a conventional Artificial Intelligence model, LLM or model executor.
 
-## 0.3 additions
+## 0.4 additions
 
-- Separate regional signal sources, transport, uptake and degradation.
-- Volume-aware amount conservation across unequal regions.
-- Explicit transport stability bound.
-- Exact local linear source/sink integration.
-- Auditable production/uptake/degradation mass ledger.
-- Bounded Hill-type receptor exposure, without assuming the Hill coefficient equals receptor count.
-- Deterministic tests for conservation, barriers, stability, reaction partitioning and receptor response.
+- Independent local homeostatic regulation per region.
+- Bounded negative feedback with explicit timestep stability guard.
+- Finite actuator capacity and finite local regulatory reserve.
+- Explicit energy and state/boundary ledgers.
+- Heterogeneous regional targets are preserved; no forced global homogenization.
+- Deterministic disturbance, recovery, resource and scaling tests.
 
-## Deliberately excluded
+## Deliberate exclusions
 
-No coupling of signals to phenotype, no directed transport, receptor internalization, binding reservoirs, feedback-regulated sources, homeostasis, differentiation or heredity. Those require independent validation.
+No moving set points/allostasis, anticipatory control, intermittent regulation, reserve replenishment, inter-region coordination, signal coupling, phenotype changes, structural homeostasis, differentiation, heredity or K.BA integration. These require independent validation.
 
 ## Run
 
@@ -27,4 +26,4 @@ cargo clippy --all-targets --all-features -- -D warnings
 cargo test --all-targets
 ```
 
-See the 0.1 validation protocol, 0.2 benchmark matrix and 0.3 signal ecology validation document.
+See the 0.1 validation protocol, 0.2 benchmark matrix, 0.3 signal ecology and 0.4 homeostasis documents.
