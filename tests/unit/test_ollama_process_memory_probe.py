@@ -17,12 +17,15 @@ def _process(
     parent: int,
     pss_kb: int = 100,
     rss_kb: int = 200,
+    start_time: int | None = None,
 ) -> None:
     directory = root / str(pid)
     directory.mkdir(parents=True)
     (directory / "cmdline").write_bytes(b"\0".join(item.encode() for item in argv) + b"\0")
+    stat_fields = ["S", str(parent)] + ["1"] * 18
+    stat_fields[19] = str(start_time if start_time is not None else pid)
     (directory / "stat").write_text(
-        f"{pid} (process with spaces) S {parent} 1 1 0 0 0 0",
+        f"{pid} (process with spaces) {' '.join(stat_fields)}",
         encoding="utf-8",
     )
     (directory / "smaps_rollup").write_text(
@@ -48,6 +51,7 @@ def test_probe_sums_pss_for_ollama_and_runner_descendants(tmp_path) -> None:
 
     assert result.status is ProcessMemoryProbeStatus.AVAILABLE
     assert result.root_pid == 100
+    assert result.root_start_time_ticks == 100
     assert result.process_ids == (100, 101)
     assert result.pss_bytes == 4_000 * 1024
     assert result.rss_bytes == 7_000 * 1024
@@ -86,6 +90,7 @@ def test_compare_memory_requires_same_complete_process_tree() -> None:
         2_000,
         "2030-01-01T00:00:00+00:00",
         "before",
+        root_start_time_ticks=100,
     )
     after = OllamaProcessMemorySnapshot(
         ProcessMemoryProbeStatus.AVAILABLE,
@@ -95,6 +100,7 @@ def test_compare_memory_requires_same_complete_process_tree() -> None:
         7_000,
         "2030-01-01T00:01:00+00:00",
         "after",
+        root_start_time_ticks=100,
     )
     different_root = OllamaProcessMemorySnapshot(
         ProcessMemoryProbeStatus.AVAILABLE,
@@ -104,6 +110,7 @@ def test_compare_memory_requires_same_complete_process_tree() -> None:
         7_000,
         "2030-01-01T00:01:00+00:00",
         "after",
+        root_start_time_ticks=200,
     )
 
     delta = compare_process_memory(before, after)
@@ -112,6 +119,17 @@ def test_compare_memory_requires_same_complete_process_tree() -> None:
     assert delta.pss_delta_bytes == 4_000
     assert delta.rss_delta_bytes == 5_000
     assert compare_process_memory(before, different_root) is None
+    reused_pid = OllamaProcessMemorySnapshot(
+        ProcessMemoryProbeStatus.AVAILABLE,
+        100,
+        (100,),
+        5000,
+        7000,
+        "2030-01-01T00:01:00+00:00",
+        "reused pid",
+        root_start_time_ticks=200,
+    )
+    assert compare_process_memory(before, reused_pid) is None
     reversed_sample = OllamaProcessMemorySnapshot(
         ProcessMemoryProbeStatus.AVAILABLE,
         100,
@@ -120,6 +138,7 @@ def test_compare_memory_requires_same_complete_process_tree() -> None:
         1000,
         "2029-12-31T23:59:00+00:00",
         "older",
+        root_start_time_ticks=100,
     )
     assert compare_process_memory(before, reversed_sample) is None
 
