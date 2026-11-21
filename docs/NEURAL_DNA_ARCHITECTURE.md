@@ -214,3 +214,25 @@ SPDX-License-Identifier: LicenseRef-AILocal-Universal-Proprietary
 Registrar autores, versão, pais, hashes, seed, loci herdados, loci mutados, regras, artefatos de teste e decisão de aprovação. Código, documentação e schemas originais do projeto são tratados conforme o aviso proprietário do repositório; ideias biológicas, artigos e componentes de terceiros mantêm suas respectivas autorias e licenças.
 
 A inclusão deste documento no registro do projeto não constitui registro de patente, marca ou exclusividade sobre conceitos abstratos.
+
+
+## 14. Verificação preliminar de recombinação (simulação sintética)
+
+Foi executada uma simulação exploratória offline com 20.000 pares de genomas artificiais. Cada genoma continha oito loci numéricos limitados a [0, 1], com dois pares funcionalmente ligados. Os genomas parentais foram gerados respeitando a restrição de compatibilidade de cada par (diferença absoluta máxima de 0,35).
+
+Resultados de uma seed fixa:
+
+| Estratégia | Descendentes que preservaram as restrições |
+|---|---:|
+| Crossover independente por locus | 72,81% |
+| Média numérica dos pais | 100,00% |
+| Crossover por blocos ligados | 100,00% |
+
+Interpretação:
+- O crossover independente por locus violou pelo menos uma restrição em 27,19% dos descendentes sintéticos. Isso justifica testar ligação entre loci e validação posterior ao crossover.
+- A média numérica preservou as restrições deste exemplo por convexidade, mas quase elimina a herança discreta dos alelos parentais; portanto, não deve ser adotada como regra universal.
+- O crossover por blocos preservou as combinações ligadas neste experimento e manteve a origem parental dos blocos.
+
+Limites: este é um teste de consistência de um modelo sintético, não evidência de superioridade biológica, qualidade cognitiva ou desempenho de uma BA real. A amostra, as restrições e os loci são artificiais. Próximos testes devem incluir topologias incompatíveis, loci categóricos, epistasia, dependências entre mais de dois loci, mutação limitada, conflitos de política e múltiplas seeds.
+
+Decisão provisória: crossover por blocos ligados é candidato preferencial para loci com dependências conhecidas; crossover independente só é permitido em loci declarados independentes; mistura numérica exige tipo, escala e semântica compatíveis. Todo descendente continua sujeito a validação de invariantes.
