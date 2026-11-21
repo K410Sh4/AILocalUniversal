@@ -108,6 +108,7 @@ As fases são entregas progressivas. Uma funcionalidade só é considerada concl
 - [x] Manter a estimativa de RAM/VRAM separada do percentual de processamento; não prometer limitação exata de GPU.
 - [ ] Validar interface, persistência, exclusão e os três perfis no Arch Linux.
 - [ ] Medir CPU/RAM/VRAM, latência e responsividade para comparar os perfis no hardware real.
+- [ ] Calibrar custo de inferência por modelo/backend e tornar o seletor consciente do perfil para filtrar candidatos acima do orçamento computacional medido.
 
 **Limite desta implementação:** o Ollama recebe um limite aproximado de threads de CPU, aplicado pelo runner no carregamento do modelo. O percentual real de CPU não é garantido, e não existe aqui um limitador portátil de computação da GPU. A elegibilidade de modelos continua baseada em viabilidade de memória independente do perfil de CPU.
 
