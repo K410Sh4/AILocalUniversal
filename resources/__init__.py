@@ -2,11 +2,17 @@
 
 from resources.estimator import ResourceEstimator
 from resources.manager import AdaptiveResourceManager
-from resources.residency import (\n    ResidentCapacityAssessment,\n    ResidentCapacityStatus,\n)\nfrom resources.selector import AdaptiveModelSelector, ModelSelectionResult
+from resources.residency import (
+    ResidentCapacityAssessment,
+    ResidentCapacityStatus,
+)
+from resources.selector import AdaptiveModelSelector, ModelSelectionResult
 
 __all__ = [
     "AdaptiveModelSelector",
     "AdaptiveResourceManager",
     "ModelSelectionResult",
-    "ResourceEstimator",\n    "ResidentCapacityAssessment",\n    "ResidentCapacityStatus",
+    "ResourceEstimator",
+    "ResidentCapacityAssessment",
+    "ResidentCapacityStatus",
 ]
