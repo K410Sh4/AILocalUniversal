@@ -393,6 +393,162 @@ class ValidationLayer:
             "verified_deterministic" if passed else "failed",
         )
 
+    def validate_chat_response(
+        self,
+        task: CognitiveTask,
+        content: str,
+        *,
+        completeness_threshold: float = 0.8,
+    ) -> dict[str, Any]:
+        """Valida presença e requisitos declarados sem atestar a verdade factual.
+
+        A média ponderada não substitui o gate dos itens obrigatórios. Quando a
+        tarefa não declara subtarefas, completude fica como not_assessed.
+        """
+        if (
+            isinstance(completeness_threshold, bool)
+            or not isinstance(completeness_threshold, (int, float))
+            or not math.isfinite(completeness_threshold)
+            or not 0.0 <= completeness_threshold <= 1.0
+        ):
+            raise ValueError("completeness_threshold precisa estar entre 0 e 1.")
+
+        checks: list[dict[str, Any]] = []
+        issues: list[dict[str, Any]] = []
+        answer_present = isinstance(content, str) and bool(content.strip())
+        checks.append(
+            self._check(
+                "answer_present",
+                answer_present,
+                "A resposta contém texto utilizável."
+                if answer_present
+                else "A resposta está vazia.",
+            )
+        )
+        if not answer_present:
+            issues.append(
+                self._issue(
+                    "answer_missing",
+                    "error",
+                    "A resposta final está vazia e não pode ser apresentada.",
+                )
+            )
+
+        completeness_score: float | None = None
+        required_count = 0
+        completed_required = 0
+        if task.subtask_plan:
+            total_weight = 0.0
+            completed_weight = 0.0
+            invalid_weights: list[str] = []
+            for item in task.subtask_plan:
+                raw_weight = item.get("weight", 1.0)
+                valid_weight = (
+                    not isinstance(raw_weight, bool)
+                    and isinstance(raw_weight, (int, float))
+                    and math.isfinite(raw_weight)
+                    and raw_weight > 0
+                )
+                if not valid_weight:
+                    invalid_weights.append(str(item.get("id", "?")))
+                    continue
+
+                weight = float(raw_weight)
+                total_weight += weight
+                result = item.get("result")
+                completed = (
+                    item.get("status") == "completed"
+                    and isinstance(result, dict)
+                    and bool(str(result.get("content", "")).strip())
+                )
+                if completed:
+                    completed_weight += weight
+                if item.get("required", True):
+                    required_count += 1
+                    completed_required += int(completed)
+
+            completeness_score = (
+                completed_weight / total_weight if total_weight > 0 else 0.0
+            )
+            all_required_complete = (
+                not invalid_weights and completed_required == required_count
+            )
+            threshold_met = completeness_score >= completeness_threshold
+            complete = all_required_complete and threshold_met
+            checks.append(
+                self._check(
+                    "mandatory_requirements_complete",
+                    complete,
+                    "Todos os requisitos obrigatórios foram atendidos."
+                    if complete
+                    else "Há requisitos obrigatórios pendentes ou peso inválido.",
+                    {
+                        "required_count": required_count,
+                        "completed_required": completed_required,
+                        "weighted_completeness": round(completeness_score, 4),
+                        "threshold": float(completeness_threshold),
+                        "invalid_weight_subtasks": invalid_weights,
+                    },
+                )
+            )
+            if not complete:
+                issues.append(
+                    self._issue(
+                        "mandatory_requirements_incomplete",
+                        "error",
+                        "A resposta não pode ser considerada completa enquanto houver "
+                        "requisitos obrigatórios pendentes.",
+                    )
+                )
+        else:
+            checks.append(
+                self._check(
+                    "mandatory_requirements_complete",
+                    True,
+                    "Nenhum requisito estruturado foi declarado; completude semântica "
+                    "não foi presumida.",
+                    {"completeness": "not_assessed"},
+                )
+            )
+
+        issues.append(
+            self._issue(
+                "llm_output_not_independently_verified",
+                "warning",
+                "A Validation Layer conferiu presença e requisitos estruturados, mas não "
+                "comprovou a veracidade factual do conteúdo gerado pelo modelo.",
+            )
+        )
+        report = self._report(
+            checks,
+            issues,
+            "not_independently_verified",
+            checked_subtasks=completed_required,
+            total_subtasks=required_count,
+        )
+        report["completeness"] = {
+            "status": (
+                "not_assessed"
+                if not task.subtask_plan
+                else "passed"
+                if all(
+                    check["name"] != "mandatory_requirements_complete"
+                    or check["status"] == "passed"
+                    for check in checks
+                )
+                else "incomplete"
+            ),
+            "weighted_score": (
+                round(completeness_score, 4)
+                if completeness_score is not None
+                else None
+            ),
+            "threshold": float(completeness_threshold),
+            "required_count": required_count,
+            "completed_required": completed_required,
+        }
+        return report
+
     def validate_execution(
         self,
         task: CognitiveTask,
