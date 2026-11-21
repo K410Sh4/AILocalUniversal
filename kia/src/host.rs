@@ -156,8 +156,7 @@ impl RuntimeHost {
         if request.request_id.trim().is_empty()
             || request.request_id.len() > 128
             || !request.request_id.chars().all(|character| {
-                character.is_ascii_alphanumeric()
-                    || matches!(character, '-' | '_' | '.' | ':')
+                character.is_ascii_alphanumeric() || matches!(character, '-' | '_' | '.' | ':')
             })
         {
             return (
