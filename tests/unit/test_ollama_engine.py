@@ -141,3 +141,35 @@ async def test_model_without_capability_metadata_is_not_assumed_to_support_chat(
     assert len(models) == 1
     assert models[0].capabilities.chat is False
     assert models[0].capabilities.verified is False
+
+
+
+@pytest.mark.asyncio
+async def test_model_inventory_does_not_coerce_invalid_size_or_digest_metadata() -> None:
+    async def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path == "/api/tags":
+            return httpx.Response(
+                200,
+                json={
+                    "models": [
+                        {"name": "float-size", "size": 12.5, "digest": 123},
+                        {"name": "boolean-size", "size": True, "digest": "sha256:valid"},
+                        {"name": "negative-size", "size": -1},
+                        {"name": "valid-size", "size": 4096, "digest": "sha256:valid"},
+                        {"name": 123, "size": 10},
+                    ]
+                },
+            )
+        return httpx.Response(200, json={"details": {"family": "unknown"}})
+
+    engine = OllamaEngine(transport=httpx.MockTransport(handler))
+    models = await engine.list_models()
+
+    assert [model.name for model in models] == [
+        "float-size",
+        "boolean-size",
+        "negative-size",
+        "valid-size",
+    ]
+    assert [model.size_bytes for model in models] == [None, None, None, 4096]
+    assert [model.digest for model in models] == [None, "sha256:valid", None, "sha256:valid"]
