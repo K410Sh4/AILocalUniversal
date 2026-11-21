@@ -148,6 +148,27 @@ As fases são entregas progressivas. Uma funcionalidade só é considerada concl
 
 A NAPA coordena Cognitive Core, NeuralModel Hub, NeuralMap, Knowledge/RAG, Adaptive Resource Manager e Neural Elastic Execution. Ela não substitui esses subsistemas nem lhes concede autoridade de execução.
 
+## NeSA — Neural Semantic Atlas
+
+### NeSA 0.1 — Semantic Page Indexer
+- [x] Gerar uma ficha por página não vazia durante a ingestão local.
+- [x] Extrair resumo extrativo e determinístico, candidatos lexicais a conceitos e palavras-chave sem invocar um LLM.
+- [x] Preservar hash do arquivo e da página, URI, título, número/índice da página, seções, offsets do resumo e método/versão do extrator.
+- [x] Reservar campo de entidades com contrato de extrator opcional; sem extrator configurado, não inventar entidades.
+- [x] Persistir fichas e índice FTS5 no mesmo SQLite e na mesma transação dos chunks; exclusão em cascata e atualização substitutiva.
+- [x] Expor listagem e busca lexical de candidatos por página sem alterar a recuperação híbrida de chunks.
+- [x] Testar persistência, proveniência, busca, reingestão, remoção e fallback quando embeddings falham.
+
+**Limites:** o resumo é extrativo, os conceitos são candidatos lexicais e a busca do catálogo é FTS5/OR; esta versão não implementa embeddings de páginas, NER padrão, grafo semântico, relações factuais nem recuperação progressiva. Consulte `docs/NEURAL_SEMANTIC_ATLAS.md`.
+
+### NeSA 0.2–0.5 — evolução planejada
+- [ ] NeSA 0.2 — Semantic Association Graph com relações tipadas, confiança e proveniência.
+- [ ] NeSA 0.3 — Semantic Intent Frames integrados à classificação contextual da NAPA.
+- [ ] NeSA 0.4 — Hierarchical & Progressive Retrieval combinando sumários, FTS5, vetores e expansão por incerteza.
+- [ ] NeSA 0.5 — Relevance Plasticity, atualizando prioridades de recuperação somente com resultados avaliados.
+
+A NeSA organiza conhecimento e recupera evidências. A NAPA decide quando consultá-la; o RAG mantém a proveniência e a validação de evidências. O NeuralMap poderá visualizar os grafos, sem duplicar a propriedade dos dados do Atlas.
+
 ## Fase 6 — Agentes especialistas e autoengenharia
 
 - [ ] System Analyst em modo somente leitura.

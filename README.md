@@ -66,6 +66,12 @@ A branch `feature/rag-v1` inclui uma biblioteca de conhecimento local e integra�
 
 **Limites:** a integração inicial ao Chat é opt-in, usa documentos como dados não confiáveis e valida a integridade estrutural das citações, sem provar verdade/entailment. A validação operacional da integração após pull no Arch, reranker concreto, benchmark de qualidade em corpus representativo, OCR e orçamento de contexto por tokenizer permanecem pendentes. Consulte [docs/RAG.md](docs/RAG.md).
  
+## NeSA 0.1 — Neural Semantic Atlas
+
+A branch `feature/nesa-semantic-page-indexer-v0.1` acrescenta um catálogo persistente de páginas documentais ao Knowledge/RAG. A ingestão produz fichas com resumo extrativo local, palavras-chave, candidatos lexicais a conceitos, seções, hash/URI e localização original. O catálogo é pesquisável por FTS5 e compartilha a transação e a política de exclusão do índice documental.
+
+O indexador padrão não chama um LLM e não inventa entidades: sem extrator configurado, o campo de entidades permanece vazio. Esta versão complementa o RAG existente; não substitui embeddings, busca híbrida de chunks ou validação de citações. Consulte [docs/NEURAL_SEMANTIC_ATLAS.md](docs/NEURAL_SEMANTIC_ATLAS.md).
+
 ## NAPA 1.0 — áreas cognitivas multilabel
 
 A branch `feature/napa-cognitive-area-registry-v1` introduz a Neural Adaptive Plasticity Architecture (NAPA) como camada de coordenação cognitiva. O primeiro incremento registra áreas como matemática, conversão, comunicação, raciocínio, criatividade, programação, conhecimento, recuperação e percepção.
@@ -105,7 +111,7 @@ A Validation Layer atual é estrutural e determinística: reproduz cálculos/con
 - workers/: operações de rede fora da thread da UI.
 - storage/: configurações e histórico local.
 - pipeline/: futuras etapas cognitivas.
-- knowledge/: loaders, chunking, índice lexical SQLite FTS5, recuperação híbrida extensível, composição de contexto e validação estrutural de evidências (branch `feature/rag-v1`).
+- knowledge/: loaders, chunking, índice lexical/vetorial, recuperação híbrida, catálogo de páginas NeSA, composição de contexto e validação de evidências.
 - resources/: estimativa de recursos e seleção adaptativa de modelos.
 - neural_elastic/: simulador offline de políticas de cache de especialistas MoE (Fase 5.0).
 - napa/: registro e classificador multilabel de áreas cognitivas (NAPA 1.0).
@@ -235,6 +241,7 @@ Consulte docs/SECURITY.md.
 - Roadmap: docs/ROADMAP.md
 - Neural Elastic Execution: docs/NEURAL_ELASTIC_EXECUTION.md
 - NAPA: docs/NAPA.md
+- Neural Semantic Atlas: docs/NEURAL_SEMANTIC_ATLAS.md
 - Estado da implementação: docs/IMPLEMENTATION_STATUS.md
 - Contratos de dados: docs/DATA_CONTRACTS.md
 - RAG e proveniência: docs/RAG.md

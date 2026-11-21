@@ -68,3 +68,12 @@ Os tipos iniciais são:
 - neural_specialist: especialistas de programação ou percepção quando um modelo adequado estiver disponível.
 
 NAPA 1.0 reutiliza Semantic Analysis e Capability Vectorizer, grava as ativações explicáveis em CognitiveTask.cognitive_areas e não seleciona ou executa modelos/ferramentas. O NeuralModel Hub descreve os modelos; o NeuralMap representa estruturas; o Adaptive Resource Manager avalia limites; Neural Elastic Execution pesquisa a execução de especialistas; o Neural Plasticity Engine futuro aprenderá prioridades sob avaliação e rollback.
+
+
+## NeSA — Neural Semantic Atlas
+
+O Neural Semantic Atlas (NeSA) organiza o conhecimento documental em fichas por página, associadas ao hash, URI, título, página, seções e offsets da origem. Na versão 0.1, o resumo é extrativo e determinístico; palavras-chave e candidatos a conceitos são lexicais. Entidades só são preenchidas por um extrator explicitamente configurado.
+
+As fichas são persistidas na mesma base SQLite e transação dos documentos/chunks, com FTS5 próprio para localizar páginas. O catálogo complementa — não substitui — a recuperação lexical/vetorial híbrida de chunks. A NeSA 0.1 não implementa grafo semântico, embeddings de página, relações factuais ou navegação hierárquica.
+
+A NAPA coordena quando consultar o Atlas; o NeuralModel Hub e o Adaptive Resource Manager continuam responsáveis pelos modelos e recursos; EvidenceValidator permanece responsável pela integridade das evidências recuperadas.

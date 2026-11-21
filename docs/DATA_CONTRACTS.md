@@ -159,3 +159,20 @@ Operações suportadas: `list`, `ingest`, `delete`, `search` e `reindex`. O work
 ### Configuração
 
 `AppConfig.embedding_model` é opcional e independente de `preferred_model` e `manual_model`. Configurações legadas sem essa chave continuam válidas. A troca do modelo é persistida, mas exige reindexação explícita para preencher o novo espaço vetorial.
+
+
+## NeSA — SemanticPageRecord (versão inicial 0.1)
+
+Cada página não vazia ingesta pode produzir uma ficha persistente:
+- `page_id`: identificador determinístico da versão da página;
+- `document_id`, `source_uri`, `source_sha256`: vínculo à origem documental;
+- `page_index` (0-based) e `page_number` (quando fornecido pelo loader);
+- `content_sha256` e `content_char_count`: integridade e tamanho do texto extraído da página;
+- `summary` e `summary_spans`: resumo extrativo e intervalos relativos ao texto extraído da página;
+- `keywords`, `concepts`, `entities`: termos lexicais, candidatos a conceitos e entidades explicitamente extraídas;
+- `section_paths`: caminhos de seção obtidos dos chunks;
+- `summary_method`, `concept_method`, `entity_method` e `metadata`: transparência dos métodos e parâmetros.
+
+O método padrão usa seleção extrativa de sentenças e n-gramas lexicais; não chama LLM nem presume conhecimento factual. `entities` fica vazio com `entity_method=not_configured` até um extrator explícito ser injetado. Os candidatos lexicais não são ontologia validada.
+
+As fichas ficam em `semantic_pages`, com FTS5 separado `semantic_pages_fts`, no mesmo banco e transação dos documentos/chunks. `delete_document` remove ambas as estruturas; a reingestão da mesma origem substitui a versão anterior. Busca do catálogo retorna `SemanticPageHit`, com score lexical de ordenação, não probabilidade. A recuperação híbrida de chunks e a validação de evidências não são alteradas.

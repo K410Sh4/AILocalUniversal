@@ -12,7 +12,8 @@ from knowledge.context import ContextComposer
 from knowledge.index import SQLiteKnowledgeIndex
 from knowledge.ingestion import DocumentIngestor
 from knowledge.loaders import LoaderRegistry
-from knowledge.models import ContextBundle
+from knowledge.models import ContextBundle, SemanticPageHit, SemanticPageRecord
+from knowledge.semantic_pages import SemanticPageIndexer
 from knowledge.retrieval import HybridRetriever
 from knowledge.vectors import (
     OllamaEmbeddingProvider,
@@ -69,10 +70,12 @@ class KnowledgeLibrary:
 
         self.loaders = LoaderRegistry()
         self.chunker = DocumentChunker()
+        self.page_indexer = SemanticPageIndexer()
         self.ingestor = DocumentIngestor(
             self.index,
             loaders=self.loaders,
             chunker=self.chunker,
+            page_indexer=self.page_indexer,
         )
         self.composer = ContextComposer()
         self.last_search_warning: str | None = None
@@ -102,9 +105,11 @@ class KnowledgeLibrary:
                 if not chunks:
                     raise ValueError("O documento não produziu trechos indexáveis.")
 
+                # Fichas semânticas e chunks são gravados na mesma transação SQLite.
+                page_records = self.page_indexer.build(document, chunks)
                 # Primeiro confirma a nova versão lexical; somente então descarta vetores
                 # antigos do mesmo documento.
-                self.index.add_document(document, chunks)
+                self.index.add_document(document, chunks, page_records=page_records)
                 self.vector_store.delete_document(document.document_id)
 
                 vector_count = 0
@@ -131,6 +136,7 @@ class KnowledgeLibrary:
                         "document_id": document.document_id,
                         "sha256": document.sha256,
                         "chunk_count": len(chunks),
+                        "semantic_page_count": len(page_records),
                         "vector_count": vector_count,
                         "vector_warning": vector_warning,
                         "status": "partial" if vector_warning else "indexed",
@@ -155,6 +161,27 @@ class KnowledgeLibrary:
             "vector_indexed": sum(item["vector_count"] for item in results),
             "items": results,
         }
+
+    def list_semantic_pages(
+        self,
+        document_id: str | None = None,
+    ) -> list[SemanticPageRecord]:
+        """Lista fichas compactas com hash, página e referência à origem."""
+        return self.index.list_semantic_pages(document_id)
+
+    def search_semantic_pages(
+        self,
+        query: str,
+        *,
+        limit: int = 10,
+        document_ids: set[str] | None = None,
+    ) -> list[SemanticPageHit]:
+        """Localiza páginas pelo catálogo FTS sem substituir a busca híbrida de chunks."""
+        return self.index.search_semantic_pages(
+            query,
+            limit=limit,
+            document_ids=document_ids,
+        )
 
     def reindex_vectors(self) -> dict[str, Any]:
         """Gera novamente embeddings para todos os documentos já extraídos."""

@@ -24,6 +24,7 @@ Este documento diferencia código integrado, cobertura automatizada e validaçã
 | Adaptive Resource Manager | Estimativa de RAM/VRAM e seleção automática conservadora na `feature/adaptive-resource-manager-v1`; Fase 4.6 acrescenta perfis persistidos e orçamento aproximado de threads CPU para Ollama | Validar no Arch; medição real, controle genérico de GPU e ciclo de vida automático continuam pendentes |
 | Neural Elastic Execution Simulator | Simulador offline de traces MoE com LRU, LFU, política estatística e Belady MIN (somente tamanhos uniformes); CLI e testes | Ainda sem traces reais de roteamento; sem modelagem de latência de SSD, prefetch ou integração com runtime |
 | NAPA 1.0 | Registro de áreas cognitivas, classificação multilabel, afinidades explicáveis e integração com SemanticAnalysisStage/CognitiveTask | Heurístico; sem roteamento, predictor de custos, plasticidade, busca progressiva ou reorganização |
+| NeSA 0.1 | Catálogo persistente de páginas com resumo extrativo, candidatos lexicais, palavras-chave, referências e busca FTS5 de páginas; integrado à ingestão RAG | Sem sumário abstrativo, NER padrão, embeddings por página, grafo ou recuperação hierárquica; validar no Arch |
 | Roteamento especialista | Planejado | Fase 5 |
 | Swarm P2P | Planejado | Fase 6 |
 | BitNet / RPC | Experimental futuro | Fase 7 |
@@ -226,3 +227,17 @@ Implementado na branch `feature/napa-cognitive-area-registry-v1`:
 - testes unitários específicos e documentação da arquitetura.
 
 **Limites:** a classificação é lexical/heurística e seus scores são afinidades, não probabilidades. A presença de uma área não aciona ferramenta, modelo ou plugin. Ainda não há estimador de custo, roteamento adaptativo, busca progressiva, aprendizado de conexões, modificação de parâmetros ou prova de economia de recursos. Validação operacional no Arch Linux permanece pendente.
+
+
+## NeSA 0.1 — Semantic Page Indexer
+
+Implementado na branch `feature/nesa-semantic-page-indexer-v0.1`:
+- cria fichas para páginas não vazias durante a ingestão por DocumentIngestor e KnowledgeLibrary;
+- resume por seleção extrativa determinística de sentenças, sem chamada ao Ollama/LLM;
+- armazena candidatos a conceitos por bigramas, palavras-chave, seções Markdown e proveniência por URI, hash documental, hash da página, página e offsets do resumo;
+- campo de entidades usa um contrato opcional de extrator; fica vazio e explicitamente marcado como não configurado na implementação padrão;
+- persiste fichas e FTS5 no mesmo banco e transação dos documentos/chunks;
+- reingestão substitui as fichas anteriores e delete_document remove fichas e entradas FTS;
+- oferece listagem e busca lexical do catálogo sem alterar o HybridRetriever de chunks.
+
+**Limites:** isso é um catálogo compacto de páginas, não um grafo semântico ou busca vetorial de páginas. Os conceitos são candidatos lexicais, não ontologia validada; FTS5 não compreende sinônimos. Os resumos são extrativos, não paráfrases semanticamente abstrativas. NER, sumários gerativos, associações tipadas e recuperação progressiva ficam para etapas posteriores. A validação operacional no Arch Linux permanece pendente.
