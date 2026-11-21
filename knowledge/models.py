@@ -55,6 +55,41 @@ class DocumentChunk:
 
 
 @dataclass(frozen=True, slots=True)
+class SemanticPageRecord:
+    """Ficha compacta de uma página, ligada à origem documental exata."""
+
+    page_id: str
+    document_id: str
+    source_uri: str
+    source_sha256: str
+    page_index: int
+    page_number: int | None
+    title: str
+    content_sha256: str
+    content_char_count: int
+    summary: str
+    summary_spans: tuple[tuple[int, int], ...] = ()
+    concepts: tuple[str, ...] = ()
+    entities: tuple[str, ...] = ()
+    keywords: tuple[str, ...] = ()
+    section_paths: tuple[tuple[str, ...], ...] = ()
+    summary_method: str = "extractive_frequency_v1"
+    concept_method: str = "lexical_ngrams_v1"
+    entity_method: str = "not_configured"
+    metadata: dict[str, Any] = field(default_factory=dict)
+
+
+@dataclass(frozen=True, slots=True)
+class SemanticPageHit:
+    """Candidato de página recuperado no catálogo; score não é probabilidade."""
+
+    page: SemanticPageRecord
+    score: float
+    rank: int = 0
+    retrieval_source: str = "semantic_page_fts"
+
+
+@dataclass(frozen=True, slots=True)
 class SearchHit:
     """Resultado de recuperação; score não é probabilidade de relevância."""
 

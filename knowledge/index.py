@@ -11,7 +11,13 @@ from pathlib import Path
 from typing import Any
 
 from knowledge.errors import KnowledgeIndexError
-from knowledge.models import DocumentChunk, LoadedDocument, SearchHit
+from knowledge.models import (
+    DocumentChunk,
+    LoadedDocument,
+    SearchHit,
+    SemanticPageHit,
+    SemanticPageRecord,
+)
 
 _QUERY_STOPWORDS = {
     "a", "as", "ao", "aos", "aquela", "aquele", "aquilo", "até", "com",
@@ -85,6 +91,33 @@ class SQLiteKnowledgeIndex:
 
             CREATE INDEX IF NOT EXISTS idx_chunks_document
                 ON chunks(document_id);
+
+            CREATE TABLE IF NOT EXISTS semantic_pages (
+                page_id TEXT PRIMARY KEY,
+                document_id TEXT NOT NULL REFERENCES documents(document_id)
+                    ON DELETE CASCADE,
+                source_uri TEXT NOT NULL,
+                source_sha256 TEXT NOT NULL,
+                page_index INTEGER NOT NULL,
+                page_number INTEGER,
+                title TEXT NOT NULL,
+                content_sha256 TEXT NOT NULL,
+                content_char_count INTEGER NOT NULL,
+                summary TEXT NOT NULL,
+                summary_spans_json TEXT NOT NULL,
+                concepts_json TEXT NOT NULL,
+                entities_json TEXT NOT NULL,
+                keywords_json TEXT NOT NULL,
+                section_paths_json TEXT NOT NULL,
+                summary_method TEXT NOT NULL,
+                concept_method TEXT NOT NULL,
+                entity_method TEXT NOT NULL,
+                metadata_json TEXT NOT NULL,
+                UNIQUE(document_id, page_index)
+            );
+
+            CREATE INDEX IF NOT EXISTS idx_semantic_pages_document
+                ON semantic_pages(document_id, page_index);
             """
         )
         try:
@@ -94,6 +127,21 @@ class SQLiteKnowledgeIndex:
                     chunk_id UNINDEXED,
                     document_id UNINDEXED,
                     content,
+                    tokenize='unicode61 remove_diacritics 2'
+                )
+                """
+            )
+            self._connection.execute(
+                """
+                CREATE VIRTUAL TABLE IF NOT EXISTS semantic_pages_fts USING fts5(
+                    page_id UNINDEXED,
+                    document_id UNINDEXED,
+                    title,
+                    summary,
+                    concepts,
+                    entities,
+                    keywords,
+                    sections,
                     tokenize='unicode61 remove_diacritics 2'
                 )
                 """
@@ -108,6 +156,7 @@ class SQLiteKnowledgeIndex:
         self,
         document: LoadedDocument,
         chunks: list[DocumentChunk],
+        page_records: list[SemanticPageRecord] | None = None,
     ) -> None:
         if not chunks:
             raise ValueError("Não é possível indexar um documento sem chunks.")
@@ -119,6 +168,19 @@ class SQLiteKnowledgeIndex:
             ):
                 raise ValueError("Os chunks não pertencem ao documento informado.")
 
+        page_records = page_records or []
+        seen_page_indexes: set[int] = set()
+        for page in page_records:
+            if (
+                page.document_id != document.document_id
+                or page.source_uri != document.source_uri
+                or page.source_sha256 != document.sha256
+            ):
+                raise ValueError("As fichas semânticas não pertencem ao documento informado.")
+            if page.page_index < 0 or page.page_index in seen_page_indexes:
+                raise ValueError("page_index deve ser único e não negativo por documento.")
+            seen_page_indexes.add(page.page_index)
+
         metadata = json.dumps(
             document.metadata,
             ensure_ascii=False,
@@ -129,6 +191,10 @@ class SQLiteKnowledgeIndex:
                 self._connection.execute("BEGIN IMMEDIATE")
                 self._connection.execute(
                     "DELETE FROM chunk_fts WHERE document_id = ?",
+                    (document.document_id,),
+                )
+                self._connection.execute(
+                    "DELETE FROM semantic_pages_fts WHERE document_id = ?",
                     (document.document_id,),
                 )
                 self._connection.execute(
@@ -183,6 +249,62 @@ class SQLiteKnowledgeIndex:
                         """,
                         (chunk.chunk_id, chunk.document_id, chunk.content),
                     )
+
+                for page in page_records:
+                    self._connection.execute(
+                        """
+                        INSERT INTO semantic_pages (
+                            page_id, document_id, source_uri, source_sha256,
+                            page_index, page_number, title, content_sha256,
+                            content_char_count, summary, summary_spans_json,
+                            concepts_json, entities_json, keywords_json,
+                            section_paths_json, summary_method, concept_method,
+                            entity_method, metadata_json
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        """,
+                        (
+                            page.page_id,
+                            page.document_id,
+                            page.source_uri,
+                            page.source_sha256,
+                            page.page_index,
+                            page.page_number,
+                            page.title,
+                            page.content_sha256,
+                            page.content_char_count,
+                            page.summary,
+                            json.dumps(page.summary_spans),
+                            json.dumps(page.concepts, ensure_ascii=False),
+                            json.dumps(page.entities, ensure_ascii=False),
+                            json.dumps(page.keywords, ensure_ascii=False),
+                            json.dumps(page.section_paths, ensure_ascii=False),
+                            page.summary_method,
+                            page.concept_method,
+                            page.entity_method,
+                            json.dumps(page.metadata, ensure_ascii=False, sort_keys=True),
+                        ),
+                    )
+                    sections = " ".join(
+                        " ".join(section) for section in page.section_paths
+                    )
+                    self._connection.execute(
+                        """
+                        INSERT INTO semantic_pages_fts (
+                            page_id, document_id, title, summary, concepts,
+                            entities, keywords, sections
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                        """,
+                        (
+                            page.page_id,
+                            page.document_id,
+                            page.title,
+                            page.summary,
+                            " ".join(page.concepts),
+                            " ".join(page.entities),
+                            " ".join(page.keywords),
+                            sections,
+                        ),
+                    )
                 self._connection.commit()
             except (sqlite3.Error, TypeError, ValueError) as exc:
                 self._connection.rollback()
@@ -198,6 +320,10 @@ class SQLiteKnowledgeIndex:
                 self._connection.execute("BEGIN IMMEDIATE")
                 self._connection.execute(
                     "DELETE FROM chunk_fts WHERE document_id = ?",
+                    (document_id,),
+                )
+                self._connection.execute(
+                    "DELETE FROM semantic_pages_fts WHERE document_id = ?",
                     (document_id,),
                 )
                 cursor = self._connection.execute(
@@ -331,6 +457,113 @@ class SQLiteKnowledgeIndex:
                     "Não foi possível listar os chunks do documento."
                 ) from exc
         return [self._row_to_chunk(row) for row in rows]
+
+    @staticmethod
+    def _row_to_semantic_page(row: sqlite3.Row) -> SemanticPageRecord:
+        return SemanticPageRecord(
+            page_id=str(row["page_id"]),
+            document_id=str(row["document_id"]),
+            source_uri=str(row["source_uri"]),
+            source_sha256=str(row["source_sha256"]),
+            page_index=int(row["page_index"]),
+            page_number=(
+                int(row["page_number"]) if row["page_number"] is not None else None
+            ),
+            title=str(row["title"]),
+            content_sha256=str(row["content_sha256"]),
+            content_char_count=int(row["content_char_count"]),
+            summary=str(row["summary"]),
+            summary_spans=tuple(
+                (int(span[0]), int(span[1]))
+                for span in json.loads(row["summary_spans_json"])
+            ),
+            concepts=tuple(json.loads(row["concepts_json"])),
+            entities=tuple(json.loads(row["entities_json"])),
+            keywords=tuple(json.loads(row["keywords_json"])),
+            section_paths=tuple(
+                tuple(section) for section in json.loads(row["section_paths_json"])
+            ),
+            summary_method=str(row["summary_method"]),
+            concept_method=str(row["concept_method"]),
+            entity_method=str(row["entity_method"]),
+            metadata=dict(json.loads(row["metadata_json"])),
+        )
+
+    def get_semantic_page(self, page_id: str) -> SemanticPageRecord | None:
+        with self._lock:
+            try:
+                row = self._connection.execute(
+                    "SELECT * FROM semantic_pages WHERE page_id = ?",
+                    (page_id,),
+                ).fetchone()
+            except sqlite3.Error as exc:
+                raise KnowledgeIndexError("Não foi possível consultar a ficha semântica.") from exc
+        return self._row_to_semantic_page(row) if row is not None else None
+
+    def list_semantic_pages(
+        self,
+        document_id: str | None = None,
+    ) -> list[SemanticPageRecord]:
+        sql = "SELECT * FROM semantic_pages"
+        parameters: tuple[str, ...] = ()
+        if document_id is not None:
+            sql += " WHERE document_id = ?"
+            parameters = (document_id,)
+        sql += " ORDER BY document_id, page_index"
+        with self._lock:
+            try:
+                rows = self._connection.execute(sql, parameters).fetchall()
+            except sqlite3.Error as exc:
+                raise KnowledgeIndexError("Não foi possível listar as fichas semânticas.") from exc
+        return [self._row_to_semantic_page(row) for row in rows]
+
+    def search_semantic_pages(
+        self,
+        query: str,
+        limit: int = 10,
+        document_ids: set[str] | None = None,
+    ) -> list[SemanticPageHit]:
+        """Busca candidatos no catálogo; a correspondência é lexical, não semântica vetorial."""
+        if limit < 1:
+            raise ValueError("limit deve ser positivo.")
+        if document_ids is not None and not document_ids:
+            return []
+        terms = [
+            term
+            for term in re.findall(r"[\w]+", query, flags=re.UNICODE)
+            if term.casefold() not in _QUERY_STOPWORDS
+        ]
+        if not terms:
+            return []
+        match_query = " OR ".join(f'"{term}"' for term in terms)
+        sql = """
+            SELECT semantic_pages.*, bm25(semantic_pages_fts) AS relevance_rank
+            FROM semantic_pages_fts
+            JOIN semantic_pages
+              ON semantic_pages.page_id = semantic_pages_fts.page_id
+            WHERE semantic_pages_fts MATCH ?
+        """
+        parameters: list[Any] = [match_query]
+        if document_ids is not None:
+            ordered_ids = sorted(document_ids)
+            placeholders = ",".join("?" for _ in ordered_ids)
+            sql += f" AND semantic_pages.document_id IN ({placeholders})"
+            parameters.extend(ordered_ids)
+        sql += " ORDER BY relevance_rank ASC LIMIT ?"
+        parameters.append(limit)
+        with self._lock:
+            try:
+                rows = self._connection.execute(sql, parameters).fetchall()
+            except sqlite3.Error as exc:
+                raise KnowledgeIndexError("A busca no catálogo semântico falhou.") from exc
+        return [
+            SemanticPageHit(
+                page=self._row_to_semantic_page(row),
+                score=max(0.0, -float(row["relevance_rank"])),
+                rank=rank,
+            )
+            for rank, row in enumerate(rows, start=1)
+        ]
 
     def close(self) -> None:
         with self._lock:

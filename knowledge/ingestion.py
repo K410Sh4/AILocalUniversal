@@ -9,6 +9,7 @@ from knowledge.errors import EmptyDocumentError
 from knowledge.index import SQLiteKnowledgeIndex
 from knowledge.loaders import LoaderRegistry
 from knowledge.models import IngestionResult
+from knowledge.semantic_pages import SemanticPageIndexer
 
 
 class DocumentIngestor:
@@ -19,17 +20,20 @@ class DocumentIngestor:
         index: SQLiteKnowledgeIndex,
         loaders: LoaderRegistry | None = None,
         chunker: DocumentChunker | None = None,
+        page_indexer: SemanticPageIndexer | None = None,
     ) -> None:
         self.index = index
         self.loaders = loaders or LoaderRegistry()
         self.chunker = chunker or DocumentChunker()
+        self.page_indexer = page_indexer or SemanticPageIndexer()
 
     def ingest(self, path: str | Path) -> IngestionResult:
         document = self.loaders.load(path)
         chunks = self.chunker.chunk(document)
         if not chunks:
             raise EmptyDocumentError("O documento não produziu trechos indexáveis.")
-        self.index.add_document(document, chunks)
+        page_records = self.page_indexer.build(document, chunks)
+        self.index.add_document(document, chunks, page_records=page_records)
         return IngestionResult(
             document_id=document.document_id,
             source_uri=document.source_uri,
