@@ -5,6 +5,7 @@ name: BA Core
 on:
   push:
     branches:
+      - feature/ba-core-homeostasis-v0.4
       - feature/ba-core-signal-ecology-v0.3
       - feature/ba-core-benchmark-matrix-v0.2
       - feature/ba-core-spatial-adaptation-v0.1
@@ -13,9 +14,11 @@ on:
       - feature/ba-developmental-substrate-contracts-v0.1
       - feature/ba-core-spatial-adaptation-v0.1
       - feature/ba-core-benchmark-matrix-v0.2
+      - feature/ba-core-signal-ecology-v0.3
       - integration/unified-architecture-v1
     paths:
       - "ba_core/**"
+      - "docs/BA_CORE_V0.4_HOMEOSTASIS.md"
       - "docs/BA_CORE_V0.3_SIGNAL_ECOLOGY.md"
       - "docs/BA_CORE_V0.1_VALIDATION.md"
       - ".github/workflows/ba-core.yml"
