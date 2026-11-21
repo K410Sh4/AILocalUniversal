@@ -2,44 +2,57 @@
 
 ## Objetivo
 
-O NeuralModel Hub é a camada de catálogo, descoberta e avaliação de modelos do AILocal Universal. Ele separa quatro conceitos que não devem ser confundidos:
+O NeuralModel Hub é a camada de catálogo, descoberta e avaliação de modelos do AILocal Universal. Ele separa quatro conceitos:
 
 1. **Ficha do modelo:** família, categoria, capacidades, modalidades, arquitetura, parâmetros, contexto, publicador, licença e procedência.
-2. **Artefato/runtime:** referência instalada, runtime, digest, quantização e tamanho do artefato em disco.
+2. **Variante/artefato:** referência exata do runtime, quantização, tamanho publicado, digest e estado instalado.
 3. **Perfil de hardware:** CPU, RAM, disco e aceleradores detectáveis.
-4. **Compatibilidade:** avaliação dos requisitos de execução verificados contra recursos efetivamente medidos.
+4. **Compatibilidade:** avaliação dos requisitos de execução verificados contra recursos medidos.
 
-O catálogo não é uma lista fixa de nomes. O inventário local do Ollama cria fichas iniciais, que podem ser complementadas por fontes curadas sem perder os metadados descobertos pelo runtime.
-
-## Entrega inicial — fases 4.1 e 4.2 (em validação)
+## Fases 4.1 e 4.2 — registro local e hardware
 
 - Contratos versionáveis para fichas, artefatos e requisitos.
 - Registro JSON local em diretório XDG, escrita atômica e permissões restritas no Linux.
-- Descoberta de modelos instalados no Ollama usando o Engine Adapter já existente.
-- Sincronização de inventário que marca artefatos ausentes como não instalados e preserva dados curados.
-- Perfil de CPU, RAM disponível, armazenamento livre e GPUs Linux expostas pelo sysfs DRM.
-- Exibição de inventário e procedência em uma nova aba NeuralModel Hub.
-- Avaliação com três estados: **compatível**, **incompatível** e **não avaliado**.
-- Nenhum download, instalação, execução de modelo ou acesso remoto é iniciado pelo Hub.
+- Descoberta dos modelos instalados no Ollama e sincronização sem apagar metadados curados.
+- Perfil de CPU, RAM disponível, armazenamento livre e GPUs expostas pelo sysfs DRM do Linux.
+- Avaliação em três estados: **compatível**, **incompatível** e **não avaliado**.
+
+## Fase 4.3 — catálogo remoto por categorias
+
+- O catálogo é um manifesto JSON versionado, servido pela branch do projeto e empacotado como fallback.
+- Cada ficha contém fontes oficiais do Ollama, desenvolvedor, categorias, capacidades, modalidades, licença quando verificada e variantes/tag.
+- Categorias suportadas: LLMs/conversação, programação, raciocínio, visão, áudio/voz, multimodais, embeddings/RAG, rerankers, geração de imagem/vídeo/música, OCR, detecção de objetos, tradução e agentes.
+- Pesquisa textual e filtro de categoria mostram apenas modelos incluídos no catálogo curado.
+- Cada variante tem uma referência exata e plataformas permitidas. Uma variante sem suporte no sistema atual não habilita a ação de instalação.
+- Atualização remota tem limite de 2 MiB, validação de esquema e validação das URLs/referências; falha remota usa o manifesto local e exibe aviso.
+- Categorias sem uma oferta Ollama curada permanecem vazias; o Hub não inventa suporte ou artefatos.
+
+## Fase 4.4 — instalação e gerenciamento pelo Ollama
+
+- O usuário seleciona uma variante e confirma o nome exato, o tamanho publicado e a situação da licença antes do download.
+- A instalação usa `POST /api/pull` do Ollama e processa o stream NDJSON em worker Qt separado da interface.
+- Progresso por camada, estados do runtime, erros e cancelamento cooperativo são exibidos na interface.
+- O término só é considerado sucesso após o evento final `success` do Ollama.
+- Cancelar encerra o stream local; o Ollama pode retomar camadas já baixadas numa tentativa posterior.
+- Remoção usa `DELETE /api/delete` e sempre pede confirmação explícita.
+- Após instalação/remoção, o inventário real do Ollama é consultado novamente para atualizar o estado instalado.
+- O catálogo exibe o tamanho publicado como informação de download; não o converte em requisito de RAM/VRAM nem afirma espaço livre no volume usado pelo Ollama.
 
 ## Regras de factualidade e segurança
 
-O endpoint de inventário do Ollama confirma apenas os modelos conhecidos pelo runtime, seus tamanhos em disco e digest quando informado. Isso não prova licença, publicador, arquitetura, parâmetros, quantização, janela de contexto ou requisitos de execução.
+O inventário local do Ollama confirma somente os modelos que o runtime reporta, tamanho em disco e digest quando disponível. Isso não prova licença, publicador, arquitetura, parâmetros, quantização, janela de contexto ou requisitos de execução.
 
-O tamanho do arquivo não é utilizado como estimativa de VRAM/RAM de inferência. Pesos carregados, cache KV, comprimento de contexto, buffers, offload, backend e concorrência mudam o consumo real.
+A lista inicial é curada e versionada pelo projeto, não uma varredura livre da internet. Referências instaláveis são validadas e só são aceitas como nomes de modelo Ollama, nunca URLs ou comandos arbitrários. O download é delegado ao runtime, evitando executar scripts ou instalar pacotes de fontes não verificadas.
 
-A compatibilidade só é declarada quando os requisitos mínimos estão marcados como verificados e possuem URL de evidência. Sem essa evidência, o resultado é **não avaliado**; o sistema não preenche lacunas com estimativas silenciosas.
+Metadados ausentes permanecem não informados. Licenças não verificadas são destacadas antes da instalação. Tamanho publicado não é estimativa de VRAM: pesos carregados, cache KV, comprimento do contexto, buffers, offload, backend e concorrência alteram o consumo real.
 
-A detecção do fabricante e do driver da GPU não prova suporte a CUDA, ROCm, Vulkan ou outro backend. O perfil inicial lê dados observáveis pelo Linux DRM; a disponibilidade de cada runtime será validada por adaptadores próprios.
-
-O arquivo de catálogo é local. Se estiver corrompido ou usar esquema desconhecido, é preservado e a sessão mostra aviso em vez de sobrescrevê-lo automaticamente.
+Fabricante e driver da GPU não comprovam suporte a CUDA, ROCm ou Vulkan. A compatibilidade só é declarada quando requisitos mínimos estiverem verificados e ligados a evidência.
 
 ## Próximas entregas
 
-- Adaptadores de fontes externas de catálogo com atualização, data e procedência por campo.
-- Verificação de licença por família, versão, quantização e artefato distribuído.
-- Probes adicionais de hardware e runtimes em outras plataformas.
-- Requisitos de memória diferenciados por runtime, quantização, contexto e offload, apoiados por medições ou documentação verificável.
+- Catálogo mais amplo e atualizado automaticamente, com ingestão e revisão de metadados por campo.
+- Licença e proveniência por versão, quantização e artefato.
+- Requisitos de memória diferenciados por runtime, quantização, contexto e offload, baseados em documentação verificável ou medições.
 - Benchmarks locais de qualidade, latência, RAM, VRAM, estabilidade e estado quente/frio.
-- Adaptive Model Selector baseado em tarefa, capacidades verificadas, hardware, qualidade medida e preferência do usuário.
-- Instalação e remoção somente com consentimento explícito, licença apresentada, espaço livre e verificação de integridade.
+- Adaptive Model Selector, fallback explicável e integração com o Resource Manager.
+- Outros runtimes e gerenciamento em plataformas adicionais.
