@@ -120,8 +120,9 @@ class AdaptiveModelSelector:
 
                 chosen = sorted(viable, key=rank)[0]
                 reason = (
-                    "Selecionado pela categoria da tarefa quando informada, "
-                    "viabilidade estimada e preferência por execução em GPU."
+                    "Selecionado entre os candidatos cuja estimativa cabe nos recursos "
+                    "disponíveis, priorizando a categoria da tarefa quando informada "
+                    "e o posicionamento em GPU."
                 )
             model, estimate, _record = chosen
             alternatives = tuple(
