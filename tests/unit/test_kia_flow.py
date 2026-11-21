@@ -16,11 +16,13 @@ from kia_bridge.flow import (
     execute_deterministic_selection,
     record_validated_deterministic_feedback,
 )
+from engines.base import RunningModelSnapshot
 from model_hub.contracts import ModelArtifact, ModelRecord
 from model_hub.hardware import HardwareProfile
 from model_hub.registry import ModelRegistry
 from napa import create_default_registry
 from resources.contracts import ResourcePlacement
+from resources.residency import ResidentCapacityStatus
 
 
 class FakeRuntimeClient:
@@ -93,11 +95,19 @@ class FakeRuntimeClient:
 
 
 class FakeResourceManager:
-    def __init__(self, placement=ResourcePlacement.CPU):
+    def __init__(self, placement=ResourcePlacement.CPU, resident_status=None):
         self.placement = placement
+        self.resident_status = resident_status
 
     def cpu_thread_limit(self, *, resource_profile, hardware):
         return 4
+
+    def assess_resident_capacity(
+        self, model_id, registry, snapshots, *, context_tokens, concurrent_requests
+    ):
+        if self.resident_status is None:
+            return SimpleNamespace(status=ResidentCapacityStatus.IDENTITY_UNVERIFIED)
+        return SimpleNamespace(status=self.resident_status)
 
     def estimate_model(self, model_id, registry, *, context_tokens, hardware):
         return SimpleNamespace(
