@@ -3,7 +3,7 @@ import json
 import httpx
 import pytest
 
-from engines.base import EngineRequest
+from engines.base import EngineRequest, RunningModelSnapshot
 from engines.ollama_engine import OllamaEngine, OllamaError, OllamaProtocolError
 
 
@@ -173,3 +173,79 @@ async def test_model_inventory_does_not_coerce_invalid_size_or_digest_metadata()
     ]
     assert [model.size_bytes for model in models] == [None, None, None, 4096]
     assert [model.digest for model in models] == [None, "sha256:valid", None, "sha256:valid"]
+
+
+@pytest.mark.asyncio
+async def test_list_running_models_normalizes_ollama_ps_snapshot() -> None:
+    async def handler(request: httpx.Request) -> httpx.Response:
+        assert request.url.path == "/api/ps"
+        return httpx.Response(
+            200,
+            json={
+                "models": [
+                    {
+                        "name": "qwen3:4b",
+                        "model": "qwen3:4b",
+                        "digest": "a" * 64,
+                        "size": 3_000_000_000,
+                        "size_vram": 2_000_000_000,
+                        "context_length": 8192,
+                        "expires_at": "2026-11-21T12:00:00Z",
+                        "details": {"family": "qwen3", "quantization_level": "Q4_K_M"},
+                    }
+                ]
+            },
+        )
+
+    engine = OllamaEngine(transport=httpx.MockTransport(handler))
+    models = await engine.list_running_models()
+
+    assert models == [
+        RunningModelSnapshot(
+            name="qwen3:4b",
+            model="qwen3:4b",
+            digest="a" * 64,
+            size_bytes=3_000_000_000,
+            size_vram_bytes=2_000_000_000,
+            context_length=8192,
+            expires_at="2026-11-21T12:00:00Z",
+            details={"family": "qwen3", "quantization_level": "Q4_K_M"},
+        )
+    ]
+
+
+@pytest.mark.asyncio
+async def test_list_running_models_preserves_unknown_values_as_none() -> None:
+    async def handler(_request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            200,
+            json={
+                "models": [
+                    {"name": "model-a", "size": True, "size_vram": -1, "context_length": 0},
+                    {"name": "model-b", "size": 1234, "size_vram": 0},
+                    {"name": "", "model": "fallback-name"},
+                    {"name": 123},
+                    None,
+                ]
+            },
+        )
+
+    models = await OllamaEngine(transport=httpx.MockTransport(handler)).list_running_models()
+
+    assert len(models) == 3
+    assert models[0].size_bytes is None
+    assert models[0].size_vram_bytes is None
+    assert models[0].context_length is None
+    assert models[1].size_bytes == 1234
+    assert models[1].size_vram_bytes == 0
+    assert models[2].name == "fallback-name"
+
+
+@pytest.mark.asyncio
+async def test_list_running_models_rejects_invalid_response_shape() -> None:
+    async def handler(_request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, json={"models": {"name": "not-a-list"}})
+
+    engine = OllamaEngine(transport=httpx.MockTransport(handler))
+    with pytest.raises(OllamaProtocolError, match="lista 'models'"):
+        await engine.list_running_models()
