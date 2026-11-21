@@ -1,5 +1,4 @@
 import pytest
-
 from workflows.graph import WorkflowGraph
 from workflows.runtime import GraphRuntime, HandlerRegistry
 
