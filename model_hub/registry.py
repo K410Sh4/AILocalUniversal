@@ -150,14 +150,24 @@ class ModelRegistry:
             if not name:
                 continue
             record_id = f"{runtime}:{name.casefold()}"
+            existing = updated.get(record_id)
+            previous_artifact = next(
+                (
+                    item for item in existing.artifacts
+                    if item.runtime == runtime and item.reference == name
+                ),
+                None,
+            ) if existing is not None else None
             artifact = ModelArtifact(
                 runtime=runtime,
                 reference=name,
                 installed=True,
                 size_bytes=model.size_bytes,
                 digest=model.digest,
+                quantization=model.quantization or (
+                    previous_artifact.quantization if previous_artifact else None
+                ),
             )
-            existing = updated.get(record_id)
             if existing is None:
                 modalities = ("text", "image") if model.capabilities.vision else ("text",)
                 updated[record_id] = ModelRecord(
@@ -167,6 +177,10 @@ class ModelRegistry:
                     category=_category_for(model),
                     capabilities=_capability_names(model),
                     modalities=modalities,
+                    architecture=model.architecture,
+                    parameter_count=model.parameter_count,
+                    context_window=model.context_window,
+                    kv_cache_bytes_per_token=model.kv_cache_bytes_per_token,
                     metadata_source="runtime_discovery",
                     artifacts=(artifact,),
                 )
@@ -176,18 +190,40 @@ class ModelRegistry:
                 if not (item.runtime == runtime and item.reference == name)
             ]
             artifacts.append(artifact)
-            if existing.metadata_source == "runtime_discovery":
-                existing = replace(
-                    existing,
-                    display_name=name,
-                    family=name.split(":", 1)[0],
-                    category=_category_for(model),
-                    capabilities=_capability_names(model),
-                    modalities=("text", "image") if model.capabilities.vision else ("text",),
-                    artifacts=tuple(artifacts),
-                )
-            else:
-                existing = replace(existing, artifacts=tuple(artifacts))
+            existing = replace(
+                existing,
+                display_name=(
+                    name if existing.metadata_source == "runtime_discovery"
+                    else existing.display_name
+                ),
+                family=(
+                    name.split(":", 1)[0]
+                    if existing.metadata_source == "runtime_discovery"
+                    else existing.family
+                ),
+                category=(
+                    _category_for(model)
+                    if existing.metadata_source == "runtime_discovery"
+                    else existing.category
+                ),
+                capabilities=(
+                    _capability_names(model)
+                    if existing.metadata_source == "runtime_discovery"
+                    else existing.capabilities
+                ),
+                modalities=(
+                    ("text", "image") if model.capabilities.vision else ("text",)
+                    if existing.metadata_source == "runtime_discovery"
+                    else existing.modalities
+                ),
+                architecture=existing.architecture or model.architecture,
+                parameter_count=existing.parameter_count or model.parameter_count,
+                context_window=existing.context_window or model.context_window,
+                kv_cache_bytes_per_token=(
+                    existing.kv_cache_bytes_per_token or model.kv_cache_bytes_per_token
+                ),
+                artifacts=tuple(artifacts),
+            )
             updated[record_id] = existing
         self._records = updated
         self._save()
