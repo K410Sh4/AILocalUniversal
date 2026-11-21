@@ -297,7 +297,6 @@ fn host_rejects_unsupported_protocol_versions() {
     assert!(child.wait().unwrap().success());
 }
 
-
 #[test]
 fn host_restores_persisted_learning_before_fresh_resource_state_and_exports_it() {
     use kia_cognitive_runtime::{CognitiveFeedback, FeedbackOutcome};
@@ -368,7 +367,13 @@ fn host_restores_persisted_learning_before_fresh_resource_state_and_exports_it()
     );
     let exported = read(&mut output);
     assert_eq!(exported["ok"], true);
-    assert_eq!(exported["result"]["network"]["feedback_history"].as_array().unwrap().len(), 1);
+    assert_eq!(
+        exported["result"]["network"]["feedback_history"]
+            .as_array()
+            .unwrap()
+            .len(),
+        1
+    );
     assert!(
         exported["result"]["network"]["connections"][0]["weight"]
             .as_f64()

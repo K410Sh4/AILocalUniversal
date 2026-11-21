@@ -354,7 +354,6 @@ fn sequential_plan_reserves_peak_resources_instead_of_summing_components() {
     assert_eq!(plan.reserved_resources.ram_bytes, 2_000_000_000);
 }
 
-
 #[test]
 fn feedback_history_is_bounded_to_recent_4096_evaluations() {
     let mut network = network();
