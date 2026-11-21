@@ -243,7 +243,8 @@ def assess_resident_capacity(
     if concurrent_requests != 1:
         return result(
             ResidentCapacityStatus.CONCURRENCY_UNVERIFIED,
-            (\n                "A capacidade de slots concorrentes não está confirmada; "
+            (
+                "A capacidade de slots concorrentes não está confirmada; "
                 "usar estimativa fria/conservadora."
             ),
             snapshot=snapshot,
@@ -262,7 +263,8 @@ def assess_resident_capacity(
     if context_tokens > snapshot.context_length:
         return result(
             ResidentCapacityStatus.CONTEXT_REQUIRES_RELOAD,
-            (\n                "O runner residente não foi configurado para o contexto solicitado; "
+            (
+                "O runner residente não foi configurado para o contexto solicitado; "
                 "será necessário recarregar."
             ),
             snapshot=snapshot,
