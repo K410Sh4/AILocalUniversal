@@ -340,16 +340,16 @@ class GraphRuntime:
                                         }
                                     }
                             elif not best_bundle:
-                                    best_bundle = {
-                                        candidate_id: dict(outputs[candidate_id])
-                                        for candidate_id in outputs
-                                        if candidate_id in nodes
-                                        and nodes[candidate_id].node_type in {
-                                            "specialist.code",
-                                            "specialist.chat",
-                                            "specialist.image",
-                                        }
+                                best_bundle = {
+                                    candidate_id: dict(outputs[candidate_id])
+                                    for candidate_id in outputs
+                                    if candidate_id in nodes
+                                    and nodes[candidate_id].node_type in {
+                                        "specialist.code",
+                                        "specialist.chat",
+                                        "specialist.image",
                                     }
+                                }
                                 best_iteration = review_runs
                         outputs[node_id] = node_output
                         outcomes[node_id] = node_success
