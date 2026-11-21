@@ -21,7 +21,7 @@ from core.cognitive_task import CognitiveTask, TaskStatus
 from core.deterministic_tools import DeterministicToolRegistry
 from core.input_processing import InputValidationError
 from core.validation_layer import ValidationLayer
-from engines.base import EngineAdapter, EngineRequest, ModelInfo
+from engines.base import EngineAdapter, EngineRequest, ModelInfo, RunningModelSnapshot
 from engines.model_selector import ModelSelectionError
 from engines.ollama_engine import OllamaEngine
 from engines.registry import EngineRegistry
@@ -79,6 +79,7 @@ class MainWindow(QMainWindow):
         self.config = self._load_config()
         self.engine_registry = EngineRegistry()
         self.engine: EngineAdapter
+        self.running_models: list[RunningModelSnapshot] = []
         self._replace_engine()
         self.models: list[ModelInfo] = []
         self._ollama_healthy = False
@@ -218,6 +219,7 @@ class MainWindow(QMainWindow):
         engine = OllamaEngine(self.config.base_url)
         self.engine_registry.register(engine)
         self.engine = self.engine_registry.get("ollama")
+        self.running_models = []
 
     def _refresh_model_hub(self) -> None:
         """Atualiza o perfil local e a avaliação conservadora do catálogo."""
@@ -289,6 +291,11 @@ class MainWindow(QMainWindow):
         healthy = bool(payload.get("healthy"))
         models = payload.get("models", [])
         self.models = models if isinstance(models, list) else []
+        running_models = payload.get("running_models", [])
+        self.running_models = [
+            item for item in running_models
+            if isinstance(item, RunningModelSnapshot)
+        ] if isinstance(running_models, list) else []
         chat_models = [
             model
             for model in self.models
@@ -347,6 +354,7 @@ class MainWindow(QMainWindow):
     def _on_backend_error(self, message: str) -> None:
         self._ollama_healthy = False
         self.models = []
+        self.running_models = []
         self.chat_view.set_models([])
         self.models_view.set_models([], False)
         self.knowledge_view.set_embedding_models([], self.config.embedding_model)
@@ -798,6 +806,8 @@ class MainWindow(QMainWindow):
             preferred_model=self.config.preferred_model,
             context_tokens=4096,
             resource_profile=self.config.resource_profile,
+            running_models=self.running_models,
+            concurrent_requests=1,
         )
         self.model_hub_view.set_resource_recommendation(selection.explanation)
         self.statusBar().showMessage(selection.explanation, 10000)
@@ -1753,6 +1763,7 @@ class MainWindow(QMainWindow):
             self._current_assistant_index = None
             self.chat_view.set_busy(False)
         worker.deleteLater()
+        self.refresh_backend()
 
     def cancel_generation(self) -> None:
         if self._chat_worker is not None:
