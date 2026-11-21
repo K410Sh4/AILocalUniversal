@@ -6,8 +6,8 @@ SPDX-License-Identifier: LicenseRef-AILocal-Universal-Proprietary
 """
 from __future__ import annotations
 
-from dataclasses import dataclass
 import math
+from dataclasses import dataclass
 
 
 @dataclass(frozen=True, slots=True)
@@ -32,8 +32,11 @@ class CueCalibration:
 
     def __post_init__(self) -> None:
         values = (
-            self.successes, self.failures, self.prior_success,
-            self.prior_failure, self.retention,
+            self.successes,
+            self.failures,
+            self.prior_success,
+            self.prior_failure,
+            self.retention,
         )
         if any(isinstance(value, bool) or not math.isfinite(value) for value in values):
             raise ValueError("calibration values must be finite numbers")
@@ -58,7 +61,10 @@ class CueCalibration:
     @property
     def reliability(self) -> float:
         return (self.prior_success + self.successes) / (
-            self.prior_success + self.prior_failure + self.successes + self.failures
+            self.prior_success
+            + self.prior_failure
+            + self.successes
+            + self.failures
         )
 
     @property
@@ -86,11 +92,17 @@ class ReactionNorm:
 
     def __post_init__(self) -> None:
         values = (
-            self.base_plasticity, self.max_plasticity,
-            self.base_diversity_reserve, self.max_diversity_reserve,
+            self.base_plasticity,
+            self.max_plasticity,
+            self.base_diversity_reserve,
+            self.max_diversity_reserve,
         )
-        if any(isinstance(value, bool) or not math.isfinite(value)
-               or not 0.0 <= value <= 1.0 for value in values):
+        if any(
+            isinstance(value, bool)
+            or not math.isfinite(value)
+            or not 0.0 <= value <= 1.0
+            for value in values
+        ):
             raise ValueError("reaction norm values must be finite and in [0, 1]")
         if self.base_plasticity > self.max_plasticity:
             raise ValueError("base_plasticity cannot exceed max_plasticity")
@@ -101,12 +113,16 @@ class ReactionNorm:
         self, calibration: CueCalibration, environmental_volatility: float
     ) -> ReactionExpression:
         """Trust reliable cues; preserve alternatives when cues are weak or volatility is high."""
-        if (isinstance(environmental_volatility, bool)
-                or not math.isfinite(environmental_volatility)
-                or not 0.0 <= environmental_volatility <= 1.0):
+        if (
+            isinstance(environmental_volatility, bool)
+            or not math.isfinite(environmental_volatility)
+            or not 0.0 <= environmental_volatility <= 1.0
+        ):
             raise ValueError("environmental_volatility must be finite and in [0, 1]")
 
-        signed_evidence = calibration.confidence * (2.0 * calibration.reliability - 1.0)
+        signed_evidence = calibration.confidence * (
+            2.0 * calibration.reliability - 1.0
+        )
         positive_evidence = max(0.0, signed_evidence)
         plasticity = self.base_plasticity + (
             self.max_plasticity - self.base_plasticity
