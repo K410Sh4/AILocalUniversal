@@ -373,12 +373,6 @@ def run() -> None:
                 f"plasticity={plasticity_mean:.3f} reserve={reserve_mean:.3f} "
                 f"forecast_uncertainty={forecast_uncertainty_mean:.3f} "
                 f"volatility={volatility_mean:.3f} entropy={entropy_mean:.3f}"
-            ):.3f} "
-                f"plasticity={statistics.fmean(r.mean_plasticity for r in results):.3f} "
-                f"reserve={statistics.fmean(r.mean_diversity_reserve for r in results):.3f} "
-                f"forecast_uncertainty={statistics.fmean(r.mean_forecast_uncertainty for r in results):.3f} "
-                f"volatility={statistics.fmean(r.environmental_change_rate for r in results):.3f} "
-                f"entropy={statistics.fmean(r.transition_entropy for r in results):.3f}"
             )
 
 
