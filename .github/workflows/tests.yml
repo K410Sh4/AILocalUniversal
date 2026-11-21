@@ -72,7 +72,7 @@ jobs:
       - name: Run NeuralDNA anticipatory benchmark
         run: python experiments/neuraldna_anticipatory_benchmark.py
       - name: Run NeuralDNA regional niche benchmark
-        run: python experiments/neuraldna_regional_niche_benchmark.py
+        run: python -m experiments.neuraldna_regional_niche_benchmark
 
   kia-rust-runtime:
     runs-on: ubuntu-latest
