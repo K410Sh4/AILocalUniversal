@@ -344,7 +344,11 @@ mod tests {
         let mut regions = Vec::with_capacity(region_count);
         let mut connections = Vec::with_capacity(region_count.saturating_sub(1));
         for index in 0..region_count {
-            let conditions = if index % 2 == 0 { [0.0, 0.0] } else { [1.0, 1.0] };
+            let conditions = if index % 2 == 0 {
+                [0.0, 0.0]
+            } else {
+                [1.0, 1.0]
+            };
             regions.push(region(
                 index as u32 + 1,
                 index as u32 + 100,
@@ -379,8 +383,7 @@ mod tests {
             } else {
                 assert!(report.local_mean_fitness > report.shared_global_mean_fitness);
                 assert!(
-                    report.local_worst_region_fitness
-                        > report.shared_global_worst_region_fitness
+                    report.local_worst_region_fitness > report.shared_global_worst_region_fitness
                 );
             }
         }
@@ -423,7 +426,10 @@ mod tests {
             world.transport_signals().unwrap();
             let after: f64 = world.regions.iter().map(|region| region.signal).sum();
             assert!((before - after).abs() < 1e-12);
-            assert!(world.regions.iter().all(|region| (0.0..=1.0).contains(&region.signal)));
+            assert!(world
+                .regions
+                .iter()
+                .all(|region| (0.0..=1.0).contains(&region.signal)));
         }
     }
 
