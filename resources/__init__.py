@@ -1,6 +1,11 @@
 """Adaptive resource estimation and model selection."""
 
 from resources.estimator import ResourceEstimator
+from resources.leases import (
+    ModelLeaseConflict,
+    ModelLifecycleLease,
+    ModelLifecycleLeaseManager,
+)
 from resources.manager import AdaptiveResourceManager
 from resources.residency import (
     ResidentCapacityAssessment,
@@ -12,6 +17,9 @@ __all__ = [
     "AdaptiveModelSelector",
     "AdaptiveResourceManager",
     "ModelSelectionResult",
+    "ModelLeaseConflict",
+    "ModelLifecycleLease",
+    "ModelLifecycleLeaseManager",
     "ResourceEstimator",
     "ResidentCapacityAssessment",
     "ResidentCapacityStatus",
