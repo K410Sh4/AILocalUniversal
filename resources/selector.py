@@ -197,11 +197,20 @@ class AdaptiveModelSelector:
             alternatives = tuple(
                 item[0].name for item in viable if item[0].name != model.name
             )
+            if estimate.placement is ResourcePlacement.RESIDENT:
+                assessment = residency_assessments[model.name]
+                memory_note = (
+                    "alocação incremental do runner=0 bytes; "
+                    f"footprint residente reportado={assessment.resident_total_bytes} bytes; "
+                    f"VRAM reportada={assessment.resident_vram_bytes} bytes"
+                )
+            else:
+                memory_note = f"memória estimada={estimate.total_required_bytes} bytes"
             explanation = (
                 profile_note
                 + f"Seletor adaptativo: {model.name}; posicionamento sugerido="
                 f"{estimate.placement.value}; contexto={context_tokens}; "
-                f"memória estimada={estimate.total_required_bytes} bytes. {reason}"
+                f"{memory_note}. {reason}"
             )
             return ModelSelectionResult(
                 model=model,
