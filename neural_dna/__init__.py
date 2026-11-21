@@ -10,6 +10,12 @@ from .development import (
     NicheState,
     develop_population,
 )
+from .environment import (
+    CueCalibration,
+    CueEvidence,
+    ReactionExpression,
+    ReactionNorm,
+)
 from .lineage import (
     LineagePolicy,
     RegionalNiche,
@@ -28,4 +34,8 @@ __all__ = [
     "RegionalNiche",
     "RegionalStepResult",
     "advance_region",
+    "CueCalibration",
+    "CueEvidence",
+    "ReactionExpression",
+    "ReactionNorm",
 ]
