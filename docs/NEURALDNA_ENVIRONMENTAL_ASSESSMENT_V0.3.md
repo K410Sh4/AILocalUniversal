@@ -24,7 +24,7 @@ signed_evidence = confidence * (2 * reliability - 1)
 
 The retention parameter discounts stale evidence. This is important in changing environments: a cue that used to be predictive must lose influence when its predictions begin failing.
 
-The inherited `ReactionNorm` converts calibrated evidence and measured environmental volatility into two separate controls:
+The candidate `ReactionNorm` converts calibrated evidence and measured environmental volatility into two separate controls. Its parameters are not yet embedded in a versioned NeuralDNA genome or passed into NeuralStem:
 
 - `plasticity`: increases only when evidence supports the cue;
 - `diversity_reserve`: increases with volatility when cue evidence is weak or unreliable.
