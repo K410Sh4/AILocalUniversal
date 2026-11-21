@@ -700,7 +700,7 @@ def build_compatibility_report(
     )
 
 
-class AdaptiveResourceManager:
+class AdaptiveHardwarePolicy:
     """Hysteresis-based policy evaluator; it recommends actions but applies none."""
 
     def __init__(
