@@ -20,6 +20,7 @@ Este documento diferencia código integrado, cobertura automatizada e validaçã
 | Validation Layer | Estrutura, dependências, replay determinístico, completude e relatório | Sem verificação factual geral de texto LLM |
 | Cognitive Inspector | Mostra resultados, estados, trace e relatório de validação | Mostra apenas a última tarefa da sessão |
 | RAG / Context Composer | Base lexical/vetorial, aba Conhecimento e integração opt-in ao Chat implementadas na `feature/rag-v1`; EmbeddingGemma e Qwen3 Embedding validados no Arch; CI atual: Ruff + 155 testes Pytest (Python 3.11) | Reranker concreto, benchmark representativo de corpus, OCR, orçamento por tokenizer e verificação factual/entailment permanecem fora desta entrega |
+| NeuralModel Hub | Registro local, perfil de hardware e compatibilidade conservadora; catálogo remoto curado por categorias com fallback local; fichas e variantes Ollama com fontes; busca/filtros; pull NDJSON com progresso/cancelamento e remoção com confirmação, na branch `feature/neural-model-hub-v1` | Catálogo inicial ainda pequeno; catálogo expandido, licença/proveniência por versão/artefato, compatibilidade medida por runtime/contexto, Adaptive Model Selector e validação de cancelamento/retomada/remoção no Arch pendentes; pull e uso no Chat já validados pelo usuário |
 | Adaptive Resource Manager | Planejado | Fase 4 |
 | Roteamento especialista | Planejado | Fase 5 |
 | Swarm P2P | Planejado | Fase 6 |
@@ -134,3 +135,32 @@ Validação automatizada atual: Ruff aprovado e 155 testes Pytest aprovados no C
 - A validação de citações é estrutural: não certifica que as afirmações da resposta sejam semanticamente implicadas pelas fontes.
 
 A integração aguarda CI e validação operacional no Arch. Não altera a main.
+
+
+## Fase 4.3/4.4 — catálogo online e instalação (implementação em branch; smoke test ponta a ponta parcial aprovado)
+
+- Catálogo JSON versionado remoto em GitHub Raw, com manifesto local empacotado como fallback.
+- Fichas curadas por categorias, pesquisa textual, variantes/tag, quantização, tamanhos publicados e links oficiais.
+- Licença fica explicitamente não verificada quando não há fonte confirmada.
+- Variantes limitadas por plataforma; recursos com suporte macOS-only não podem ser baixados no Linux.
+- Busca e parsing em worker Qt separado da interface.
+- Instalação via API oficial Ollama `/api/pull`, stream NDJSON com progresso, cancelamento, timeout de leitura sem limite para downloads longos e validação do evento `success`.
+- Remoção via `/api/delete`, com confirmação na UI e atualização do inventário após o runtime concluir.
+- Referências são validadas como identificadores de modelo Ollama; URLs arbitrárias e caminhos não são aceitos.
+- Testes unitários para manifesto, fallback remoto, filtragem por categoria, restrições de plataforma, pull, progresso, falhas e remoção.
+
+O usuário validou no Arch Linux o pull/instalação de um modelo pelo Catálogo online e o uso posterior no Chat. Cancelamento, retomada e remoção ainda precisam de teste operacional no ambiente-alvo. Tamanho publicado de download não representa requisito de memória de inferência ou espaço no volume configurado no Ollama.
+
+
+## Registro de validação operacional do NeuralModel Hub — 2026-11-21
+
+Resultado informado pelo usuário no Arch Linux:
+- Um modelo foi selecionado e instalado diretamente pela aba Catálogo online do NeuralModel Hub.
+- Modelo/tag confirmado pela captura da interface: `qwen3.5:2b-q4_K_M`.
+- Após a instalação, esse modelo foi utilizado para uma conversa real pela interface Chat do AILocal Universal.
+- A barra de status da interface exibiu `138.15 tokens/s` ao concluir a resposta observada; esse valor é o indicador apresentado pelo aplicativo nessa execução, não um benchmark controlado ou comparativo.
+- O teste comprova o caminho funcional catálogo → pull/instalação no Ollama → descoberta pelo inventário → seleção/uso no Chat.
+- O prompt usado como smoke test foi uma pergunta técnica sobre como lidar com o gargalo de modelos de aproximadamente 35B em PCs modestos.
+- A resposta gerada chegou ao usuário, mas não foi considerada validada em qualidade: continha recomendações repetidas e imprecisas sobre modificar dimensões de embedding, heads e layers de modelos pré-treinados, além de confusão entre famílias/tamanhos de parâmetros.
+
+Este é um smoke test operacional ponta a ponta reportado pelo usuário, não um benchmark de qualidade, velocidade ou consumo. A captura identifica o modelo como `qwen3.5:2b-q4_K_M` e mostra `138.15 tokens/s` para a resposta observada; o tempo de download e o perfil de recursos não foram registrados. Testes de cancelamento, retomada e remoção continuam pendentes.

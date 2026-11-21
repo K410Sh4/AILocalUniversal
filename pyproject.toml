@@ -24,7 +24,7 @@ ailocal = "app.main:main"
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["app*", "core*", "engines*", "pipeline*", "resources*", "knowledge*", "swarm*", "storage*", "workers*"]
+include = ["app*", "core*", "engines*", "pipeline*", "resources*", "knowledge*", "swarm*", "storage*", "workers*", "model_hub*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -38,3 +38,6 @@ target-version = "py311"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B"]
+
+[tool.setuptools.package-data]
+model_hub = ["catalog_default.json"]

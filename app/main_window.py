@@ -12,6 +12,7 @@ from app.dialogs.settings_dialog import SettingsDialog
 from app.views.chat_view import ChatView
 from app.views.cognitive_inspector_view import CognitiveInspectorView
 from app.views.knowledge_view import KnowledgeView
+from app.views.model_hub_view import ModelHubView
 from app.views.models_view import ModelsView
 from core.cognitive_pipeline import analyze_request
 from core.cognitive_task import CognitiveTask, TaskStatus
@@ -21,9 +22,19 @@ from engines.base import EngineAdapter, EngineRequest, ModelInfo
 from engines.model_selector import ModelSelectionError, choose_model
 from engines.ollama_engine import OllamaEngine
 from engines.registry import EngineRegistry
+from model_hub.catalog import CatalogDocument, CatalogEntry, CatalogVariant, ModelCatalogClient
+from model_hub.compatibility import CompatibilityEngine
+from model_hub.contracts import ModelArtifact, ModelRecord
+from model_hub.hardware import HardwareProfiler
+from model_hub.registry import ModelRegistry, ModelRegistryError
 from storage.configuration import AppConfig, ConfigurationError, ConfigurationStore
 from storage.conversations import Conversation, ConversationStore
 from workers.knowledge_workers import KnowledgeRetrievalWorker
+from workers.model_hub_workers import (
+    ModelCatalogWorker,
+    OllamaDeleteWorker,
+    OllamaPullWorker,
+)
 from workers.ollama_workers import (
     OllamaChatWorker,
     OllamaStatusWorker,
@@ -51,6 +62,14 @@ class MainWindow(QMainWindow):
         self.engine: EngineAdapter
         self._replace_engine()
         self.models: list[ModelInfo] = []
+        self._ollama_healthy = False
+        self.model_hub_registry = ModelRegistry()
+        self.hardware_profiler = HardwareProfiler()
+        self.model_catalog_client = ModelCatalogClient()
+        self._catalog_document: CatalogDocument | None = None
+        self._catalog_worker: ModelCatalogWorker | None = None
+        self._pull_worker: OllamaPullWorker | None = None
+        self._delete_worker: OllamaDeleteWorker | None = None
         self._status_worker: OllamaStatusWorker | None = None
         self._knowledge_worker: KnowledgeRetrievalWorker | None = None
         self._pending_knowledge_text: str | None = None
@@ -71,6 +90,7 @@ class MainWindow(QMainWindow):
 
         self.chat_view = ChatView()
         self.models_view = ModelsView()
+        self.model_hub_view = ModelHubView()
         self.cognitive_view = CognitiveInspectorView()
         self.knowledge_view = KnowledgeView(
             ollama_url=self.config.base_url,
@@ -80,6 +100,7 @@ class MainWindow(QMainWindow):
         tabs = QTabWidget()
         tabs.addTab(self.chat_view, "Chat")
         tabs.addTab(self.models_view, "Modelos")
+        tabs.addTab(self.model_hub_view, "NeuralModel Hub")
         tabs.addTab(self.cognitive_view, "Cognitivo")
         tabs.addTab(self.knowledge_view, "Conhecimento")
         self.setCentralWidget(tabs)
@@ -88,6 +109,12 @@ class MainWindow(QMainWindow):
         self.chat_view.cancel_requested.connect(self.cancel_generation)
         self.chat_view.refresh_models_requested.connect(self.refresh_backend)
         self.models_view.refresh_requested.connect(self.refresh_backend)
+        self.model_hub_view.refresh_requested.connect(self._refresh_model_hub)
+        self.model_hub_view.catalog_refresh_requested.connect(self._refresh_model_catalog)
+        self.model_hub_view.install_requested.connect(self._start_model_pull)
+        self.model_hub_view.cancel_download_requested.connect(self._cancel_model_pull)
+        self.model_hub_view.delete_requested.connect(self._confirm_model_delete)
+        self.model_hub_view.refresh_requested.connect(self.refresh_backend)
         self.chat_view.settings_requested.connect(self.open_settings)
         self.chat_view.new_conversation_requested.connect(self.new_conversation)
         self.chat_view.conversation_selected.connect(self.select_conversation)
@@ -104,6 +131,8 @@ class MainWindow(QMainWindow):
         self._render_current_conversation()
         self.chat_view.set_mode(self.config.mode)
         self.statusBar().showMessage("Pronto")
+        self._refresh_model_hub()
+        self._refresh_model_catalog()
         self.refresh_backend()
 
     def _load_config(self) -> AppConfig:
@@ -146,6 +175,45 @@ class MainWindow(QMainWindow):
         engine = OllamaEngine(self.config.base_url)
         self.engine_registry.register(engine)
         self.engine = self.engine_registry.get("ollama")
+
+    def _refresh_model_hub(self) -> None:
+        """Atualiza o perfil local e a avaliação conservadora do catálogo."""
+        try:
+            profile = self.hardware_profiler.probe()
+            records = self.model_hub_registry.list_records()
+            runtime_availability = {"ollama"} if self._ollama_healthy else None
+            evaluator = CompatibilityEngine()
+            compatibility = {
+                record.record_id: evaluator.assess(
+                    record,
+                    profile,
+                    available_runtimes=runtime_availability,
+                )
+                for record in records
+            }
+            self.model_hub_view.set_data(
+                profile,
+                records,
+                compatibility,
+                runtime_available={"ollama"} if self._ollama_healthy else set(),
+                registry_warning=self.model_hub_registry.load_warning,
+            )
+            if self._catalog_document is not None:
+                installed_refs = {
+                    artifact.reference
+                    for record in records
+                    for artifact in record.artifacts
+                    if artifact.runtime == "ollama" and artifact.installed
+                }
+                self.model_hub_view.set_catalog_data(
+                    self._catalog_document,
+                    installed_refs,
+                )
+        except (OSError, ValueError, RuntimeError) as exc:
+            self.statusBar().showMessage(
+                f"Não foi possível atualizar o NeuralModel Hub: {exc}",
+                10000,
+            )
 
     def refresh_backend(self) -> None:
         if self._status_worker is not None and self._status_worker.isRunning():
@@ -191,6 +259,16 @@ class MainWindow(QMainWindow):
         )
         self.chat_view.set_models(names, selected)
         self.models_view.set_models(self.models, healthy)
+        self._ollama_healthy = healthy
+        if healthy:
+            try:
+                self.model_hub_registry.sync_runtime_inventory("ollama", self.models)
+            except (OSError, ModelRegistryError, ValueError) as exc:
+                self.statusBar().showMessage(
+                    f"Inventário recebido, mas catálogo local não salvo: {exc}",
+                    10000,
+                )
+        self._refresh_model_hub()
         if healthy:
             if chat_models:
                 message = (
@@ -215,12 +293,261 @@ class MainWindow(QMainWindow):
             self.statusBar().showMessage(message)
 
     def _on_backend_error(self, message: str) -> None:
+        self._ollama_healthy = False
         self.models = []
         self.chat_view.set_models([])
         self.models_view.set_models([], False)
         self.knowledge_view.set_embedding_models([], self.config.embedding_model)
+        self._refresh_model_hub()
         self.chat_view.set_status("Erro ao consultar Ollama")
         self.statusBar().showMessage(message, 10000)
+
+
+    def _refresh_model_catalog(self) -> None:
+        """Busca o catálogo remoto e usa o manifesto local como fallback."""
+        if self._catalog_worker is not None and self._catalog_worker.isRunning():
+            return
+        worker = ModelCatalogWorker(self.model_catalog_client, self)
+        self._catalog_worker = worker
+        self.model_hub_view.set_catalog_loading(True, "Consultando catálogo de modelos…")
+        worker.completed.connect(self._on_model_catalog_loaded)
+        worker.failed.connect(self._on_model_catalog_failed)
+        worker.finished.connect(lambda w=worker: self._catalog_worker_finished(w))
+        worker.start()
+
+    def _catalog_worker_finished(self, worker: ModelCatalogWorker) -> None:
+        if self._catalog_worker is worker:
+            self._catalog_worker = None
+        worker.deleteLater()
+
+    def _merge_catalog_metadata(
+        self, document: CatalogDocument, installed_refs: set[str]
+    ) -> None:
+        """Enriquece el inventário local sem sobrescrever o estado real do runtime."""
+        installed_folded = {item.casefold() for item in installed_refs}
+        for entry in document.entries:
+            for variant in entry.variants:
+                record_id = f"ollama:{variant.reference.casefold()}"
+                existing = self.model_hub_registry.get(record_id)
+                previous = (
+                    next(
+                        (
+                            item for item in existing.artifacts
+                            if item.runtime == "ollama"
+                            and item.reference.casefold() == variant.reference.casefold()
+                        ),
+                        None,
+                    )
+                    if existing is not None
+                    else None
+                )
+                artifacts = (
+                    [
+                        item for item in existing.artifacts
+                        if not (
+                            item.runtime == "ollama"
+                            and item.reference.casefold() == variant.reference.casefold()
+                        )
+                    ]
+                    if existing is not None
+                    else []
+                )
+                artifacts.append(
+                    ModelArtifact(
+                        runtime="ollama",
+                        reference=variant.reference,
+                        installed=(
+                            variant.reference.casefold() in installed_folded
+                            or bool(previous and previous.installed)
+                        ),
+                        size_bytes=variant.size_bytes,
+                        digest=previous.digest if previous else None,
+                        quantization=variant.quantization,
+                    )
+                )
+                self.model_hub_registry.upsert(
+                    ModelRecord(
+                        record_id=record_id,
+                        display_name=entry.display_name,
+                        family=entry.family,
+                        category=entry.categories[0],
+                        capabilities=entry.capabilities,
+                        modalities=entry.modalities,
+                        parameter_count=entry.parameter_count,
+                        active_parameter_count=entry.active_parameter_count,
+                        context_window=entry.context_window,
+                        license_name=entry.license_name,
+                        license_url=entry.license_url,
+                        license_verified=entry.license_verified,
+                        source_url=entry.source_url,
+                        publisher=entry.publisher,
+                        metadata_source="catalog_import",
+                        artifacts=tuple(artifacts),
+                    )
+                )
+
+    def _on_model_catalog_loaded(self, document: object) -> None:
+        if not isinstance(document, CatalogDocument):
+            self._on_model_catalog_failed("Resposta de catálogo inválida.")
+            return
+        self._catalog_document = document
+        installed_refs = {
+            artifact.reference
+            for record in self.model_hub_registry.list_records()
+            for artifact in record.artifacts
+            if artifact.runtime == "ollama" and artifact.installed
+        }
+        self._merge_catalog_metadata(document, installed_refs)
+        self.model_hub_view.set_catalog_data(document, installed_refs)
+        self.model_hub_view.set_catalog_loading(False)
+        if document.warning:
+            self.statusBar().showMessage(document.warning, 12000)
+
+    def _on_model_catalog_failed(self, message: str) -> None:
+        self.model_hub_view.set_catalog_loading(False, f"Falha ao carregar catálogo: {message}")
+        self.statusBar().showMessage(f"NeuralModel Hub: {message}", 10000)
+
+    def _start_model_pull(self, model_reference: str) -> None:
+        """Inicia pull somente para uma variante presente no catálogo curado."""
+        if not isinstance(self.engine, OllamaEngine):
+            self.statusBar().showMessage(
+                "O runtime selecionado não oferece instalação de modelos.", 10000
+            )
+            return
+        if self._pull_worker is not None and self._pull_worker.isRunning():
+            return
+        selected: tuple[CatalogEntry, CatalogVariant] | None = None
+        if self._catalog_document is not None:
+            for entry in self._catalog_document.entries:
+                for variant in entry.variants:
+                    if variant.reference == model_reference:
+                        selected = (entry, variant)
+                        break
+                if selected is not None:
+                    break
+        if selected is None:
+            QMessageBox.warning(
+                self,
+                "Modelo não encontrado",
+                "A referência selecionada não consta do catálogo curado atual.",
+            )
+            return
+        entry, variant = selected
+        if not variant.available_on():
+            QMessageBox.warning(
+                self,
+                "Plataforma não suportada",
+                variant.install_note or "Esta variante não está habilitada para este sistema.",
+            )
+            return
+        license_text = (
+            f"Licença: {entry.license_name} (identificada na fonte)."
+            if entry.license_verified
+            else "Licença: não verificada. Consulte a fonte e confirme os termos antes do uso."
+        )
+        size_text = variant.size_label or "tamanho não publicado"
+        note = variant.install_note or ""
+        prompt = (
+            f"Modelo: {entry.display_name}\n"
+            f"Referência Ollama: {variant.reference}\n"
+            f"Download publicado: {size_text}\n"
+            f"{license_text}\n\n"
+            "O tamanho publicado é informativo e não garante o consumo de RAM/VRAM. "
+            "O download será armazenado pelo Ollama no diretório configurado no runtime; "
+            "o espaço livre informado pelo AILocal pode estar em outro volume.\n\n"
+            f"{note}\n\nDeseja iniciar o download e a instalação?"
+        )
+        answer = QMessageBox.question(
+            self,
+            "Confirmar instalação de modelo",
+            prompt,
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No,
+        )
+        if answer != QMessageBox.StandardButton.Yes:
+            return
+
+        worker = OllamaPullWorker(self.engine, model_reference, self)
+        self._pull_worker = worker
+        self.model_hub_view.tabs.setCurrentWidget(self.model_hub_view.catalog_tab)
+        self.model_hub_view.set_installation_busy(
+            True, f"Preparando download de {model_reference}…"
+        )
+        worker.progress.connect(self.model_hub_view.set_installation_progress)
+        worker.completed.connect(self._on_model_pull_completed)
+        worker.failed.connect(self._on_model_pull_failed)
+        worker.cancelled.connect(self._on_model_pull_cancelled)
+        worker.finished.connect(lambda w=worker: self._pull_worker_finished(w))
+        worker.start()
+
+    def _cancel_model_pull(self) -> None:
+        worker = self._pull_worker
+        if worker is not None and worker.isRunning():
+            self.model_hub_view.set_installation_busy(
+                True, "Cancelamento solicitado; aguardando o runtime encerrar o stream…"
+            )
+            worker.cancel()
+
+    def _on_model_pull_completed(self, payload: object) -> None:
+        model = payload.get("model", "modelo") if isinstance(payload, dict) else "modelo"
+        self.model_hub_view.mark_installation_complete(
+            f"Download concluído: {model}. Atualizando inventário local…"
+        )
+        self.statusBar().showMessage(f"Modelo instalado: {model}", 10000)
+        self.refresh_backend()
+
+    def _on_model_pull_failed(self, message: str) -> None:
+        self.model_hub_view.set_installation_busy(False, f"Falha no download: {message}")
+        QMessageBox.warning(self, "Falha ao instalar modelo", message)
+
+    def _on_model_pull_cancelled(self) -> None:
+        self.model_hub_view.mark_installation_cancelled(
+            "Download cancelado. O Ollama poderá retomar camadas pendentes em uma nova tentativa."
+        )
+
+    def _pull_worker_finished(self, worker: OllamaPullWorker) -> None:
+        if self._pull_worker is worker:
+            self._pull_worker = None
+        worker.deleteLater()
+
+    def _confirm_model_delete(self, model_reference: str) -> None:
+        """Remove uma referência local somente após confirmação humana."""
+        if not isinstance(self.engine, OllamaEngine):
+            self.statusBar().showMessage("O runtime atual não oferece remoção de modelos.")
+            return
+        if self._delete_worker is not None and self._delete_worker.isRunning():
+            return
+        answer = QMessageBox.question(
+            self,
+            "Confirmar remoção",
+            f"Remover o modelo {model_reference} do armazenamento local do Ollama? "
+            "Esta ação libera espaço em disco e não pode ser desfeita pelo AILocal.",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No,
+        )
+        if answer != QMessageBox.StandardButton.Yes:
+            return
+        worker = OllamaDeleteWorker(self.engine, model_reference, self)
+        self._delete_worker = worker
+        self.model_hub_view.remove_button.setEnabled(False)
+        worker.completed.connect(self._on_model_delete_completed)
+        worker.failed.connect(self._on_model_delete_failed)
+        worker.finished.connect(lambda w=worker: self._delete_worker_finished(w))
+        worker.start()
+
+    def _on_model_delete_completed(self, payload: object) -> None:
+        model = payload.get("model", "modelo") if isinstance(payload, dict) else "modelo"
+        self.statusBar().showMessage(f"Modelo removido: {model}", 10000)
+        self.refresh_backend()
+
+    def _on_model_delete_failed(self, message: str) -> None:
+        QMessageBox.warning(self, "Falha ao remover modelo", message)
+        self._refresh_model_hub()
+
+    def _delete_worker_finished(self, worker: OllamaDeleteWorker) -> None:
+        if self._delete_worker is worker:
+            self._delete_worker = None
+        worker.deleteLater()
 
     def _save_config(self) -> None:
         try:
@@ -281,6 +608,7 @@ class MainWindow(QMainWindow):
                     self._status_worker.wait(1500)
                 self._replace_engine()
                 self.models = []
+                self._ollama_healthy = False
                 self.chat_view.set_models([])
                 self.models_view.set_models([], False)
             self.refresh_backend()
@@ -976,6 +1304,34 @@ class MainWindow(QMainWindow):
             )
             event.ignore()
             return
+        if self._pull_worker is not None and self._pull_worker.isRunning():
+            self._pull_worker.cancel()
+            if not self._pull_worker.wait(5000):
+                QMessageBox.information(
+                    self,
+                    "Download em andamento",
+                    "O download ainda está encerrando. Cancele ou aguarde antes de fechar.",
+                )
+                event.ignore()
+                return
+        if self._delete_worker is not None and self._delete_worker.isRunning():
+            if not self._delete_worker.wait(5000):
+                QMessageBox.information(
+                    self,
+                    "Remoção em andamento",
+                    "A remoção ainda está em andamento. Aguarde antes de fechar.",
+                )
+                event.ignore()
+                return
+        if self._catalog_worker is not None and self._catalog_worker.isRunning():
+            if not self._catalog_worker.wait(5000):
+                QMessageBox.information(
+                    self,
+                    "Catálogo em atualização",
+                    "A consulta do catálogo ainda está em andamento. Aguarde antes de fechar.",
+                )
+                event.ignore()
+                return
         if self._chat_worker is not None and self._chat_worker.isRunning():
             self._chat_worker.cancel()
             self._chat_worker.wait(5000)

@@ -8,161 +8,120 @@ As fases são entregas progressivas. Uma funcionalidade só é considerada concl
 - [x] Estrutura Python modular e contratos iniciais.
 - [x] Documentação de arquitetura, segurança e roadmap.
 
-**Saída:** base versionada e extensível.
-
 ## Fase 1 — Aplicação desktop local
 
 - [x] Interface PySide6 com Chat, Modelos e configurações.
 - [x] Contrato Engine Adapter e registry.
-- [x] Adaptador Ollama: health check, inventário, capacidades via API /api/show e streaming NDJSON.
-- [x] Workers Qt para manter operações de rede fora da thread da interface.
-- [x] Seleção manual/automática e modelo preferido.
-- [x] Histórico e configuração locais com escrita atômica.
-- [x] Cancelamento cooperativo, tratamento de erros e timeouts.
-- [x] Validação visual do Chat, inventário e geração real com Ollama no Arch Linux, demonstrada nesta sessão.
-
-**Saída:** aplicação local funcional com backend Ollama. A validação do executor/validação é feita separadamente na Fase 2.
+- [x] Adaptador Ollama: health, inventário, capacidades via /api/show e streaming NDJSON.
+- [x] Workers Qt, seleção manual/automática, histórico e configuração local.
+- [x] Cancelamento cooperativo, timeouts e tratamento de erros.
+- [x] Validação visual do Chat, inventário e geração real no Arch Linux.
 
 ## Fase 2 — Núcleo cognitivo e execução controlada
 
-### 2.1 — Análise e planejamento
-
-- [x] Input Processing com preservação da entrada original.
-- [x] Semantic Analysis heurística.
-- [x] Capability Vectorizer lexical de 12 dimensões.
-- [x] Task Decomposer para listas e sequências explícitas.
-- [x] Cognitive Planner, Orchestrator e Execution Trace.
+- [x] Input Processing, Semantic Analysis heurística e Capability Vectorizer lexical.
+- [x] Task Decomposer, Cognitive Planner, Orchestrator e Execution Trace.
 - [x] Ferramentas determinísticas iniciais: calculadora AST restrita e conversor de unidades.
+- [x] Cognitive Inspector e Cognitive Task Executor sequencial em worker Qt.
+- [x] Estados explícitos, ordenação topológica e bloqueio de dependências inválidas/cíclicas.
+- [x] Validation Layer estrutural e replay determinístico de ferramentas.
 
-### 2.2 — Execução de subtarefas
-
-- [x] Cognitive Inspector com análise, plano, subtarefas e trace.
-- [x] Cognitive Task Executor sequencial, em worker Qt.
-- [x] Ordenação topológica e bloqueio de dependências inválidas/cíclicas.
-- [x] Execução local de cálculo/conversão quando intenção e risco permitem.
-- [x] Chamadas individuais ao mesmo modelo para subtarefas LLM.
-- [x] Síntese final com streaming para o Chat.
-- [x] Estados explícitos para pendente, em execução, concluída, falha, bloqueada, cancelada e ignorada.
-
-### 2.3 — Validation Layer
-
-- [x] Conferência de resultado não vazio e estrutura da subtarefa.
-- [x] Conferência das dependências antes de liberar resultados às etapas seguintes.
-- [x] Reprodução determinística de cálculos/conversões e comparação de ferramenta, conteúdo, estado e valor.
-- [x] Verificação de completude antes da síntese final.
-- [x] Relatório estruturado no CognitiveTask e no Cognitive Inspector.
-- [x] Separação entre aprovação estrutural, resultado reproduzido localmente e revisão factual pendente.
-- [ ] Validar a nova camada no Arch Linux com pedidos determinísticos e compostos.
-- [ ] Melhorar a decomposição de pedidos mistos para reduzir repetição de contexto nas subtarefas.
-
-**Limite declarado:** saídas livres do LLM continuam como not_independently_verified. A camada atual não faz checagem factual geral, prova formal ou validação científica de explicações. Não há correção automática de conteúdo factual incerto; erros estruturais/determinísticos bloqueiam a síntese.
-
-**Critério de saída da Fase 2:** testes locais aprovados, validação real no Arch, cancelamento/falhas conferidos e qualidade da decomposição revisada.
+**Limite:** saídas livres do LLM permanecem não verificadas factualmente; a Validation Layer não substitui prova formal ou verificação de domínio.
 
 ## Fase 3 — Conhecimento local e RAG verificável
 
-### 3.1 — Ingestão e recuperação lexical (base inicial na branch `feature/rag-v1`)
+- [x] Loaders explícitos para texto, Markdown, formatos técnicos e PDF opcional.
+- [x] Proveniência por URI, SHA-256, página, seção e offsets Unicode.
+- [x] Chunking determinístico e índice lexical SQLite FTS5.
+- [x] Embeddings via Ollama, SQLite vetorial e recuperação híbrida por RRF.
+- [x] Context Composer, validação estrutural de citações e KnowledgeRuntime.
+- [x] Biblioteca local privada e aba Conhecimento com workers Qt.
+- [x] Integração opt-in do RAG ao Chat, fontes na resposta e evidências no Cognitive Inspector.
+- [x] EmbeddingGemma e Qwen3 Embedding testados no Arch.
+- [x] Ruff e 155 testes Pytest; Chat com RAG ligado/desligado e Cognitive Inspector validados.
+- [x] Microbenchmark sintético: ambos embeddings acertaram o documento esperado em primeiro lugar nas quatro consultas; baseline lexical não recuperou as formulações sem sobreposição lexical.
 
-- [x] Loader UTF-8 para texto e formatos técnicos declarados.
-- [x] Loader Markdown com preservação de títulos e blocos.
-- [x] Loader PDF opcional por pypdf, com limite de bytes/páginas/caracteres; sem OCR.
-- [x] Proveniência com URI, SHA-256, página, seção e offsets Unicode.
-- [x] Chunking determinístico com limites, sobreposição e separação por página/seção.
-- [x] Índice lexical local SQLite FTS5, filtros por documento e reingestão sem resultados obsoletos.
-- [x] Contratos substituíveis para busca vetorial e reranking.
-- [x] Fusão de rankings por Reciprocal Rank Fusion quando o backend vetorial existe.
-- [x] Context Composer com citações e orçamento em caracteres.
-- [x] Validação estrutural de referências, hash e trecho original.
-- [x] Testes unitários de loaders, chunking, indexação, recuperação, contexto e proveniência.
+**Limites desta entrega:** reranker concreto, corpus representativo com julgamento humano, OCR, orçamento efetivo por tokenizer e verificação semântica independente permanecem futuros. O microbenchmark sintético não estabelece um vencedor entre os embeddings nem prevê qualidade em corpus real.
 
-### 3.2 — Recuperação semântica e integração
+## Fase 4 — NeuralModel Hub e gerenciamento adaptativo
 
-- [x] Provedor de embeddings via Ollama `/api/embed`, com batch, dimensões configuráveis e rejeição de entradas excessivas sem truncamento silencioso.
-- [x] Armazenamento vetorial SQLite com vetores float32 normalizados, busca cosseno, filtros e substituição transacional de documentos.
-- [x] LocalVectorIndexer e backend vetorial que confere chunk_id, document_id e source_sha256 antes de devolver evidências.
-- [x] Fusão lexical/vetorial por RRF quando o backend vetorial é fornecido.
-- [x] Testes simulados do provider, persistência, filtros, reindexação e integração lexical/vetorial.
-- [x] KnowledgeRuntime para anexar Evidence ao CognitiveTask e preparar mensagem documental não confiável.
-- [x] Smoke test real no Arch Linux com Ollama `embeddinggemma`: 768 dimensões, 2 chunks sintéticos indexados, busca vetorial/híbrida aprovada e SQLite temporário removido.
-- [ ] Escolher e comparar modelos de embeddings locais em hardware leve, intermediário e potente.
-- [ ] Implementar reranker concreto, opcional e mensurável.
-- [ ] Definir política de deduplicação e orçamento de tokens com benchmarks.
-- [x] Integrar o KnowledgeRuntime ao MainWindow/CognitiveTaskExecutor com ativação explícita e recuperação em worker Qt.
-- [x] Integrar Context Composer ao contexto do modelo, delimitar documentos como dados não confiáveis e transportar Evidence ao CognitiveTask.
-- [x] Exibir fontes recuperadas no Chat e proveniência das evidências no Cognitive Inspector; validar vínculo/hash das citações sem declarar veracidade factual.
-- [x] Criar microbenchmark sintético reproduzível com precision@k, recall@k, MRR e cobertura, executável em modo lexical ou híbrido por modelo.
-- [ ] Ampliar corpus de avaliação RAG com documentos representativos, julgamentos humanos de relevância, fidelidade e conflitos.
-- [x] Testar a delimitação de conteúdo documental não confiável e a rejeição de identificadores de citação inexistentes; resistência semântica do modelo continua sendo mitigação, não garantia.
-- [ ] Definir orçamento de tokens por tokenizer/backend; a primeira versão usa limite em caracteres.
+### 4.1 — Registro e descoberta (implementado nesta branch; validação pendente)
 
-**Saída da Fase 3:** respostas com evidências recuperadas, proveniência verificável e validação explícita dos vínculos. A validação de links/hash não deve ser confundida com prova factual ou verificação de entailment.
+- [x] Contrato versionável de ficha de modelo, artefato/runtime, licença e requisitos.
+- [x] Registro JSON local com escrita atômica, versão de esquema e permissões restritas no Linux.
+- [x] Descoberta do inventário Ollama sem inferir metadados ausentes.
+- [x] Preservação de metadados curados durante sincronização do runtime.
+- [x] Interface inicial NeuralModel Hub integrada à aplicação.
+- [ ] Validar a interface e a persistência no Arch Linux.
 
-### 3.3 — Biblioteca documental e interface Conhecimento
+### 4.2 — Hardware Compatibility Engine (implementação inicial nesta branch)
 
-- [x] Serviço KnowledgeLibrary com persistência lexical/vetorial em diretório XDG local.
-- [x] Ingestão explícita de arquivos selecionados pelo usuário; sem cópia ou movimentação do original.
-- [x] Listagem de documentos, tipo, tamanho e contagem de chunks.
-- [x] Remoção do índice com preservação do arquivo original.
-- [x] Prévia de recuperação lexical/vetorial dentro da aba Conhecimento.
-- [x] Seleção persistente de modelo de embeddings, independente do modelo de chat.
-- [x] Reindexação explícita após troca de modelo de embeddings.
-- [x] Workers Qt para não bloquear a thread da interface.
-- [x] Fallback lexical e aviso explícito quando a consulta vetorial falhar.
-- [x] Testes automatizados do serviço, configuração, métricas do benchmark e componentes básicos da UI; CI anterior à integração Chat com 142 testes aprovados.
-- [x] Validar visualmente a aba Conhecimento no Arch Linux.
-- [x] Ingerir e buscar um documento de teste no ambiente do usuário; recuperação lexical/vetorial e reindexação real validadas com EmbeddingGemma e Qwen3 Embedding.
+- [x] Perfil de CPU, RAM, disco e GPUs Linux via sysfs DRM.
+- [x] Leitura de VRAM total/usada/livre e driver quando expostos pelo kernel.
+- [x] Estados compatível/incompatível/não avaliado baseados em requisitos verificados.
+- [ ] Validar medições na RX 5700 XT e em ambiente sem GPU dedicada.
+- [ ] Ampliar probes por plataforma/runtime; fabricante e driver não comprovam Vulkan/ROCm/CUDA.
 
-## Fase 4 — Gerenciamento adaptativo de recursos
+### 4.3 — Catálogo remoto por categorias (implementado nesta branch; validação pendente)
 
-1. Telemetria de RAM, VRAM, CPU, GPU e disco, distinguindo valores disponíveis e estimados.
-2. Perfil de hardware e orçamento realista de pesos, cache KV, contexto e buffers.
-3. Model Manager: inventário, carregamento, descarregamento, estado quente/frio e leases.
-4. Scheduler com fila, prioridade, concorrência limitada e cancelamento.
-5. Políticas LRU e prevenção de thrashing entre modelos.
-6. Enforcement de token budget, RAM budget e deadlines.
-7. Benchmarks por hardware, modelo, quantização, contexto e estado frio/quente.
+- [x] Manifesto JSON versionado, remoto com fallback local empacotado.
+- [x] Categorias, busca textual, fichas, variantes Ollama e fontes oficiais.
+- [x] Limites de tamanho, validação de esquema, procedência e nomes de modelo.
+- [x] Variantes com plataforma incompatível aparecem sem ação de instalação.
+- [ ] Ampliar o catálogo e revisar periodicamente as fichas/licenças.
 
-**Saída:** execução previsível dentro dos limites físicos da máquina.
+### 4.4 — Download, instalação e gerenciamento (implementação nesta branch; validação pendente)
 
-## Fase 5 — Modelos especialistas e roteamento adaptativo
+- [x] Confirmação explícita com modelo/tag, tamanho publicado e situação da licença.
+- [x] Pull pelo endpoint Ollama em worker Qt, progresso NDJSON e cancelamento cooperativo.
+- [x] Verificação do evento final de sucesso do runtime.
+- [x] Remoção por API com confirmação e atualização do inventário.
+- [ ] Validar download, cancelamento, retomada e remoção no Arch Linux.
+- [ ] Adicionar verificação pós-download de digest quando o runtime expuser uma fonte confiável.
 
-1. Perfis de capacidade por modelo, baseados em metadados verificáveis e benchmarks locais.
-2. Corpus de avaliação por domínio: código, matemática, ciência, escrita e raciocínio.
-3. Medição de qualidade, latência, memória e custo por tarefa.
-4. Seletor que combine intenção, requisitos, perfil do modelo, recursos disponíveis e preferência do usuário.
-5. Planejamento multi-modelo com justificativa e fallback explícito.
-6. Síntese cruzada e validação de divergências entre especialistas.
-7. Garantia de que a seleção manual do usuário prevaleça quando exigida.
+### 4.5 — Adaptive Model Selector (planejado)
 
-**Saída:** roteamento especializado mensurável, explicável e reversível.
+- [ ] Requisitos de memória por modelo, quantização, runtime, contexto e offload, baseados em evidência ou medição.
+- [ ] Benchmark local de qualidade, latência, RAM/VRAM e estabilidade.
+- [ ] Seleção por tarefa, recursos, preferência, qualidade medida e fallback explicável.
+- [ ] Políticas de carregamento, descarregamento, leases e concorrência integradas ao Resource Manager.
+
+**Saída:** descoberta, instalação e seleção de modelos explicáveis, conservadoras e adaptadas ao hardware real.
+
+## Fase 5 — Agentes especialistas e autoengenharia
+
+- [ ] System Analyst em modo somente leitura.
+- [ ] Code Analyst para análise do repositório e dependências.
+- [ ] Test Engineer para reproduzir falhas e executar testes autorizados.
+- [ ] Security Auditor com escopo e ferramentas restritos.
+- [ ] Implementer em branch/worktree isolado, diff revisável e testes.
+- [ ] Validação independente e aprovação humana antes de qualquer merge.
+
+**Saída:** agentes especializados que analisam e propõem mudanças sem modificar main autonomamente.
 
 ## Fase 6 — Rede cooperativa (Swarm P2P)
 
-1. Identidade, pareamento e autorização explícita de nós.
-2. Descoberta, heartbeat e telemetria.
-3. Control Plane separado do Data Plane.
-4. Transporte autenticado e criptografado, limites de tamanho, timeout e cancelamento.
-5. Despacho de subtarefas independentes e Map-Reduce.
-6. Transferência de arquivos com hash, integridade, retomada e controle de acesso.
-7. Tolerância a falhas, nós offline e reconciliação de resultados.
-
-**Saída:** cooperação entre máquinas confiáveis, sem presumir que descoberta equivale a autorização.
+- [ ] Identidade, pareamento e autorização explícita de nós.
+- [ ] Descoberta, heartbeat e telemetria.
+- [ ] Control Plane separado do Data Plane.
+- [ ] Transporte autenticado e criptografado, limites, timeout e cancelamento.
+- [ ] Despacho de subtarefas independentes e Map-Reduce.
+- [ ] Transferência de arquivos com hash, integridade, retomada e controle de acesso.
+- [ ] Tolerância a falhas, nós offline e reconciliação de resultados.
 
 ## Fase 7 — Laboratório de desempenho e backends experimentais
 
-- BitNet e modelos de baixa precisão.
-- llama.cpp RPC e execução remota experimental.
-- Speculative decoding.
-- Inferência distribuída por camadas apenas após benchmark de rede e memória.
-- Comparação de qualidade, latência, throughput, consumo e estabilidade.
+- [ ] BitNet e modelos de baixa precisão.
+- [ ] llama.cpp RPC e execução remota experimental.
+- [ ] Speculative decoding.
+- [ ] Inferência distribuída por camadas após benchmark de rede e memória.
+- [ ] Comparação de qualidade, latência, throughput, consumo e estabilidade.
 
-**Saída:** otimizações aceitas por evidência experimental, não por promessa teórica.
-
-## Regras de evolução transversais
+## Regras transversais
 
 - Não confundir score heurístico com probabilidade.
 - Não marcar saída de LLM como verificada sem evidência ou validador independente.
-- Toda ferramenta precisa de contrato, limites, testes positivos e negativos.
+- Toda ferramenta precisa de contrato, limites e testes positivos/negativos.
 - Toda tarefa distribuída exige autenticação, autorização, timeout, integridade e cancelamento.
-- Benchmarks devem registrar hardware, modelo, quantização, contexto e estado quente/frio.
+- Benchmarks registram hardware, modelo, quantização, contexto e estado quente/frio.
 - main só recebe uma fase depois de revisão, CI aprovado e validação de aceitação no ambiente-alvo.

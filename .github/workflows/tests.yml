@@ -6,10 +6,12 @@ on:
       - main
       - bootstrap/project-structure
       - feature/rag-v1
+      - feature/neural-model-hub-v1
   pull_request:
     branches:
       - main
       - bootstrap/project-structure
+      - feature/rag-v1
 
 jobs:
   unit-tests:
