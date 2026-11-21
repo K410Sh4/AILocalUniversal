@@ -171,3 +171,25 @@ def test_probe_rejects_pid_reuse_during_sampling(tmp_path, monkeypatch) -> None:
 
     assert result.status is ProcessMemoryProbeStatus.INCOMPLETE
     assert result.pss_bytes is None
+
+
+def test_probe_does_not_misidentify_ollama_run_with_argument_serve(tmp_path) -> None:
+    _process(tmp_path, 300, argv=("ollama", "run", "serve"), parent=1)
+
+    result = probe_ollama_process_memory(tmp_path)
+
+    assert result.status is ProcessMemoryProbeStatus.NOT_FOUND
+
+
+def test_probe_accepts_ollama_serve_with_flags(tmp_path) -> None:
+    _process(
+        tmp_path,
+        301,
+        argv=("/usr/bin/ollama", "serve", "--host", "127.0.0.1:11434"),
+        parent=1,
+    )
+
+    result = probe_ollama_process_memory(tmp_path)
+
+    assert result.status is ProcessMemoryProbeStatus.AVAILABLE
+    assert result.root_pid == 301
