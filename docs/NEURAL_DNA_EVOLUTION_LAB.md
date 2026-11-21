@@ -26,13 +26,13 @@ Equações simplificadas:
 A função saturante tipo Hill é inspirada em modelos regulatórios, não ajustada a parâmetros fisiológicos.
 
 ## Testes e experimentos
-- 15 testes locais aprovados na nova suíte test_lineage.py.
-- Varredura exploratória de 653.184 combinações de população, demanda, atividade, recurso, capacidade, ativação, feedback, autorrenovação, homeostase, pressão de diferenciação e custo: invariantes de capacidade, conservação e orçamento preservados.
+- 16 testes locais previstos na suíte test_lineage.py após incluir regressão de capacidade; a execução de CI ainda é necessária para confirmar.
+- Varredura exploratória de 373.248 combinações de população, demanda, atividade, recurso, capacidade, ativação, feedback, autorrenovação, homeostase, pressão de diferenciação e custo: invariantes de capacidade, conservação e orçamento preservados. A regra de capacidade foi corrigida para preservar progenitores residentes não selecionados; descendentes que não cabem no nicho diferenciam-se em vez de remover células residentes arbitrariamente.
 - A suíte automatizada inclui uma varredura reduzida para CI.
 - Os testes não demonstram aprendizagem, inteligência, superioridade evolutiva ou fidelidade biológica.
 
 ## Limites conhecidos
-- Regiões são simuladas independentemente; comunicação entre regiões e nicho intrínseco multicelular ainda não foram implementados.
+- Regiões são simuladas independentemente; comunicação entre regiões e nicho intrínseco multicelular ainda não foram implementados. A diferenciação excedente por capacidade ainda usa o destino dominante do nicho, uma simplificação a comparar com destinos alternativos e quiescência.
 - A escolha de destino é dominante, sem múltiplos subtipos por região.
 - Não há migração, morte, poda, maturação funcional, conectividade, sinapses ou plasticidade da BA.
 - O modelo não substitui NeuralDNA 0.1; acrescenta uma camada experimental de linhagem.
