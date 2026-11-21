@@ -297,9 +297,14 @@ impl AdaptiveCognitiveNetwork {
             .iter()
             .filter(|feedback| {
                 self.capabilities.contains_key(&feedback.capability_id)
-                    && self.components.get(&feedback.component_id).is_some_and(|component| {
-                        component.supported_capabilities.contains(&feedback.capability_id)
-                    })
+                    && self
+                        .components
+                        .get(&feedback.component_id)
+                        .is_some_and(|component| {
+                            component
+                                .supported_capabilities
+                                .contains(&feedback.capability_id)
+                        })
             })
             .cloned()
             .rev()

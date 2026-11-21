@@ -274,7 +274,6 @@ fn unsupported_contract_schema_is_rejected_before_planning() {
     assert!(invalid.validate().is_err());
 }
 
-
 #[test]
 fn sequential_plan_reserves_peak_resources_instead_of_summing_components() {
     use kia_cognitive_runtime::CognitiveCapability;
