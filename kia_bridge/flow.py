@@ -7,6 +7,13 @@ from typing import Any
 
 from core.cognitive_task import CognitiveTask
 from core.deterministic_tools import DeterministicToolRegistry, ToolResult
+from model_hub.contracts import ModelRecord
+from model_hub.hardware import HardwareProfile
+from model_hub.registry import ModelRegistry
+from napa.contracts import AreaActivation, CognitiveAreaKind, NapaClassification
+from napa.registry import CognitiveAreaRegistry, create_default_registry
+from resources.contracts import ResourcePlacement
+
 from .adapters import (
     build_network_payload,
     cognitive_request_from_napa,
@@ -16,12 +23,6 @@ from .adapters import (
     resource_snapshot_from_hardware,
 )
 from .client import KiaRuntimeClient
-from model_hub.contracts import ModelRecord
-from model_hub.hardware import HardwareProfile
-from model_hub.registry import ModelRegistry
-from napa.contracts import AreaActivation, CognitiveAreaKind, NapaClassification
-from napa.registry import CognitiveAreaRegistry, create_default_registry
-from resources.contracts import ResourcePlacement
 
 
 MIB = 1024 * 1024
