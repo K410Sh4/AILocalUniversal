@@ -13,7 +13,6 @@ import random
 import statistics
 from dataclasses import dataclass
 
-
 STATE_COUNT = 3
 GENERALIST_FITNESS = 0.35
 SPECIALIST_MISMATCH_FITNESS = 0.05
