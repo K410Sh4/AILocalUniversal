@@ -37,6 +37,7 @@ def test_all_strategies_return_bounded_metrics():
         assert 0.0 <= result.history_forecast_accuracy <= 1.0
         assert 0.0 <= result.mean_plasticity <= 1.0
         assert 0.0 <= result.mean_diversity_reserve <= 1.0
+        assert 0.0 <= result.mean_forecast_uncertainty <= 1.0
 
 
 def test_predictive_horizon_matches_development_latency():
@@ -108,3 +109,34 @@ def test_reserve_tracks_residual_forecast_uncertainty_not_change_rate():
 def test_invalid_parameters_are_rejected(overrides):
     with pytest.raises(ValueError):
         trial(1, **overrides)
+
+
+
+def test_adaptive_prefers_the_predictor_with_higher_measured_skill():
+    cue_leads = [
+        trial(
+            seed,
+            process="drift",
+            cue_accuracy=0.90,
+            cue_horizon=3,
+            development_latency=3,
+        )
+        for seed in range(10)
+    ]
+    history_leads = [
+        trial(
+            seed,
+            process="cycle",
+            cue_accuracy=0.95,
+            cue_horizon=2,
+            development_latency=2,
+        )
+        for seed in range(10)
+    ]
+    cue_led_plasticity = statistics.fmean(
+        result.mean_plasticity for result in cue_leads
+    )
+    history_led_plasticity = statistics.fmean(
+        result.mean_plasticity for result in history_leads
+    )
+    assert cue_led_plasticity > history_led_plasticity + 0.4
