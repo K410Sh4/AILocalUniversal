@@ -131,12 +131,15 @@ O zero representa somente nova alocação do runner; não significa consumo zero
 
 **Limite explícito:** essas leases coordenam somente operações iniciadas pela aplicação. Não reservam RAM/VRAM do kernel, não impedem unload feito externamente por CLI/outro cliente e ainda não compartilham o `ExecutionLeaseManager` Rust com o ciclo de vida Ollama.
 
-**Próxima etapa — concorrência, leases de runtime e validação empírica:**
+**Etapa 5 implementada — probe de memória do processo Ollama no Linux:** `resources.telemetry.probe_ollama_process_memory()` localiza uma única instância `ollama serve`, percorre seus processos descendentes e agrega PSS/RSS via `/proc/PID/smaps_rollup`. PSS é a métrica primária porque distribui páginas compartilhadas proporcionalmente; RSS permanece apenas informativa. `compare_process_memory()` calcula deltas somente entre amostras completas do mesmo PID e em ordem temporal.
+
+O probe retorna `not_found`, `ambiguous` ou `incomplete` quando não pode provar a árvore/telemetria. Não mede VRAM, não atribui automaticamente um delta a um modelo e ainda não alimenta o seletor. O kernel pode negar leitura de `smaps_rollup`; nesse caso não há estimativa parcial.
+
+**Próxima etapa — sessões de medição e calibração empírica:**
 
 1. Conectar leases de ciclo de vida ao unload/expiração do Ollama e ao `ExecutionLeaseManager` Rust; mais de uma solicitação permanece no caminho conservador até haver telemetria confiável.
-2. Separar reservas persistentes de residência dos leases temporários por tarefa e liberar somente após confirmação de unload.
-3. Coletar medições frias/quentes simultâneas de RAM/VRAM, tamanho do runner, contexto, latência e throughput no Arch Linux.
-4. Calibrar previsões por modelo, quantização, backend e hardware com traces reproduzíveis e rollback.
+2. Criar sessões controladas de medição antes/depois de load, inferência e unload, associando snapshots `/api/ps`, PSS, RAM/VRAM, digest e contexto.
+3. Calibrar previsões por modelo, quantização, backend e hardware com várias amostras, mediana/MAD, limite superior conservador e rollback.
 
 O campo `context_length` reportado pelo runtime é a capacidade/configuração do runner, não a quantidade de tokens atualmente ocupados no cache KV. A avaliação residente apenas verifica se a capacidade configurada comporta a tarefa; não tenta calcular ocupação atual do KV.
 
@@ -145,7 +148,8 @@ O campo `context_length` reportado pelo runtime é a capacidade/configuração d
 Ainda não implementado:
 
 - telemetria contínua de RAM/VRAM/CPU/GPU;
-- aferição de memória do processo Ollama enquanto carrega e infere;
+- integração do probe PSS com sessões controladas de load/inferência/unload;
+- aferição correlacionada de VRAM por processo ou por janela isolada;
 - benchmarks frios/quentes de latência, throughput, qualidade e estabilidade;
 - contexto adaptativo configurável por tarefa;
 - estimativa de cache quantizado;
