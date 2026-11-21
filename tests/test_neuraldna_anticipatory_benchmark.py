@@ -111,7 +111,6 @@ def test_invalid_parameters_are_rejected(overrides):
         trial(1, **overrides)
 
 
-
 def test_adaptive_prefers_the_predictor_with_higher_measured_skill():
     cue_leads = [
         trial(
