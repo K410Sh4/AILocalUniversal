@@ -282,6 +282,14 @@ class DeterministicToolRegistry:
     def __init__(self, tools: list[DeterministicTool] | None = None) -> None:
         self._tools = list(tools or [UnitConversionTool(), CalculatorTool()])
 
+    def tool_names(self) -> tuple[str, ...]:
+        """Nomes estáveis dos executores determinísticos registrados."""
+        return tuple(
+            name
+            for name in (getattr(tool, "name", None) for tool in self._tools)
+            if isinstance(name, str) and name.strip()
+        )
+
     def execute(self, text: str) -> ToolResult | None:
         for tool in self._tools:
             result = tool.execute(text)

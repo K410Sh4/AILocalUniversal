@@ -76,3 +76,16 @@ async def test_pipeline_ignores_bullets_inside_fenced_code() -> None:
     )
 
     assert task.subtask_plan == []
+
+
+@pytest.mark.asyncio
+async def test_pipeline_can_defer_deterministic_execution_to_kia_runtime() -> None:
+    task = await analyze_request(
+        "Calcule 2 + 2.",
+        execute_deterministic=False,
+    )
+
+    assert task.intent == "calculation"
+    assert task.deterministic_results == []
+    assert task.result is None
+    assert task.execution_plan[0]["route"] == "llm_assisted"

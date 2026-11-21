@@ -274,3 +274,21 @@ Implementado na branch `feature/kia-runtime-host-bridge-v0.2`:
 - testes de protocolo subprocesso Rust e testes unitários Python para bridge/adapters.
 
 **Limite:** a ponte está disponível como pacote reutilizável, mas ainda não foi inserida no ciclo de vida do MainWindow/CognitiveTaskExecutor. O Python ainda executa os motores; Rust planeja. A próxima etapa integra o plano à execução cognitiva e instala adaptadores de inferência explícitos.
+
+
+## K.IA 0.3 — ACCA Vertical Flow
+
+Implementação em andamento na branch feature/kia-acca-vertical-flow-v0.3:
+- Chat pode iniciar kia-runtime-host sob demanda; sem binário ou plano executável, usa o fluxo anterior como fallback.
+- O pipeline realiza normalização, NAPA e decomposição sem pré-executar a ferramenta determinística.
+- O coordenador constrói rede com áreas NAPA, modelos de chat instalados, ferramentas determinísticas e snapshot do Adaptive Resource Manager.
+- Calculator/unit_converter só são candidatos para suas intenções próprias e quando o risco é baixo.
+- Modelo Ollama só entra no novo roteamento quando o artefato está instalado, consta no inventário atual, possui adaptador registrado e o estimador demonstra placement integral em RAM; GPU/híbrido continua no seletor legado.
+- Rust escolhe o modelo/componente. Python/OllamaEngine continua sendo o executor de inferência.
+- Para plano sequencial, o budget reserva o pico por dimensão, não soma custos de componentes que não estão ativos ao mesmo tempo.
+- Resultado determinístico é reproduzido pela ValidationLayer; somente status passed + verified_deterministic produz feedback success para a plasticidade operacional.
+- replace_state preserva pesos/contadores de conexões compatíveis, evitando zerar o aprendizado entre mensagens do mesmo processo.
+- Resposta LLM recebe validação estrutural e gate de completude para requisitos declarados; continua not_independently_verified.
+- Testes cobrem NAPA → planner → calculadora Python → replay de validação → feedback e planejamento de modelo com custo explícito.
+
+**Limites:** plasticidade operacional permanece em memória do processo, sem persistência após reinício. A reserva sequencial é lógica, não quota do kernel. O custo CPU usa teto de threads configurado, não FLOPs medidos. GPU/híbrido, RAG/NeSA como provedor de plano, ANN/CSR semântico, energia, terminação entre etapas, treinamento e LoRA ainda não estão integrados. CI não substitui validação real no Arch Linux.

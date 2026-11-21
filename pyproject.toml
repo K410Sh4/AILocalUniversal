@@ -42,3 +42,19 @@ select = ["E", "F", "I", "UP", "B"]
 
 [tool.setuptools.package-data]
 model_hub = ["catalog_default.json"]
+
+
+[tool.ruff.lint.isort]
+known-first-party = [
+    "app",
+    "core",
+    "engines",
+    "kia_bridge",
+    "knowledge",
+    "model_hub",
+    "napa",
+    "neural_elastic",
+    "resources",
+    "storage",
+    "workers",
+]

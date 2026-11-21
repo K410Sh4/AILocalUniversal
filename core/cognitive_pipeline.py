@@ -34,23 +34,34 @@ class DeterministicProcessingStage:
 
 
 class CognitivePipeline:
-    """Pipeline local: entrada, análise, ferramentas e planejamento."""
+    """Pipeline local com execução determinística opcional para roteamento externo."""
 
-    def __init__(self) -> None:
-        self.orchestrator = Orchestrator(
-            [
-                InputProcessingStage(),
-                SemanticAnalysisStage(CapabilityVectorizer()),
-                TaskDecompositionStage(),
-                DeterministicProcessingStage(),
-                CognitivePlanningStage(),
-            ]
-        )
+    def __init__(
+        self,
+        *,
+        execute_deterministic: bool = True,
+        tools: DeterministicToolRegistry | None = None,
+    ) -> None:
+        stages = [
+            InputProcessingStage(),
+            SemanticAnalysisStage(CapabilityVectorizer()),
+            TaskDecompositionStage(),
+        ]
+        if execute_deterministic:
+            stages.append(DeterministicProcessingStage(tools))
+        stages.append(CognitivePlanningStage())
+        self.orchestrator = Orchestrator(stages)
 
     async def run(self, text: str) -> CognitiveTask:
         return await self.orchestrator.run(CognitiveTask(original_text=text))
 
 
-async def analyze_request(text: str) -> CognitiveTask:
-    """Executa a análise cognitiva completa sem acesso à rede."""
-    return await CognitivePipeline().run(text)
+async def analyze_request(
+    text: str,
+    *,
+    execute_deterministic: bool = True,
+) -> CognitiveTask:
+    """Analisa uma solicitação; execução local pode ser delegada ao roteador K.IA."""
+    return await CognitivePipeline(
+        execute_deterministic=execute_deterministic
+    ).run(text)

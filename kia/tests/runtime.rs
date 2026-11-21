@@ -273,3 +273,83 @@ fn unsupported_contract_schema_is_rejected_before_planning() {
     invalid.schema_version += 1;
     assert!(invalid.validate().is_err());
 }
+
+#[test]
+fn sequential_plan_reserves_peak_resources_instead_of_summing_components() {
+    use kia_cognitive_runtime::CognitiveCapability;
+
+    let mut network = AdaptiveCognitiveNetwork::default();
+    network.add_capability(capability()).unwrap();
+    network
+        .add_capability(CognitiveCapability {
+            id: "programming".into(),
+            name: "Programação".to_owned(),
+            domain: "software".to_owned(),
+            intent_tags: BTreeSet::from(["programming".to_owned()]),
+            context_tags: BTreeSet::new(),
+            enabled: true,
+        })
+        .unwrap();
+
+    let mut calculator = component(
+        "local-calculator",
+        NeuralComponentKind::DeterministicTool,
+        ResourceVector {
+            cpu_millis: 300,
+            ram_bytes: 1_000_000_000,
+            ..ResourceVector::default()
+        },
+        0.95,
+    );
+    calculator.supported_capabilities = BTreeSet::from(["mathematics".into()]);
+    network.add_component(calculator).unwrap();
+
+    let mut programmer = component(
+        "local-programmer",
+        NeuralComponentKind::NeuralSpecialist,
+        ResourceVector {
+            cpu_millis: 300,
+            ram_bytes: 2_000_000_000,
+            ..ResourceVector::default()
+        },
+        0.9,
+    );
+    programmer.supported_capabilities = BTreeSet::from(["programming".into()]);
+    network.add_component(programmer).unwrap();
+
+    let snapshot = ResourceSnapshot {
+        total: ResourceVector {
+            cpu_millis: 1000,
+            ram_bytes: 4_000_000_000,
+            ..ResourceVector::default()
+        },
+        available: ResourceVector {
+            cpu_millis: 1000,
+            ram_bytes: 4_000_000_000,
+            ..ResourceVector::default()
+        },
+        available_targets: vec![ExecutionTarget::Cpu],
+    };
+    let budget = ResourceBudget::new(
+        ResourceVector {
+            cpu_millis: 400,
+            ram_bytes: 3_000_000_000,
+            ..ResourceVector::default()
+        },
+        &snapshot,
+    )
+    .unwrap();
+    let mut registry = ExecutorRegistry::default();
+    registry.register(ComponentId::from("local-calculator"), MockExecutor);
+    registry.register(ComponentId::from("local-programmer"), MockExecutor);
+    let runtime = CognitiveRuntime::new(network, snapshot, budget, registry).unwrap();
+    let mut request = request();
+    request.required_capabilities.push("programming".into());
+    request.intent = "calculation and programming".to_owned();
+
+    let plan = runtime.plan(&request).unwrap();
+
+    assert_eq!(plan.selections.len(), 2);
+    assert_eq!(plan.reserved_resources.cpu_millis, 300);
+    assert_eq!(plan.reserved_resources.ram_bytes, 2_000_000_000);
+}

@@ -19,7 +19,6 @@ DEFAULT_MODEL_AREA_MAP: dict[str, tuple[str, ...]] = {
     "general": ("generation",),
     "embeddings": ("retrieval",),
     "vision": ("perception",),
-    "tool_calling": ("tool_use",),
 }
 
 

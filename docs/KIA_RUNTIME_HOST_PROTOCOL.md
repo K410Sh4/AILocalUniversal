@@ -99,3 +99,10 @@ Falha:
 ## Limites da v1
 
 O host é síncrono e atende uma solicitação por vez. Não há execução concorrente, streaming de token, filas, timeout por componente, leases, transporte de payload binário ou conexão de rede. O protocolo é IPC local e não deve ser exposto como endpoint TCP sem autenticação e autorização adicionais.
+
+
+## Sincronização e plasticidade em memória
+
+Quando replace_state recebe um novo snapshot no mesmo processo, o host preserva pesos, contadores e referências de feedback das conexões com a mesma identidade tipada que continuam válidas no novo grafo. O histórico de feedback preservado é limitado às 4.096 entradas mais recentes. Conexões removidas ou incompatíveis não são transferidas.
+
+Esse mecanismo mantém a plasticidade operacional entre turnos da sessão, mas não é persistência em disco. Encerrar/reiniciar kia-runtime-host reinicia a rede para os pesos enviados pelo lado Python até que a persistência versionada seja implementada.
