@@ -1,0 +1,701 @@
+"""Versioned, declarative workflow graph model and static validator."""
+
+from __future__ import annotations
+
+import json
+import math
+import re
+from dataclasses import dataclass, field
+from enum import StrEnum
+from pathlib import Path
+from typing import Any
+
+GRAPH_FORMAT = "ailocal.pipeline-graph"
+GRAPH_VERSION = "1.0"
+
+
+class EdgeType(StrEnum):
+    ALWAYS = "always"
+    ON_SUCCESS = "on_success"
+    ON_FAILURE = "on_failure"
+
+
+class GraphError(ValueError):
+    """Stable, user-safe validation or serialization error."""
+
+    def __init__(
+        self,
+        reason_code: str,
+        message: str,
+        alternatives: tuple[str, ...] = (),
+    ) -> None:
+        self.reason_code = reason_code
+        self.message = message
+        self.alternatives = alternatives
+        super().__init__(f"{reason_code}: {message}")
+
+
+@dataclass(frozen=True)
+class NodeTypeSpec:
+    inputs: frozenset[str]
+    outputs: frozenset[str]
+    category: str
+    required_inputs: frozenset[str] = frozenset()
+
+
+NODE_SPECS: dict[str, NodeTypeSpec] = {
+    "input.text": NodeTypeSpec(frozenset(), frozenset({"text"}), "input"),
+    "input.attachment": NodeTypeSpec(
+        frozenset(), frozenset({"attachment"}), "input"
+    ),
+    "specialist.code": NodeTypeSpec(
+        frozenset({"text", "context", "feedback", "budget"}),
+        frozenset({"code", "text", "artifacts"}),
+        "specialist",
+        frozenset({"text"}),
+    ),
+    "specialist.chat": NodeTypeSpec(
+        frozenset({"text", "code", "context", "feedback", "budget"}),
+        frozenset({"explanation", "text"}),
+        "specialist",
+        frozenset({"text"}),
+    ),
+    "specialist.image": NodeTypeSpec(
+        frozenset({"prompt", "code", "explanation", "context", "feedback", "budget"}),
+        frozenset({"image", "artifact"}),
+        "specialist",
+        frozenset({"prompt"}),
+    ),
+    "specialist.review": NodeTypeSpec(
+        frozenset({"code", "explanation", "image", "context", "budget"}),
+        frozenset({"decision", "approved", "feedback", "retry_targets", "score", "notes"}),
+        "specialist",
+        frozenset({"code", "explanation"}),
+    ),
+    "control.loop": NodeTypeSpec(
+        frozenset({"decision"}),
+        frozenset({"repeat", "decision"}),
+        "control",
+        frozenset({"decision"}),
+    ),
+    "filter.context": NodeTypeSpec(
+        frozenset({"text", "content", "context"}),
+        frozenset({"text", "context"}),
+        "filter",
+        frozenset({"text"}),
+    ),
+    "hardware.profile": NodeTypeSpec(
+        frozenset(), frozenset({"budget", "report"}), "hardware"
+    ),
+    "merge.outputs": NodeTypeSpec(
+        frozenset({"code", "explanation", "image", "review"}),
+        frozenset({"result"}),
+        "output",
+        frozenset({"code", "explanation", "review"}),
+    ),
+    "output.response": NodeTypeSpec(
+        frozenset({"result"}), frozenset({"response"}), "output",
+        frozenset({"result"}),
+    ),
+    "output.trace": NodeTypeSpec(
+        frozenset({"trace"}), frozenset({"trace"}), "output"
+    ),
+}
+
+_SPECIALIST_DEFAULTS: dict[str, Any] = {
+    "engine": "ollama",
+    "model_id": "qwen2.5:7b",
+    "system_prompt": "",
+    "plugin_ref": None,
+    "generation": {"temperature": 0.2, "num_predict": 2048},
+    "use_resource_budget": True,
+    "optional": False,
+}
+
+DEFAULT_NODE_CONFIGS: dict[str, dict[str, Any]] = {
+    "input.text": {"required": True},
+    "input.attachment": {"required": False, "max_size_mb": 25},
+    "specialist.code": {**_SPECIALIST_DEFAULTS, "model_id": "qwen2.5:7b"},
+    "specialist.chat": {
+        **_SPECIALIST_DEFAULTS,
+        "model_id": "deepseek-r1:7b",
+        "generation": {"temperature": 0.4, "num_predict": 2048},
+    },
+    "specialist.image": {
+        **_SPECIALIST_DEFAULTS,
+        "engine": "image",
+        "model_id": "flux.1",
+        "generation": {"steps": 24, "width": 1024, "height": 1024},
+    },
+    "specialist.review": {
+        **_SPECIALIST_DEFAULTS,
+        "model_id": "qwen2.5:7b",
+        "generation": {"temperature": 0.1, "num_predict": 1200},
+    },
+    "control.loop": {
+        "max_iterations": 3,
+        "review_node_id": "review",
+        "default_retry_targets": ["code", "chat", "image"],
+        "stop_condition": "approved",
+    },
+    "filter.context": {"max_characters": 24000, "preserve_attachments": True},
+    "hardware.profile": {"profile": "auto", "protection_mode": "protected"},
+    "merge.outputs": {"include_trace": True},
+    "output.response": {"format": "structured"},
+    "output.trace": {"enabled": True},
+}
+
+
+@dataclass(slots=True)
+class GraphNode:
+    node_id: str
+    node_type: str
+    label: str
+    config: dict[str, Any] = field(default_factory=dict)
+    enabled: bool = True
+    position: dict[str, float] = field(
+        default_factory=lambda: {"x": 0.0, "y": 0.0}
+    )
+    color: str | None = None
+
+    @classmethod
+    def create(
+        cls,
+        node_id: str,
+        node_type: str,
+        *,
+        label: str | None = None,
+        config: dict[str, Any] | None = None,
+        position: tuple[float, float] = (0.0, 0.0),
+    ) -> GraphNode:
+        if node_type not in NODE_SPECS:
+            raise GraphError(
+                "UNKNOWN_NODE_TYPE",
+                f"Tipo de nó desconhecido: {node_type}.",
+                ("Use um dos tipos registrados na biblioteca NeuralMap.",),
+            )
+        merged = json.loads(json.dumps(DEFAULT_NODE_CONFIGS[node_type]))
+        if config:
+            merged.update(config)
+        return cls(
+            node_id=node_id,
+            node_type=node_type,
+            label=label or node_type,
+            config=merged,
+            position={"x": float(position[0]), "y": float(position[1])},
+        )
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "id": self.node_id,
+            "type": self.node_type,
+            "label": self.label,
+            "enabled": self.enabled,
+            "config": self.config,
+            "ui": {
+                "position": {
+                    "x": self.position["x"],
+                    "y": self.position["y"],
+                },
+                **({"color": self.color} if self.color else {}),
+            },
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> GraphNode:
+        if not isinstance(data, dict):
+            raise GraphError("INVALID_NODE", "Cada nó deve ser um objeto JSON.")
+        node_type = data.get("type")
+        if not isinstance(node_type, str) or node_type not in NODE_SPECS:
+            raise GraphError(
+                "UNKNOWN_NODE_TYPE",
+                f"Tipo de nó desconhecido: {node_type}.",
+                ("Atualize o AILocal Universal ou remova o nó desconhecido.",),
+            )
+        node_id = data.get("id")
+        label = data.get("label")
+        enabled = data.get("enabled", True)
+        config = data.get("config")
+        ui = data.get("ui", {})
+        if not isinstance(node_id, str) or not isinstance(label, str):
+            raise GraphError(
+                "INVALID_NODE_IDENTITY",
+                "id e label do nó precisam ser textos.",
+            )
+        if not isinstance(enabled, bool):
+            raise GraphError("INVALID_NODE_ENABLED", "enabled precisa ser booleano.")
+        if not isinstance(config, dict):
+            raise GraphError("INVALID_NODE_CONFIG", "A configuração do nó deve ser um objeto.")
+        if not isinstance(ui, dict):
+            raise GraphError("INVALID_NODE_UI", "Os metadados visuais do nó devem ser um objeto.")
+        position = ui.get("position", {"x": 0.0, "y": 0.0})
+        if not isinstance(position, dict):
+            raise GraphError("INVALID_NODE_POSITION", "A posição do nó precisa ser um objeto.")
+        coordinates: dict[str, float] = {}
+        for axis in ("x", "y"):
+            value = position.get(axis, 0.0)
+            if isinstance(value, bool) or not isinstance(value, (int, float)):
+                raise GraphError(
+                    "INVALID_NODE_POSITION",
+                    f"A coordenada {axis} precisa ser numérica.",
+                )
+            parsed = float(value)
+            if not math.isfinite(parsed):
+                raise GraphError(
+                    "INVALID_NODE_POSITION",
+                    f"A coordenada {axis} precisa ser finita.",
+                )
+            coordinates[axis] = parsed
+        color = ui.get("color")
+        if color is not None and (
+            not isinstance(color, str)
+            or not re.fullmatch(r"#[0-9A-Fa-f]{6}", color)
+        ):
+            raise GraphError("INVALID_NODE_COLOR", "A cor do nó deve estar em #RRGGBB.")
+
+        node = cls(
+            node_id=node_id,
+            node_type=node_type,
+            label=label,
+            enabled=enabled,
+            config=dict(config),
+            position=coordinates,
+            color=color,
+        )
+        _validate_node_config(node)
+        return node
+
+
+@dataclass(slots=True)
+class GraphEdge:
+    edge_id: str
+    source: str
+    source_port: str
+    target: str
+    target_port: str
+    edge_type: EdgeType = EdgeType.ALWAYS
+
+    def to_dict(self) -> dict[str, str]:
+        return {
+            "id": self.edge_id,
+            "source": self.source,
+            "source_port": self.source_port,
+            "target": self.target,
+            "target_port": self.target_port,
+            "edge_type": self.edge_type.value,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> GraphEdge:
+        if not isinstance(data, dict):
+            raise GraphError("INVALID_EDGE", "Cada conexão deve ser um objeto JSON.")
+        fields = ("id", "source", "source_port", "target", "target_port")
+        if any(not isinstance(data.get(key), str) for key in fields):
+            raise GraphError(
+                "INVALID_EDGE",
+                "IDs e nomes de portas da conexão precisam ser textos.",
+            )
+        try:
+            return cls(
+                edge_id=data["id"],
+                source=data["source"],
+                source_port=data["source_port"],
+                target=data["target"],
+                target_port=data["target_port"],
+                edge_type=EdgeType(data.get("edge_type", "always")),
+            )
+        except (ValueError, TypeError) as exc:
+            raise GraphError(
+                "INVALID_EDGE",
+                "Tipo de aresta inválido.",
+                ("Use always, on_success ou on_failure.",),
+            ) from exc
+
+
+@dataclass(slots=True)
+class WorkflowGraph:
+    graph_id: str
+    name: str
+    nodes: list[GraphNode]
+    edges: list[GraphEdge]
+    graph_version: str = GRAPH_VERSION
+    description: str = ""
+    metadata: dict[str, Any] = field(default_factory=dict)
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "format": GRAPH_FORMAT,
+            "version": self.graph_version,
+            "id": self.graph_id,
+            "name": self.name,
+            "description": self.description,
+            "nodes": [node.to_dict() for node in self.nodes],
+            "edges": [edge.to_dict() for edge in self.edges],
+            "metadata": self.metadata,
+        }
+
+    @classmethod
+    def from_dict(
+        cls,
+        data: dict[str, Any],
+        *,
+        validate: bool = True,
+    ) -> WorkflowGraph:
+        if not isinstance(data, dict) or data.get("format") != GRAPH_FORMAT:
+            raise GraphError(
+                "UNSUPPORTED_GRAPH_FORMAT",
+                "O arquivo não é um NeuralMap pipeline graph compatível.",
+            )
+        version = str(data.get("version", ""))
+        if version.split(".", 1)[0] != GRAPH_VERSION.split(".", 1)[0]:
+            raise GraphError(
+                "UNSUPPORTED_GRAPH_VERSION",
+                f"Versão de grafo não suportada: {version}.",
+                ("Atualize o AILocal Universal para abrir este mapa.",),
+            )
+        if not isinstance(data.get("id"), str) or not isinstance(data.get("name"), str):
+            raise GraphError("INVALID_GRAPH_IDENTITY", "id e name do grafo precisam ser textos.")
+        if not isinstance(data.get("description", ""), str):
+            raise GraphError("INVALID_GRAPH_DESCRIPTION", "description precisa ser texto.")
+        if not isinstance(data.get("nodes"), list) or not isinstance(data.get("edges"), list):
+            raise GraphError("INVALID_GRAPH_COLLECTIONS", "nodes e edges precisam ser listas.")
+        metadata = data.get("metadata", {})
+        if not isinstance(metadata, dict):
+            raise GraphError("INVALID_GRAPH_METADATA", "metadata precisa ser um objeto.")
+        try:
+            graph = cls(
+                graph_id=data["id"],
+                name=data["name"],
+                description=data.get("description", ""),
+                graph_version=version,
+                nodes=[GraphNode.from_dict(item) for item in data["nodes"]],
+                edges=[GraphEdge.from_dict(item) for item in data["edges"]],
+                metadata=dict(metadata),
+            )
+        except (KeyError, TypeError, ValueError) as exc:
+            if isinstance(exc, GraphError):
+                raise
+            raise GraphError("INVALID_GRAPH", "A estrutura do grafo está incompleta.") from exc
+        if validate:
+            validate_graph(graph)
+        return graph
+
+    @classmethod
+    def load(cls, path: str | Path) -> WorkflowGraph:
+        try:
+            data = json.loads(Path(path).read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as exc:
+            raise GraphError(
+                "GRAPH_READ_ERROR",
+                f"Não foi possível abrir o NeuralMap: {exc}",
+            ) from exc
+        return cls.from_dict(data)
+
+    def save(self, path: str | Path) -> None:
+        validate_graph(self)
+        target = Path(path)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        temporary = target.with_name(target.name + ".tmp")
+        temporary.write_text(
+            json.dumps(self.to_dict(), ensure_ascii=False, indent=2) + "\n",
+            encoding="utf-8",
+        )
+        temporary.replace(target)
+
+
+def _validate_node_config(node: GraphNode) -> None:
+    config = node.config
+    if node.node_type.startswith("specialist."):
+        if node.enabled:
+            for key in ("engine", "model_id"):
+                if not isinstance(config.get(key), str) or not config[key].strip():
+                    raise GraphError(
+                        "SPECIALIST_CONFIG_INCOMPLETE",
+                        f"O nó '{node.label}' precisa definir engine e model_id.",
+                        ("Escolha um backend/modelo instalado ou desabilite o nó opcional.",),
+                    )
+        if config.get("plugin_ref") is not None and not isinstance(config["plugin_ref"], str):
+            raise GraphError("INVALID_PLUGIN_REF", "plugin_ref deve ser um identificador textual.")
+        for key in ("use_resource_budget", "optional"):
+            if key in config and not isinstance(config[key], bool):
+                raise GraphError(
+                    "INVALID_SPECIALIST_FLAG",
+                    f"{key} precisa ser booleano no nó '{node.label}'.",
+                )
+        generation = config.get("generation", {})
+        if not isinstance(generation, dict):
+            raise GraphError(
+                "INVALID_GENERATION_CONFIG",
+                f"Os parâmetros de geração de '{node.label}' devem ser um objeto.",
+            )
+        for key, value in generation.items():
+            if not isinstance(key, str) or not (
+                value is None
+                or isinstance(value, (str, int, float, bool))
+            ):
+                raise GraphError(
+                    "INVALID_GENERATION_VALUE",
+                    f"O parâmetro '{key}' do nó '{node.label}' precisa ser escalar JSON.",
+                )
+    if node.node_type == "control.loop":
+        maximum = config.get("max_iterations", 3)
+        if isinstance(maximum, bool) or not isinstance(maximum, int) or not 1 <= maximum <= 20:
+            raise GraphError(
+                "INVALID_LOOP_LIMIT",
+                "max_iterations deve ser um inteiro entre 1 e 20.",
+            )
+        review_node_id = config.get("review_node_id", "review")
+        retry_targets = config.get("default_retry_targets", [])
+        if not isinstance(review_node_id, str) or not review_node_id:
+            raise GraphError(
+                "INVALID_LOOP_REVIEW_NODE",
+                "review_node_id precisa identificar o nó de revisão.",
+            )
+        if not isinstance(retry_targets, list) or any(
+            not isinstance(target, str) for target in retry_targets
+        ):
+            raise GraphError(
+                "INVALID_LOOP_RETRY_TARGETS",
+                "default_retry_targets precisa ser uma lista de IDs de nós.",
+            )
+        if config.get("stop_condition", "approved") != "approved":
+            raise GraphError(
+                "UNSUPPORTED_LOOP_CONDITION",
+                "A versão 1 aceita somente a condição de parada 'approved'.",
+            )
+    if node.node_type == "filter.context":
+        maximum = config.get("max_characters", 24000)
+        if isinstance(maximum, bool) or not isinstance(maximum, int) or maximum < 256:
+            raise GraphError(
+                "INVALID_CONTEXT_LIMIT",
+                "max_characters precisa ser um inteiro de pelo menos 256.",
+            )
+        if not isinstance(config.get("preserve_attachments", True), bool):
+            raise GraphError(
+                "INVALID_ATTACHMENT_POLICY",
+                "preserve_attachments precisa ser booleano.",
+            )
+    if node.node_type == "hardware.profile":
+        profile = config.get("profile", "auto")
+        if not isinstance(profile, str) or profile not in {
+            "auto",
+            "ultra_light",
+            "minimal",
+            "balanced",
+            "performance",
+            "max_quality",
+        }:
+            raise GraphError("INVALID_HARDWARE_PROFILE", "Perfil de hardware desconhecido.")
+        protection_mode = config.get("protection_mode", "protected")
+        if not isinstance(protection_mode, str) or protection_mode not in {
+            "permissive",
+            "adaptive",
+            "protected",
+        }:
+            raise GraphError("INVALID_PROTECTION_MODE", "Modo de proteção desconhecido.")
+
+
+def _is_loop_back_edge(edge: GraphEdge, nodes: dict[str, GraphNode]) -> bool:
+    source = nodes.get(edge.source)
+    return bool(
+        source
+        and source.node_type == "control.loop"
+        and edge.source_port == "repeat"
+    )
+
+
+def topological_order(graph: WorkflowGraph) -> list[str]:
+    """Return DAG order after excluding the only permitted loop-back edges."""
+    nodes = {node.node_id: node for node in graph.nodes if node.enabled}
+    adjacency: dict[str, list[str]] = {node_id: [] for node_id in nodes}
+    indegree = dict.fromkeys(nodes, 0)
+    for edge in graph.edges:
+        if edge.source not in nodes or edge.target not in nodes:
+            continue
+        if _is_loop_back_edge(edge, nodes):
+            continue
+        adjacency[edge.source].append(edge.target)
+        indegree[edge.target] += 1
+
+    ready = sorted(node_id for node_id, degree in indegree.items() if degree == 0)
+    result: list[str] = []
+    while ready:
+        current = ready.pop(0)
+        result.append(current)
+        for target in sorted(adjacency[current]):
+            indegree[target] -= 1
+            if indegree[target] == 0:
+                ready.append(target)
+                ready.sort()
+    if len(result) != len(nodes):
+        raise GraphError(
+            "UNCONTROLLED_CYCLE",
+            "O grafo contém um ciclo que não passa por control.loop.repeat.",
+            ("Remova o ciclo ou conecte o retorno por um nó control.loop explícito.",),
+        )
+    return result
+
+
+def validate_graph(graph: WorkflowGraph) -> None:
+    if graph.graph_version != GRAPH_VERSION:
+        raise GraphError(
+            "UNSUPPORTED_GRAPH_VERSION",
+            f"Versão não suportada: {graph.graph_version}.",
+        )
+    if not graph.graph_id or not re.fullmatch(r"[A-Za-z0-9._-]{1,120}", graph.graph_id):
+        raise GraphError("INVALID_GRAPH_ID", "O identificador do grafo é inválido.")
+    if not graph.name.strip():
+        raise GraphError("INVALID_GRAPH_NAME", "O grafo precisa ter um nome.")
+    node_map: dict[str, GraphNode] = {}
+    for node in graph.nodes:
+        if not re.fullmatch(r"[A-Za-z0-9._-]{1,120}", node.node_id):
+            raise GraphError("INVALID_NODE_ID", f"Identificador de nó inválido: {node.node_id}.")
+        if node.node_id in node_map:
+            raise GraphError("DUPLICATE_NODE_ID", f"ID de nó duplicado: {node.node_id}.")
+        if node.node_type not in NODE_SPECS:
+            raise GraphError("UNKNOWN_NODE_TYPE", f"Tipo desconhecido: {node.node_type}.")
+        if not node.label.strip():
+            raise GraphError("INVALID_NODE_LABEL", "Todo nó precisa ter um rótulo.")
+        _validate_node_config(node)
+        node_map[node.node_id] = node
+
+    if not graph.nodes:
+        raise GraphError("EMPTY_GRAPH", "O NeuralMap não contém nós.")
+
+    edge_ids: set[str] = set()
+    seen_edges: set[tuple[str, str, str, str]] = set()
+    loop_nodes = [
+        node for node in graph.nodes
+        if node.enabled and node.node_type == "control.loop"
+    ]
+    if len(loop_nodes) > 1:
+        raise GraphError(
+            "MULTIPLE_LOOPS_UNSUPPORTED",
+            "A versão 1 permite um controlador de loop por grafo.",
+            ("Combine as revisões em um único specialist.review e control.loop.",),
+        )
+
+    for edge in graph.edges:
+        if edge.edge_id in edge_ids:
+            raise GraphError("DUPLICATE_EDGE_ID", f"ID de conexão duplicado: {edge.edge_id}.")
+        edge_ids.add(edge.edge_id)
+        signature = (edge.source, edge.source_port, edge.target, edge.target_port)
+        if signature in seen_edges:
+            raise GraphError("DUPLICATE_EDGE", "Existe uma conexão duplicada.")
+        seen_edges.add(signature)
+        if edge.source not in node_map or edge.target not in node_map:
+            raise GraphError("EDGE_NODE_MISSING", "Uma conexão referencia um nó inexistente.")
+        source_spec = NODE_SPECS[node_map[edge.source].node_type]
+        target_spec = NODE_SPECS[node_map[edge.target].node_type]
+        if edge.source_port not in source_spec.outputs:
+            raise GraphError(
+                "INVALID_SOURCE_PORT",
+                f"Porta de saída '{edge.source_port}' não existe em "
+                f"{node_map[edge.source].node_type}.",
+            )
+        if edge.target_port not in target_spec.inputs:
+            raise GraphError(
+                "INVALID_TARGET_PORT",
+                f"Porta de entrada '{edge.target_port}' não existe em "
+                f"{node_map[edge.target].node_type}.",
+            )
+        if _is_loop_back_edge(edge, node_map):
+            if node_map[edge.target].node_type not in {
+                "specialist.code", "specialist.chat", "specialist.image"
+            } or edge.target_port != "feedback":
+                raise GraphError(
+                    "INVALID_LOOP_BACK_EDGE",
+                    "control.loop.repeat só pode retornar a uma porta feedback de especialista.",
+                )
+
+    for node in graph.nodes:
+        if not node.enabled:
+            continue
+        required_ports = set(NODE_SPECS[node.node_type].required_inputs)
+        if (
+            node.node_type.startswith("specialist.")
+            and node.config.get("use_resource_budget", True)
+        ):
+            required_ports.add("budget")
+        connected_ports = {
+            edge.target_port
+            for edge in graph.edges
+            if edge.target == node.node_id
+            and node_map[edge.source].enabled
+        }
+        missing_ports = required_ports - connected_ports
+        if missing_ports:
+            raise GraphError(
+                "REQUIRED_INPUT_CONNECTION_MISSING",
+                f"O nó '{node.label}' não está conectado às portas obrigatórias: "
+                + ", ".join(sorted(missing_ports)),
+                ("Conecte cada porta obrigatória a uma saída compatível ou desabilite o nó.",),
+            )
+
+    if loop_nodes:
+        loop = loop_nodes[0]
+        incoming_review = [
+            edge for edge in graph.edges
+            if edge.target == loop.node_id and edge.target_port == "decision"
+        ]
+        review_id = loop.config.get("review_node_id")
+        if not any(
+            node_map[edge.source].node_type == "specialist.review"
+            and edge.source == review_id
+            and edge.edge_type == EdgeType.ON_FAILURE
+            for edge in incoming_review
+        ):
+            raise GraphError(
+                "LOOP_REVIEW_LINK_MISSING",
+                "control.loop precisa receber a decisão on_failure do specialist.review declarado.",
+            )
+        if not any(
+            _is_loop_back_edge(edge, node_map) for edge in graph.edges
+        ):
+            raise GraphError(
+                "LOOP_BACK_EDGE_MISSING",
+                "control.loop não possui retorno para nenhum especialista.",
+            )
+
+    enabled_types = {node.node_type for node in graph.nodes if node.enabled}
+    if "input.text" not in enabled_types:
+        raise GraphError("TEXT_INPUT_MISSING", "O grafo precisa de ao menos um nó input.text.")
+    if "output.response" not in enabled_types:
+        raise GraphError("RESPONSE_OUTPUT_MISSING", "O grafo precisa de um nó output.response.")
+
+    order = topological_order(graph)
+    enabled = {node.node_id: node for node in graph.nodes if node.enabled}
+    positions = {node_id: index for index, node_id in enumerate(order)}
+    adjacency: dict[str, list[str]] = {node_id: [] for node_id in enabled}
+    for edge in graph.edges:
+        if edge.source not in enabled or edge.target not in enabled:
+            continue
+        if _is_loop_back_edge(edge, enabled):
+            continue
+        if positions[edge.source] >= positions[edge.target]:
+            raise GraphError(
+                "INVALID_GRAPH_ORDER",
+                "As dependências do grafo não formam uma ordem de execução válida.",
+            )
+        adjacency[edge.source].append(edge.target)
+
+    input_nodes = [
+        node.node_id for node in enabled.values() if node.node_type == "input.text"
+    ]
+    response_nodes = {
+        node.node_id for node in enabled.values() if node.node_type == "output.response"
+    }
+    reachable: set[str] = set(input_nodes)
+    queue = list(input_nodes)
+    while queue:
+        current = queue.pop(0)
+        for target in adjacency.get(current, []):
+            if target not in reachable:
+                reachable.add(target)
+                queue.append(target)
+    if not reachable.intersection(response_nodes):
+        raise GraphError(
+            "OUTPUT_DISCONNECTED",
+            "Não existe caminho ativo entre input.text e output.response.",
+            ("Conecte a entrada a pelo menos um nó de processamento e à saída final.",),
+        )
