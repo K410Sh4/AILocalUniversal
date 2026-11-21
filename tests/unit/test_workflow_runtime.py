@@ -71,3 +71,40 @@ async def test_review_loop_restores_best_outputs_with_custom_node_ids() -> None:
     assert result.output["explanation"] == "explanation-for-code-v1"
     assert result.output["review"]["convergence"] == "limit_reached"
     assert result.output["review"]["best_iteration"] == 1
+
+
+
+@pytest.mark.asyncio
+async def test_dry_run_executes_specialist_shapes_without_calling_handlers() -> None:
+    graph = WorkflowGraph.load(TEMPLATE)
+    for node in graph.nodes:
+        if node.node_type == "hardware.profile":
+            node.enabled = False
+        if node.node_type.startswith("specialist."):
+            node.config["use_resource_budget"] = False
+
+    handlers = HandlerRegistry()
+    calls = []
+
+    async def forbidden_handler(_node, _inputs, _context):
+        calls.append("called")
+        raise AssertionError("dry-run must not invoke backend handlers")
+
+    for node_type in (
+        "specialist.code",
+        "specialist.chat",
+        "specialist.image",
+        "specialist.review",
+    ):
+        handlers.register(node_type, forbidden_handler)
+
+    result = await GraphRuntime(handlers).run(
+        graph,
+        "Gere uma solução de exemplo.",
+        dry_run=True,
+    )
+
+    assert result.success is True
+    assert calls == []
+    assert result.output["review"]["approved"] is True
+    assert result.output["image"]["status"] == "not_generated"
