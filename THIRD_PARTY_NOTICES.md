@@ -74,3 +74,8 @@ This is an inventory of the declared direct dependencies, not a certification of
 | serde_json | JSON serialization for runtime contracts and executor payloads | MIT OR Apache-2.0 | External dependency; not relicensed by this project |
 
 The exact resolved versions and transitive dependencies must be reviewed from cargo metadata / the generated lockfile before a release. Rust dependency licenses do not change the proprietary status of original AILocal Universal or K.IA code.
+
+
+## K.IA Runtime Host / Python Bridge
+
+No additional third-party dependency was added to Python. The Rust host continues to use serde and serde_json as declared above. The host protocol itself is an original local IPC contract; it is not based on a bundled third-party RPC server.

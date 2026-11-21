@@ -26,6 +26,7 @@ pub enum NetworkError {
     InvalidConnection(String),
     InvalidFeedback(String),
     InvalidLearningRate,
+    InvalidNetwork(String),
 }
 
 impl Display for NetworkError {
@@ -170,6 +171,94 @@ impl AdaptiveCognitiveNetwork {
             }
             _ => Ok(()),
         }
+    }
+
+    /// Valida também redes desserializadas de fontes externas.
+    pub fn validate(&self) -> Result<(), NetworkError> {
+        for (id, capability) in &self.capabilities {
+            if !id.is_valid()
+                || id != &capability.id
+                || capability.name.trim().is_empty()
+                || capability.domain.trim().is_empty()
+            {
+                return Err(NetworkError::InvalidNetwork(
+                    "Registro de capacidade inconsistente.".to_owned(),
+                ));
+            }
+        }
+        for (id, component) in &self.components {
+            if !id.is_valid()
+                || id != &component.id
+                || component.name.trim().is_empty()
+                || !component.baseline_quality.is_finite()
+                || !(0.0..=1.0).contains(&component.baseline_quality)
+                || component.supported_capabilities.is_empty()
+                || component
+                    .supported_capabilities
+                    .iter()
+                    .any(|capability| !self.capabilities.contains_key(capability))
+            {
+                return Err(NetworkError::InvalidNetwork(
+                    "Registro de componente inconsistente ou com capacidade ausente.".to_owned(),
+                ));
+            }
+        }
+        for (index, connection) in self.connections.iter().enumerate() {
+            self.validate_node(&connection.from)?;
+            self.validate_node(&connection.to)?;
+            if !connection.weight.is_finite()
+                || !(0.0..=1.0).contains(&connection.weight)
+                || connection.successes > connection.observations
+                || connection.from == connection.to
+            {
+                return Err(NetworkError::InvalidNetwork(
+                    "Conexão com peso, contador ou extremidade inválida.".to_owned(),
+                ));
+            }
+            if connection.kind == ConnectionKind::Supports {
+                match (&connection.from, &connection.to) {
+                    (NetworkNode::Capability(capability), NetworkNode::Component(component)) => {
+                        if !self.components[component]
+                            .supported_capabilities
+                            .contains(capability)
+                        {
+                            return Err(NetworkError::InvalidNetwork(
+                                "Conexão Supports contradiz as capacidades do componente."
+                                    .to_owned(),
+                            ));
+                        }
+                    }
+                    _ => {
+                        return Err(NetworkError::InvalidNetwork(
+                            "Conexão Supports precisa ser Capability -> Component.".to_owned(),
+                        ));
+                    }
+                }
+            }
+            if self.connections[..index].iter().any(|previous| {
+                previous.from == connection.from
+                    && previous.to == connection.to
+                    && previous.kind == connection.kind
+            }) {
+                return Err(NetworkError::InvalidNetwork(
+                    "Conexão tipada duplicada.".to_owned(),
+                ));
+            }
+        }
+        for feedback in &self.feedback_history {
+            let component = self.components.get(&feedback.component_id);
+            if !self.capabilities.contains_key(&feedback.capability_id)
+                || component.is_none_or(|item| {
+                    !item.supported_capabilities.contains(&feedback.capability_id)
+                })
+                || feedback.validation_ref.trim().is_empty()
+            {
+                return Err(NetworkError::InvalidNetwork(
+                    "Histórico de feedback contém referência inválida.".to_owned(),
+                ));
+            }
+        }
+        Ok(())
     }
 
     pub fn support_weight(&self, capability_id: &CapabilityId, component_id: &ComponentId) -> f32 {

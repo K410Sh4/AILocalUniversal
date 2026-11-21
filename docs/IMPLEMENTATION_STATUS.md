@@ -259,3 +259,18 @@ Implementado na branch feature/kia-rust-cognitive-runtime-v0.1:
 - CI Rust: fmt, clippy e cargo test.
 
 **Limites:** nenhum provider Ollama/llama.cpp, persistência, coleta física de hardware, execução concorrente, cancelamento, treinamento paramétrico ou mudanças estruturais de modelos. A reserva é lógica, não quota efetiva do sistema operacional. Validação manual no Arch Linux permanece pendente.
+
+
+## K.IA 0.2 — Runtime Host & Python Bridge
+
+Implementado na branch `feature/kia-runtime-host-bridge-v0.2`:
+- binário persistente `kia-runtime-host` com JSONL v1 e comandos health, replace_state, plan, record_feedback, inspect e shutdown;
+- validação de estado desserializado, IDs do grafo, referências, alvos, budget e executores anunciados pela aplicação;
+- planejamento Rust sem inferência falsa: o host recebe IDs de executores Python disponíveis, retorna o plano e deixa a aplicação executar;
+- cliente Python thread-safe com processo persistente, handshake, timeout, correlação de respostas, tratamento de EOF e shutdown;
+- conversores do registry NAPA e ModelRegistry para capacidades/componentes;
+- artefatos instalados de modelos só entram como componentes; custo e alvo desconhecidos permanecem inelegíveis, sem estimar RAM/VRAM pelo tamanho do arquivo;
+- conversor conservador de HardwareProfile para snapshot, sem presumir que uma GPU detectada tenha backend computacional disponível;
+- testes de protocolo subprocesso Rust e testes unitários Python para bridge/adapters.
+
+**Limite:** a ponte está disponível como pacote reutilizável, mas ainda não foi inserida no ciclo de vida do MainWindow/CognitiveTaskExecutor. O Python ainda executa os motores; Rust planeja. A próxima etapa integra o plano à execução cognitiva e instala adaptadores de inferência explícitos.

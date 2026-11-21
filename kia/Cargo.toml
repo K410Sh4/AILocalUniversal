@@ -1,11 +1,15 @@
 [package]
 name = "kia-cognitive-runtime"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 rust-version = "1.75"
-description = "Rust cognitive runtime foundation for K.IA / Artificial Brain"
+description = "Rust cognitive runtime foundation and local host for K.IA / Artificial Brain"
 license = "LicenseRef-AILocal-Universal-Proprietary"
 
 [dependencies]
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
+
+[[bin]]
+name = "kia-runtime-host"
+path = "src/bin/kia-runtime-host.rs"

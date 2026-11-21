@@ -112,3 +112,20 @@ cargo test --all-targets
 ~~~
 
 A CI roda estes três comandos separadamente dos testes Python.
+
+
+## K.IA 0.2 — Runtime Host & Python Bridge
+
+A crate agora gera o binário local `kia-runtime-host`. Ele mantém o grafo em memória e atende JSONL versionado pelo stdin/stdout. Comandos: health, replace_state, plan, record_feedback, inspect e shutdown.
+
+O protocolo aceita IDs de executores declarados pela aplicação; isso não faz o Rust executar os modelos. O host escolhe componentes e devolve ExecutionPlan. Python continua responsável por executar a seleção através dos adapters existentes. A sincronização de estado valida referências, alvos, snapshots e orçamento antes de substituir o estado em memória.
+
+O pacote `kia_bridge` fornece:
+- `KiaRuntimeClient`: inicia o executável sem shell, valida o handshake, serializa chamadas com lock, correlaciona request_id, aplica timeout de leitura e encerra por shutdown;
+- conversão das áreas NAPA para nós de capacidade;
+- conversão de ModelRecord/artefatos instalados em componentes, sem inferir RAM/VRAM pelo tamanho do arquivo;
+- custos e alvos explicitamente fornecidos; custo/alvo ausente torna o componente inelegível;
+- conversão de HardwareProfile para ResourceSnapshot, mantendo CPU/GPU/NPU conservadores;
+- criação de CognitiveRequest com as áreas efetivamente ativadas pela NAPA.
+
+Consulte `docs/KIA_RUNTIME_HOST_PROTOCOL.md` para o schema JSONL.

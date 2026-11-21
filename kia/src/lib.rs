@@ -5,6 +5,7 @@
 //! por implementações de ComponentExecutor.
 
 mod executor;
+mod host;
 mod ids;
 mod network;
 mod planner;
@@ -13,9 +14,13 @@ mod runtime;
 mod types;
 
 pub use executor::{ComponentExecutor, ExecutorRegistry};
+pub use host::{
+    HostCommand, HostError, HostRequest, HostResponse, HostState, RuntimeHost,
+    HOST_PROTOCOL_VERSION, MAX_REQUEST_BYTES,
+};
 pub use ids::{CapabilityId, ComponentId};
 pub use network::{AdaptiveCognitiveNetwork, NetworkError, PlasticityUpdate};
-pub use planner::{ExecutionPlan, PlannedComponent};
+pub use planner::{plan_with_executor_ids, ExecutionPlan, PlannedComponent};
 pub use resources::{
     ExecutionTarget, ProcessingProfile, ResourceBudget, ResourceError, ResourceSnapshot,
     ResourceVector,

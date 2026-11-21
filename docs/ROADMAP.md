@@ -183,11 +183,20 @@ A NeSA organiza conhecimento e recupera evidências. A NAPA decide quando consul
 
 **Limites:** sem adaptadores reais, persistência, Tokio, coleta física de hardware, concorrência/cancelamento, treinamento paramétrico ou plasticidade estrutural. Reserva de hardware é lógica, não quota real do kernel. Consulte docs/KIA_ARCHITECTURE.md.
 
-### K.IA 0.2–0.5 — evolução planejada
-- [ ] K.IA 0.2 — Persistência versionada, event log, idempotência e restauração da rede.
-- [ ] K.IA 0.3 — Adaptadores locais Ollama e llama.cpp, com protocolo e capacidades declaradas.
-- [ ] K.IA 0.4 — Hardware providers, execução concorrente limitada, timeout, cancelamento e leases.
-- [ ] K.IA 0.5 — Sincronização de NAPA, NeSA, NeuralModel Hub, NEE e Knowledge/RAG na Adaptive Cognitive Network.
+### K.IA 0.2 — Runtime Host & Python Bridge
+- [x] Binário local persistente com JSONL v1 e comandos health, replace_state, plan, record_feedback, inspect e shutdown.
+- [x] Validação do grafo desserializado, snapshot, orçamento e executores declarados pelo lado Python.
+- [x] Cliente Python com processo persistente, handshake, timeout, correlação de request_id e shutdown.
+- [x] Conversores NAPA/NeuralModel Hub/HardwareProfile para os contratos Rust.
+- [x] Custos/alvos desconhecidos permanecem inelegíveis; tamanho de artefato não vira estimativa de memória.
+- [x] Testes do subprocesso JSONL Rust e da ponte Python.
+- [ ] Integrar a ponte ao fluxo do Chat e do CognitiveTaskExecutor.
+
+### K.IA 0.3–0.5 — evolução planejada
+- [ ] K.IA 0.3 — Persistência versionada, event log, idempotência e restauração da rede.
+- [ ] K.IA 0.4 — Adaptadores locais Ollama e llama.cpp, com protocolo e capacidades declaradas.
+- [ ] K.IA 0.5 — Hardware providers, execução concorrente limitada, timeout por tarefa, cancelamento e leases.
+- [ ] K.IA 0.6 — Sincronização de NeSA, Neural Elastic Execution e Knowledge/RAG na Adaptive Cognitive Network.
 
 ### Neural Plasticity & Development
 - [ ] Plasticity 0.2 — benchmark de rotas, shadow mode, A/B, limiares e rollback.

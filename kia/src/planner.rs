@@ -85,7 +85,7 @@ fn score_component(
         .clamp(0.0, 1.0)
 }
 
-pub(crate) fn build_plan<F>(
+pub fn build_plan<F>(
     network: &AdaptiveCognitiveNetwork,
     request: &CognitiveRequest,
     snapshot: &ResourceSnapshot,
@@ -184,5 +184,19 @@ where
         network_version: network.version(),
         selections,
         reserved_resources: reserved,
+    })
+}
+
+
+/// Planeja usando IDs de executores conhecidos pelo processo da aplicação.
+pub fn plan_with_executor_ids(
+    network: &AdaptiveCognitiveNetwork,
+    request: &CognitiveRequest,
+    snapshot: &ResourceSnapshot,
+    budget: &ResourceBudget,
+    available_executors: &BTreeSet<ComponentId>,
+) -> Result<ExecutionPlan, RuntimeError> {
+    build_plan(network, request, snapshot, budget, |component_id| {
+        available_executors.contains(component_id)
     })
 }
