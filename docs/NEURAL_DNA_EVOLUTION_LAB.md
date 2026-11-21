@@ -30,12 +30,14 @@ Ambiente local isolado, Python 3.11+:
 | Seleção de destino por sinal do nicho | aprovado |
 | Limite de recurso e diferenciação parcial | aprovado |
 | Sinais insuficientes preservam progenitores | aprovado |
-| Determinismo | aprovado |
-| Rejeição de loci fora do domínio | aprovado |
+| Sensibilidade à atividade | aprovado |
+| Potência progenitora | aprovado |
+| Desempate determinístico | aprovado |
+| Rejeição de loci fora do domínio, incluindo NaN e infinitos | aprovado |
 | Rejeição de orçamento inválido | aprovado |
 | Conservação da população | aprovado |
 
-Resultado: **7 testes aprovados**. compileall aprovado. Ruff não estava instalado no ambiente de prototipagem; lint não foi declarado como aprovado.
+Resultado: **28 testes/casos aprovados**. compileall aprovado. Ruff não estava instalado no ambiente de prototipagem; lint não foi declarado como aprovado.
 
 ## Interpretação e limites
 
