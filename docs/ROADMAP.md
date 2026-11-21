@@ -92,12 +92,13 @@ As fases são entregas progressivas. Uma funcionalidade só é considerada concl
 - [ ] Validar a decisão e as estimativas no Arch com Qwen3 4B, Qwen3.5 e Qwen3-Coder-Next 80B; comparar com medições reais de RAM/VRAM e `ollama ps`.
 - [ ] Persistir benchmarks controlados de qualidade, latência, RAM/VRAM, estabilidade e estado quente/frio.
 - [ ] Adicionar orçamento de contexto configurável e recomendações por tarefa/capacidade com métricas de qualidade.
-- [ ] Implementar telemetria contínua, leases, concorrência e políticas de carregamento/descarregamento.
+- [x] Adicionar leases de ciclo de vida na aplicação: impedir pull/remoção enquanto o Chat usa o modelo e impedir início de uso durante mutação.
+- [ ] Integrar leases compartilhadas com Ollama/Rust, concorrência e telemetria contínua; automatizar carregamento/descarregamento somente após validação.
 - [x] Expor snapshot de residência Ollama via `/api/ps` no contrato Engine Adapter (`RunningModelSnapshot`), preservando digest, tamanho, VRAM, contexto e expiração reportados.
 - [x] Reconciliar snapshots com artefatos instalados por referência exata + digest; estados ausente/divergente/ambíguo permanecem inconclusivos e não reduzem a estimativa.
 - [x] Avaliar reutilização do runner residente quando digest e contexto coincidem, sem contabilizar pesos/KV/buffers já alocados novamente para uma solicitação serial.
 - [x] Integrar snapshots `/api/ps` ao seletor do modo Automático e ao fluxo ACCA/K.IA; manter modo Manual inalterado, carimbar observações e rejeitar snapshots com mais de 30 s ou próximos da expiração.
-- [ ] Integrar slots concorrentes reais, leases e unload confirmado; validar medições frias/quentes no Arch Linux.
+- [ ] Integrar slots concorrentes reais e leases Rust/Python, unload confirmado e medições frias/quentes no Arch Linux.
 - [ ] Validar seleção quente/fria no Arch Linux, comparando estimativas com RAM/VRAM observadas e confirmando o comportamento de unload/keep-alive.
 
 **Limites desta iteração:** as estimativas são teóricas e de confiança média; overhead de runtime é uma reserva fixa, não uma medição. O posicionamento híbrido é recomendação, não controle de offload. Na ausência de metadados suficientes, o seletor mantém o fallback legado e informa que não verificou a memória. Nenhum modelo é carregado/descarregado automaticamente por esta entrega.
