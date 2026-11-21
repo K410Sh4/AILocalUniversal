@@ -25,7 +25,6 @@ pub use runtime::{
     ExecutionStatus, RuntimeError,
 };
 pub use types::{
-    CognitiveCapability, CognitiveConnection, CognitiveFeedback, CognitiveRequest,
-    ConnectionKind, FeedbackOutcome, NeuralComponent, NeuralComponentKind, NetworkNode,
-    CONTRACT_SCHEMA_VERSION,
+    CognitiveCapability, CognitiveConnection, CognitiveFeedback, CognitiveRequest, ConnectionKind,
+    FeedbackOutcome, NetworkNode, NeuralComponent, NeuralComponentKind, CONTRACT_SCHEMA_VERSION,
 };

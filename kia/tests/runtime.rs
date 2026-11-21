@@ -1,8 +1,8 @@
 use kia_cognitive_runtime::{
     AdaptiveCognitiveNetwork, CognitiveCapability, CognitiveConnection, CognitiveFeedback,
     CognitiveRequest, CognitiveRuntime, ComponentExecutor, ComponentId, ConnectionKind,
-    ExecutionTarget, ExecutorRegistry, FeedbackOutcome, NeuralComponent, NeuralComponentKind,
-    NetworkNode, ProcessingProfile, ResourceBudget, ResourceSnapshot, ResourceVector,
+    ExecutionTarget, ExecutorRegistry, FeedbackOutcome, NetworkNode, NeuralComponent,
+    NeuralComponentKind, ProcessingProfile, ResourceBudget, ResourceSnapshot, ResourceVector,
     CONTRACT_SCHEMA_VERSION,
 };
 use serde_json::{json, Value};

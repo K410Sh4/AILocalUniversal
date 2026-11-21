@@ -131,9 +131,11 @@ impl CognitiveRequest {
             return Err("max_components precisa ser positivo.".to_owned());
         }
         let mut unique = BTreeSet::new();
-        if self.required_capabilities.iter().any(|capability| {
-            !capability.is_valid() || !unique.insert(capability)
-        }) {
+        if self
+            .required_capabilities
+            .iter()
+            .any(|capability| !capability.is_valid() || !unique.insert(capability))
+        {
             return Err("A solicitação contém IDs inválidos ou capacidades duplicadas.".to_owned());
         }
         Ok(())

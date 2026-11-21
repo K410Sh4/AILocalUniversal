@@ -1,4 +1,4 @@
-use crate::{ComponentId, CognitiveRequest, NeuralComponent};
+use crate::{CognitiveRequest, ComponentId, NeuralComponent};
 use serde_json::Value;
 use std::collections::HashMap;
 

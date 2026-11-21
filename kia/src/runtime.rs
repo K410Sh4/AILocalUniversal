@@ -1,6 +1,6 @@
 use crate::{
-    AdaptiveCognitiveNetwork, CognitiveRequest, ExecutorRegistry, PlannedComponent,
-    ResourceBudget, ResourceSnapshot,
+    AdaptiveCognitiveNetwork, CognitiveRequest, ExecutorRegistry, PlannedComponent, ResourceBudget,
+    ResourceSnapshot,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -80,7 +80,9 @@ impl CognitiveRuntime {
         budget: ResourceBudget,
         executors: ExecutorRegistry,
     ) -> Result<Self, RuntimeError> {
-        snapshot.validate().map_err(RuntimeError::InvalidResources)?;
+        snapshot
+            .validate()
+            .map_err(RuntimeError::InvalidResources)?;
         if !budget.max.fits_within(&snapshot.available) {
             return Err(RuntimeError::BudgetExceedsAvailability);
         }
@@ -100,10 +102,7 @@ impl CognitiveRuntime {
         &mut self.network
     }
 
-    pub fn plan(
-        &self,
-        request: &CognitiveRequest,
-    ) -> Result<crate::ExecutionPlan, RuntimeError> {
+    pub fn plan(&self, request: &CognitiveRequest) -> Result<crate::ExecutionPlan, RuntimeError> {
         crate::planner::build_plan(
             &self.network,
             request,
@@ -113,10 +112,7 @@ impl CognitiveRuntime {
         )
     }
 
-    pub fn execute(
-        &self,
-        request: &CognitiveRequest,
-    ) -> Result<ExecutionReport, RuntimeError> {
+    pub fn execute(&self, request: &CognitiveRequest) -> Result<ExecutionReport, RuntimeError> {
         let plan = self.plan(request)?;
         let mut outputs = Vec::new();
         let mut failures = Vec::new();
@@ -141,7 +137,12 @@ impl CognitiveRuntime {
                         capabilities: selection.capabilities.clone(),
                         value,
                     });
-                    events.push(event(selection, ExecutionStatus::Completed, duration_ms, None));
+                    events.push(event(
+                        selection,
+                        ExecutionStatus::Completed,
+                        duration_ms,
+                        None,
+                    ));
                 }
                 Err(reason) => {
                     let duration_ms = started.elapsed().as_millis() as u64;

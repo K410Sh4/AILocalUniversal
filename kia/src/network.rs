@@ -1,6 +1,6 @@
 use crate::{
     CapabilityId, CognitiveConnection, CognitiveFeedback, ComponentId, ConnectionKind,
-    FeedbackOutcome, NeuralComponent, NetworkNode,
+    FeedbackOutcome, NetworkNode, NeuralComponent,
 };
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
@@ -85,10 +85,7 @@ impl AdaptiveCognitiveNetwork {
         Ok(())
     }
 
-    pub fn add_component(
-        &mut self,
-        component: NeuralComponent,
-    ) -> Result<(), NetworkError> {
+    pub fn add_component(&mut self, component: NeuralComponent) -> Result<(), NetworkError> {
         if !component.id.is_valid()
             || component.name.trim().is_empty()
             || !component.baseline_quality.is_finite()
@@ -113,10 +110,7 @@ impl AdaptiveCognitiveNetwork {
         Ok(())
     }
 
-    pub fn add_connection(
-        &mut self,
-        connection: CognitiveConnection,
-    ) -> Result<(), NetworkError> {
+    pub fn add_connection(&mut self, connection: CognitiveConnection) -> Result<(), NetworkError> {
         self.validate_node(&connection.from)?;
         self.validate_node(&connection.to)?;
         if !connection.weight.is_finite()
@@ -135,13 +129,13 @@ impl AdaptiveCognitiveNetwork {
         if connection.kind == ConnectionKind::Supports {
             match (&connection.from, &connection.to) {
                 (NetworkNode::Capability(capability), NetworkNode::Component(component)) => {
-                    let node = self.components.get(component).ok_or_else(|| {
-                        NetworkError::UnknownComponent(component.clone())
-                    })?;
+                    let node = self
+                        .components
+                        .get(component)
+                        .ok_or_else(|| NetworkError::UnknownComponent(component.clone()))?;
                     if !node.supported_capabilities.contains(capability) {
                         return Err(NetworkError::InvalidConnection(
-                            "O componente não declara suporte à capacidade de origem."
-                                .to_owned(),
+                            "O componente não declara suporte à capacidade de origem.".to_owned(),
                         ));
                     }
                 }
@@ -178,11 +172,7 @@ impl AdaptiveCognitiveNetwork {
         }
     }
 
-    pub fn support_weight(
-        &self,
-        capability_id: &CapabilityId,
-        component_id: &ComponentId,
-    ) -> f32 {
+    pub fn support_weight(&self, capability_id: &CapabilityId, component_id: &ComponentId) -> f32 {
         self.connections
             .iter()
             .find(|connection| {
@@ -215,7 +205,10 @@ impl AdaptiveCognitiveNetwork {
             .components
             .get(&feedback.component_id)
             .ok_or_else(|| NetworkError::UnknownComponent(feedback.component_id.clone()))?;
-        if !component.supported_capabilities.contains(&feedback.capability_id) {
+        if !component
+            .supported_capabilities
+            .contains(&feedback.capability_id)
+        {
             return Err(NetworkError::InvalidFeedback(
                 "O componente não está associado à capacidade avaliada.".to_owned(),
             ));
@@ -256,7 +249,11 @@ impl AdaptiveCognitiveNetwork {
                 kind: ConnectionKind::Supports,
                 weight: updated_weight,
                 observations: 1,
-                successes: if feedback.outcome == FeedbackOutcome::Success { 1 } else { 0 },
+                successes: if feedback.outcome == FeedbackOutcome::Success {
+                    1
+                } else {
+                    0
+                },
             });
         }
         self.feedback_history.push(feedback);

@@ -96,7 +96,9 @@ where
     F: Fn(&ComponentId) -> bool,
 {
     request.validate().map_err(RuntimeError::InvalidRequest)?;
-    snapshot.validate().map_err(RuntimeError::InvalidResources)?;
+    snapshot
+        .validate()
+        .map_err(RuntimeError::InvalidResources)?;
     if !budget.max.fits_within(&snapshot.available) {
         return Err(RuntimeError::BudgetExceedsAvailability);
     }
