@@ -126,7 +126,7 @@ As fases são entregas progressivas. Uma funcionalidade só é considerada concl
 
 **Limite:** a Fase 5.0 simula substituição de cache, não inferência completa. Bytes lidos são misses simulados, não I/O físico; traces sintéticos não demonstram aceleração, qualidade ou viabilidade em hardware de 4 GB. Consulte `docs/NEURAL_ELASTIC_EXECUTION.md`.
 
-## Fase 5 — Agentes especialistas e autoengenharia
+## Fase 6 — Agentes especialistas e autoengenharia
 
 - [ ] System Analyst em modo somente leitura.
 - [ ] Code Analyst para análise do repositório e dependências.
@@ -137,7 +137,7 @@ As fases são entregas progressivas. Uma funcionalidade só é considerada concl
 
 **Saída:** agentes especializados que analisam e propõem mudanças sem modificar main autonomamente.
 
-## Fase 6 — Rede cooperativa (Swarm P2P)
+## Fase 7 — Rede cooperativa (Swarm P2P)
 
 - [ ] Identidade, pareamento e autorização explícita de nós.
 - [ ] Descoberta, heartbeat e telemetria.
@@ -147,7 +147,7 @@ As fases são entregas progressivas. Uma funcionalidade só é considerada concl
 - [ ] Transferência de arquivos com hash, integridade, retomada e controle de acesso.
 - [ ] Tolerância a falhas, nós offline e reconciliação de resultados.
 
-## Fase 7 — Laboratório de desempenho e backends experimentais
+## Fase 8 — Laboratório de desempenho e backends experimentais
 
 - [ ] BitNet e modelos de baixa precisão.
 - [ ] llama.cpp RPC e execução remota experimental.
