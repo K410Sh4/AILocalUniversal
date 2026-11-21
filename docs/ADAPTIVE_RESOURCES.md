@@ -123,15 +123,19 @@ O estimador atual calcula `pesos + cache KV + overhead` como requisito total e c
 
 Esta etapa é deliberadamente informativa: mesmo quando a identidade é confirmada, o estimador e o seletor continuam usando o caminho conservador de memória fria. O endpoint não fornece decomposição suficiente para calcular com segurança o custo incremental de pesos, KV e buffers. Assim, nenhuma memória é subtraída e nenhum candidato passa a ser considerado viável apenas por estar residente.
 
-**Próxima etapa — contabilização residente segura:**
+**Etapa 3 implementada — avaliação de capacidade residente:** `resources.residency.assess_resident_capacity()` verifica identidade confirmada, footprint reportado coerente, contexto configurado suficiente e uma única solicitação concorrente. Quando tudo coincide, retorna `reuse_ready` e `incremental_runner_bytes=0`: pesos, KV e buffers do runner já estão alocados e não devem ser somados novamente para uma nova solicitação serial dentro da capacidade existente.
 
-1. Reconciliar o digest de `RunningModelSnapshot` com o digest do artefato instalado. Divergência ou digest ausente mantém o caminho frio/conservador.
-2. Separar o custo de carregamento frio do custo incremental sem inferir uso de KV a partir apenas de `context_length`.
-3. Não contar pesos novamente como nova alocação quando a identidade residente for comprovadamente idêntica e a medição de memória disponível já refletir a residência; preservar a margem para KV adicional, buffers e overhead ainda não medidos.
-4. Manter reservas de residência separadas dos leases temporários por tarefa. A reserva só é liberada após confirmação de unload/expiração.
-5. Validar as estimativas com medições simultâneas de RAM/VRAM e estados frios/quentes no Arch Linux.
+O zero representa somente nova alocação do runner; não significa consumo zero do processo ou do sistema. A avaliação não subtrai `size` de RAM/VRAM livre, não infere decomposição de memória e não aprova slots concorrentes. Digest ausente/divergente, telemetria incompleta, contexto maior ou concorrência não comprovada retornam estados de fallback. O método está exposto no `AdaptiveResourceManager`, mas ainda não está conectado ao seletor principal nem ao ciclo de vida da UI.
 
-O campo `context_length` reportado pelo runtime é a capacidade/configuração de contexto do runner, não prova da quantidade efetivamente ocupada no cache KV. O estimador incremental permanece pendente até haver uma política conservadora validada em cargas reais.
+**Próxima etapa — integração operacional segura:**
+
+1. Conectar a avaliação de capacidade residente ao seletor e ao fluxo Chat, obtendo snapshots atuais do Engine Adapter sem alterar o modo Manual.
+2. Integrar slots reais de concorrência, fila e leases; mais de uma solicitação permanece no caminho conservador até haver telemetria confiável.
+3. Manter reservas de residência separadas dos leases temporários por tarefa. A reserva só é liberada após confirmação de unload/expiração.
+4. Coletar medições frias/quentes simultâneas de RAM/VRAM, tamanho do runner, contexto, latência e throughput no Arch Linux.
+5. Calibrar previsões por modelo, quantização, backend e hardware com traces reproduzíveis e rollback.
+
+O campo `context_length` reportado pelo runtime é a capacidade/configuração do runner, não a quantidade de tokens atualmente ocupados no cache KV. A avaliação residente apenas verifica se a capacidade configurada comporta a tarefa; não tenta calcular ocupação atual do KV.
 
 ## Limites desta versão
 
