@@ -1,3 +1,5 @@
+from dataclasses import replace
+
 import pytest
 
 from engines.base import EngineCapabilities, ModelInfo, RunningModelSnapshot
@@ -219,19 +221,17 @@ def test_selector_uses_cold_estimate_when_resident_context_is_too_small() -> Non
         quantization="Q4_K_M",
         kv_bytes_per_token=147_456,
     )
-    record = ModelRecord(
-        **{
-            **record.to_dict(),
-            "artifacts": (
-                ModelArtifact(
-                    runtime="ollama",
-                    reference="qwen3:4b",
-                    installed=True,
-                    digest="sha256:qwen",
-                    quantization="Q4_K_M",
-                ),
+    record = replace(
+        record,
+        artifacts=(
+            ModelArtifact(
+                runtime="ollama",
+                reference="qwen3:4b",
+                installed=True,
+                digest="sha256:qwen",
+                quantization="Q4_K_M",
             ),
-        }
+        ),
     )
     running = RunningModelSnapshot(
         name="qwen3:4b",
