@@ -1,23 +1,23 @@
-# BA Core 0.1 — Spatial Adaptation Substrate
+# BA Core 0.3 — Spatial Signal Ecology
 
 Copyright © 2026 K410Sh4. All rights reserved.  
 SPDX-License-Identifier: LicenseRef-AILocal-Universal-Proprietary
 
-`ba-core` is an independent Rust experiment for the **Brain Artificial (BA)**. The BA is a distinct adaptive and developmental system, not a conventional Artificial Intelligence model. This crate is neither an LLM nor a model executor.
+ba-core is an independent experimental substrate for the **Brain Artificial (BA)**, a distinct adaptive and developmental system. It is not a conventional Artificial Intelligence model, LLM or model executor.
 
-## Included in 0.1
+## 0.3 additions
 
-- Regions with independently observable local environmental conditions (two normalized dimensions).
-- Local units with bounded phenotype and receptor-like sensitivity.
-- Local phenotypic adaptation, separate from inherited/genetic change.
-- Pairwise spatial signal transport with explicit permeability.
-- A conservative simultaneous transport update.
-- Validation for identifiers, finite normalized state and transport stability.
-- Mean and worst-region fitness metrics.
+- Separate regional signal sources, transport, uptake and degradation.
+- Volume-aware amount conservation across unequal regions.
+- Explicit transport stability bound.
+- Exact local linear source/sink integration.
+- Auditable production/uptake/degradation mass ledger.
+- Bounded Hill-type receptor exposure, without assuming the Hill coefficient equals receptor count.
+- Deterministic tests for conservation, barriers, stability, reaction partitioning and receptor response.
 
-## Deliberately not included
+## Deliberately excluded
 
-No genetic inheritance, mutation, reproduction, developmental differentiation, reaction-diffusion chemistry, energy economy, persistence or K.BA bridge is claimed in this version. Those mechanisms require separate hypotheses and tests.
+No coupling of signals to phenotype, no directed transport, receptor internalization, binding reservoirs, feedback-regulated sources, homeostasis, differentiation or heredity. Those require independent validation.
 
 ## Run
 
@@ -27,4 +27,4 @@ cargo clippy --all-targets --all-features -- -D warnings
 cargo test --all-targets
 ```
 
-See [the validation protocol](../docs/BA_CORE_V0.1_VALIDATION.md) and [the 0.2 benchmark matrix](../docs/BA_CORE_V0.2_BENCHMARK_MATRIX.md) for experimental gates and interpretation limits.
+See the 0.1 validation protocol, 0.2 benchmark matrix and 0.3 signal ecology validation document.

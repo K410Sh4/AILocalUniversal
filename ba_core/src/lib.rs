@@ -7,6 +7,8 @@
 //! and conservative signal transport between regions. It is not an AI model,
 //! a language model, or a claim of biological equivalence.
 
+pub mod signal_ecology;
+
 use std::collections::BTreeSet;
 
 pub type RegionId = u32;
