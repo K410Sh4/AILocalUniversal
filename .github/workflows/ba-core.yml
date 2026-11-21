@@ -5,6 +5,7 @@ name: BA Core
 on:
   push:
     branches:
+      - feature/ba-core-benchmark-matrix-v0.2
       - feature/ba-core-spatial-adaptation-v0.1
   pull_request:
     branches:
