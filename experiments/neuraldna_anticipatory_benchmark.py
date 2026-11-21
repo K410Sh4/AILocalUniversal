@@ -343,11 +343,37 @@ def run() -> None:
                 )
                 for seed in range(30)
             ]
+            fitness_mean = statistics.fmean(
+                result.geometric_mean_fitness for result in results
+            )
+            cue_mean = statistics.fmean(
+                result.cue_accuracy_at_response for result in results
+            )
+            history_mean = statistics.fmean(
+                result.history_forecast_accuracy for result in results
+            )
+            plasticity_mean = statistics.fmean(
+                result.mean_plasticity for result in results
+            )
+            reserve_mean = statistics.fmean(
+                result.mean_diversity_reserve for result in results
+            )
+            forecast_uncertainty_mean = statistics.fmean(
+                result.mean_forecast_uncertainty for result in results
+            )
+            volatility_mean = statistics.fmean(
+                result.environmental_change_rate for result in results
+            )
+            entropy_mean = statistics.fmean(
+                result.transition_entropy for result in results
+            )
             print(
-                f"  {strategy:22s} "
-                f"fitness={statistics.fmean(r.geometric_mean_fitness for r in results):.4f} "
-                f"cue={statistics.fmean(r.cue_accuracy_at_response for r in results):.3f} "
-                f"history={statistics.fmean(\n                    r.history_forecast_accuracy for r in results\n                ):.3f} "
+                f"  {strategy:22s} fitness={fitness_mean:.4f} "
+                f"cue={cue_mean:.3f} history={history_mean:.3f} "
+                f"plasticity={plasticity_mean:.3f} reserve={reserve_mean:.3f} "
+                f"forecast_uncertainty={forecast_uncertainty_mean:.3f} "
+                f"volatility={volatility_mean:.3f} entropy={entropy_mean:.3f}"
+            ):.3f} "
                 f"plasticity={statistics.fmean(r.mean_plasticity for r in results):.3f} "
                 f"reserve={statistics.fmean(r.mean_diversity_reserve for r in results):.3f} "
                 f"forecast_uncertainty={statistics.fmean(r.mean_forecast_uncertainty for r in results):.3f} "
