@@ -73,3 +73,24 @@ def test_parameter_sweep_preserves_invariants():
         assert len(result.progenitors)+result.differentiated_total==n+result.divisions
         checked+=1
     assert checked>1000
+
+
+def test_capacity_pressure_preserves_unselected_resident_progenitors():
+    policy = LineagePolicy(
+        activation_rate=1.0,
+        activation_half_saturation=0.01,
+        crowding_feedback=0.0,
+        base_self_renewal=1.0,
+        homeostatic_self_renewal=0.0,
+        differentiation_pressure=0.0,
+        max_lineage_depth=1,
+    )
+    resident = NeuralStemCell(potency=0.7, lineage_depth=1)
+    dividing = NeuralStemCell(potency=1.0, lineage_depth=0)
+    result = advance_region(
+        genome(), niche(capacity=2), [dividing, resident], policy, seed=7
+    )
+    assert resident in result.progenitors
+    assert len(result.progenitors) == 2
+    assert result.differentiated_total == 1
+    assert len(result.progenitors) + result.differentiated_total == 3
