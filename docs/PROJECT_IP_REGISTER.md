@@ -17,9 +17,10 @@ SPDX-License-Identifier: LicenseRef-AILocal-Universal-Proprietary
 | Neural Elastic Execution | Contratos de traces MoE, simulador de cache, políticas de substituição, métricas e ferramentas de benchmark originais | Simulador inicial na branch feature/neural-elastic-simulator-v1 |
 | NAPA — Neural Adaptive Plasticity Architecture | Taxonomia de áreas cognitivas, contratos, registry, classificador multilabel e integração operacional original quando presentes | NAPA 1.0 na branch feature/napa-cognitive-area-registry-v1 |
 | NeSA — Neural Semantic Atlas | Contratos de páginas semânticas, indexador extrativo, catálogo persistente e ferramentas originais de inspeção/recuperação do Atlas quando presentes | NeSA 0.1 na branch feature/nesa-semantic-page-indexer-v0.1 |
-| K.IA / Artificial Brain | Rust Cognitive Runtime, Adaptive Cognitive Network, contratos tipados, política de seleção, orçamento lógico, conexões e mecanismos originais de plasticidade operacional quando presentes | K.IA 0.1 na branch feature/kia-rust-cognitive-runtime-v0.1 |
+| K.IA — Runtime de coordenação | Rust Cognitive Runtime, contratos tipados, política de seleção, orçamento lógico e mecanismos de execução originais quando presentes | K.IA 0.1–0.5 em branches dedicadas |
+| Brain Artificial (BA) | Arquitetura própria de desenvolvimento e organização artificial, especialização regional, adaptação ambiental, homeostase, comunicação e evolução estrutural; distinta de IA convencional | Pesquisa conceitual e experimental; não equivale ainda a um sistema operacional completo |
 | Swarm / P2P | Contratos, identidade, autorização, protocolos e execução cooperativa originais quando codificados | Roadmap / arquitetura |
-| NeuralDNA — Artificial Heredity and Development | Genoma artificial, loci de personalidade/preferências/predisposições, epigenoma, desenvolvimento da BA, recombinação, mutação, proveniência, avaliação ambiental, ReactionNorm, predição ambiental adquirida e protocolos de integração | Especificação; NeuralStem 0.1, linhagem regional 0.2, avaliação ambiental 0.3, protocolo 0.4 e benchmarks antecipatório 0.5 e de nichos regionais 0.6 em branches empilhadas |
+| NeuralDNA — Artificial Heredity and Development | Genoma artificial, loci de personalidade/preferências/predisposições, epigenoma, desenvolvimento da BA, recombinação, mutação, proveniência, avaliação ambiental, ReactionNorm, predição ambiental adquirida e protocolos de integração | Especificação; NeuralStem 0.1, linhagem regional 0.2, avaliação ambiental 0.3, protocolo 0.4 e benchmarks antecipatório 0.5, nichos regionais 0.6 e comunicação espacial 0.7 em branches empilhadas |
 | Documentação e schemas | Texto técnico, diagramas, exemplos, testes e formatos originais | Evolução contínua |
 
 ## Limites de titularidade
@@ -51,6 +52,16 @@ A branch `feature/neuraldna-regional-niche-benchmark-v0.6` acrescenta a implemen
 O registro cobre código, testes, documentação, hipóteses, parâmetros e protocolo de benchmark originais. Conceitos de nicho ecológico, microambiente celular, sinalização intercelular, heterogeneidade espacial e homeostase permanecem conhecimentos científicos gerais, atribuídos às respectivas fontes.
 
 O benchmark não é uma implementação clínica, não processa sinais cerebrais humanos e não altera o genoma da BA.
+
+Copyright © 2026 K410Sh4. All rights reserved.  
+SPDX-License-Identifier: LicenseRef-AILocal-Universal-Proprietary
+
+
+## Addendum NeuralDNA 0.7 — comunicação espacial
+
+A branch `feature/neuraldna-spatial-communication-v0.7` registra código, testes, protocolo experimental e documentação originais para comparar topologias de comunicação entre regiões, fronteiras de nichos, agregação local, perda de mensagens, latência e custo de coordenação.
+
+A Brain Artificial (BA) é registrada como linha arquitetural própria, distinta de IA convencional e de modelos generativos. K.IA permanece runtime separado de coordenação. Os experimentos 0.5–0.7 não demonstram uma BA completa e não devem ser apresentados como tal.
 
 Copyright © 2026 K410Sh4. All rights reserved.  
 SPDX-License-Identifier: LicenseRef-AILocal-Universal-Proprietary
