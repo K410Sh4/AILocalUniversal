@@ -46,8 +46,8 @@ def test_close_event_refuses_to_close_while_worker_is_still_running(
     timeout: int,
 ) -> None:
     monkeypatch.setattr(
-        "app.main_window.QMessageBox.information",
-        lambda *_args: None,
+        "app.main_window.QMessageBox",
+        SimpleNamespace(information=lambda *_args: None),
     )
     worker = FakeWorker(wait_result=False)
     window = SimpleNamespace(
