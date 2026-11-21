@@ -32,6 +32,9 @@ def test_worker_cancel_tolerates_event_loop_shutdown_race() -> None:
         def done(self) -> bool:
             return False
 
+        def cancel(self) -> None:
+            return None
+
     graph = WorkflowGraph.load("workflows/templates/multi_specialist.pipeline.graph.json")
     worker = NeuralMapWorker(
         GraphRuntime(HandlerRegistry()),
