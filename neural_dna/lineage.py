@@ -94,25 +94,32 @@ def advance_region(genome: DevelopmentGenome, niche: RegionalNiche,
     divisions = min(len(candidates), resource_limit)
     if policy.max_divisions_per_step is not None:
         divisions = min(divisions, policy.max_divisions_per_step)
-    selected = set(candidates[:divisions])
+    selected_order = candidates[:divisions]
+    selected = set(selected_order)
     fate = _fate_index(genome, niche.demand)
     differentiated = [0, 0, 0]
-    next_cells: list[NeuralStemCell] = []
-    for i, cell in enumerate(cells):
-        if i not in selected:
-            next_cells.append(cell)
-            continue
+    # Preserve every non-dividing progenitor. Newly generated progenitors compete
+    # only for the remaining niche capacity; excess daughters commit to the
+    # dominant fate instead of silently displacing unrelated resident cells.
+    next_cells: list[NeuralStemCell] = [
+        cell for index, cell in enumerate(cells) if index not in selected
+    ]
+    for index in selected_order:
+        cell = cells[index]
         for _ in range(2):
-            if cell.lineage_depth+1 <= policy.max_lineage_depth and rng.random() < self_renewal:
-                next_cells.append(NeuralStemCell(
-                    potency=max(0.0, min(1.0, cell.potency*policy.potency_decay)),
-                    lineage_depth=cell.lineage_depth+1))
+            remains_progenitor = (
+                cell.lineage_depth + 1 <= policy.max_lineage_depth
+                and rng.random() < self_renewal
+            )
+            if remains_progenitor and len(next_cells) < niche.capacity:
+                next_cells.append(
+                    NeuralStemCell(
+                        potency=max(0.0, min(1.0, cell.potency * policy.potency_decay)),
+                        lineage_depth=cell.lineage_depth + 1,
+                    )
+                )
             else:
                 differentiated[fate] += 1
-    overflow = max(0, len(next_cells)-niche.capacity)
-    if overflow:
-        del next_cells[-overflow:]
-        differentiated[fate] += overflow
     used = divisions*genome.resource_cost
     return RegionalStepResult(niche.region_id, tuple(next_cells), tuple(differentiated),
         len(candidates), divisions, used, max(0.0, niche.available_resource-used),
