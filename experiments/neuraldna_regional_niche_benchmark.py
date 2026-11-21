@@ -9,7 +9,6 @@ SPDX-License-Identifier: LicenseRef-AILocal-Universal-Proprietary
 from __future__ import annotations
 
 import math
-import random
 import statistics
 from dataclasses import dataclass
 
@@ -183,7 +182,7 @@ def simulate_regional_trial(
         if received_global is not None:
             global_signal_count += region_count
 
-        for region, environment in enumerate(environments):
+        for region in range(region_count):
             target = target_states[region]
             local_cue = local_cues[region][step]
             history = history_predictions[region][step]
