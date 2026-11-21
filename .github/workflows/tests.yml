@@ -3,6 +3,7 @@ name: Tests
 on:
   push:
     branches:
+      - feature/ba-core-benchmark-matrix-v0.2
       - main
       - bootstrap/project-structure
       - feature/rag-v1
