@@ -9,6 +9,7 @@ on:
       - feature/neural-model-hub-v1
       - feature/adaptive-resource-manager-v1
       - feature/chat-management-resource-profiles-v1
+      - feature/neural-elastic-simulator-v1
   pull_request:
     branches:
       - main
@@ -17,6 +18,7 @@ on:
       - feature/neural-model-hub-v1
       - feature/adaptive-resource-manager-v1
       - feature/chat-management-resource-profiles-v1
+      - feature/neural-elastic-simulator-v1
 
 jobs:
   unit-tests:
