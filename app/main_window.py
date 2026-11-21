@@ -911,6 +911,8 @@ class MainWindow(QMainWindow):
             model_references=tuple(model.name for model in self.models),
             local_engine_endpoint=self._is_local_engine_endpoint(self.config.base_url),
             knowledge_enabled=self.config.knowledge_enabled,
+            running_models=self.running_models,
+            concurrent_requests=1,
         )
 
     def _apply_kia_plan(self, task: CognitiveTask, decision) -> bool:
