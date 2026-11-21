@@ -15,9 +15,10 @@ diagrams, interface designs, original examples, and other original creative
 materials authored for or incorporated into this project by its rights holder,
 including the AILocal Universal, Cognitive Pipeline, Cognitive Task Executor,
 Validation Layer, NeuralMap, NeuralPlugin, NeuralPlugin Manager, NeuralInjector
-Engine, NeuralInjector Package Specification (NIP), and the .neuralinjector
-format implementations and documentation, to the extent those materials are
-present in the repository and owned by the rights holder.
+Engine, NeuralInjector Package Specification (NIP), the .neuralinjector
+format implementations and documentation, and Neural Elastic Execution
+contracts, simulator, policies, and original tooling, to the extent those
+materials are present in the repository and owned by the rights holder.
 
 2. ALL RIGHTS RESERVED — NO GENERAL LICENSE
 
