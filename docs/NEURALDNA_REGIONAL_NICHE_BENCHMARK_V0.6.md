@@ -73,7 +73,28 @@ This is a deliberately simple communication model. It does not yet model topolog
 
 The acquired transition model and predictor calibration are region-specific. They are runtime experience, not inherited genotype and not epigenetic marks.
 
-## 6. Required hypotheses
+## 6. Initial CI observations
+
+The first reproducible GitHub Actions run used 20 paired seeds, four regions, 400 steps, 0.95 cue accuracy, two steps of development latency, two steps of communication latency, and matching signal anticipation.
+
+| Scenario | Strategy | Fitness | Selected accuracy | Shared-signal use |
+|---|---|---:|---:|---:|
+| Shared stable niche | Local cue | 0.8430 | 0.950 | 0.000 |
+| Shared stable niche | Global signal | 0.9532 | 0.994 | 0.995 |
+| Shared stable niche | Local history | 0.9955 | 0.998 | 0.000 |
+| Shared stable niche | Adaptive network | 0.8955 | 0.996 | 0.179 |
+| Divergent local niches | Local cue | 0.8430 | 0.950 | 0.000 |
+| Divergent local niches | Global signal | 0.2728 | 0.576 | 0.995 |
+| Divergent local niches | Adaptive local | 0.8311 | 0.973 | 0.000 |
+| Divergent local niches | Adaptive network | 0.8310 | 0.973 | 0.001 |
+
+Regional divergence was 0.000 in the shared stable scenario and 0.663 in the divergent scenario.
+
+**Interpretation:** a shared signal can aggregate independent noise, but a global-only policy collapses when regions occupy different niches. The adaptive network almost completely suppresses the shared signal in the divergent scenario. However, it did not outperform the simpler local-cue baseline in geometric fitness: calibration, reserve, and adaptation costs remain measurable. In the shared stable scenario, local history already predicts the environment extremely well, so the shared signal adds little beyond that predictor.
+
+This is a useful negative result, not a failure to hide: coordination is not automatically beneficial, and extra plasticity is not free. The next controller revision must compare marginal predictive gain against calibration, communication, and plasticity costs before selecting a shared pathway. Do not integrate the current adaptive policy into NeuralStem based only on these results.
+
+## 7. Required hypotheses
 
 1. In a common niche with independent signal noise, aggregation can improve shared-signal reliability.
 2. In divergent niches, local cues should outperform a shared majority signal for at least some regions.
@@ -83,7 +104,7 @@ The acquired transition model and predictor calibration are region-specific. The
 6. Regional diversity reserve should respond to predictive uncertainty, not raw environmental change rate.
 7. No communication strategy should dominate across all niche configurations.
 
-## 7. Validation gate
+## 8. Validation gate
 
 Automated tests cover determinism, bounded outputs, local-vs-global performance under divergent niches, noise aggregation in a shared stochastic niche, adaptive signal selection, communication-delay compensation, and invalid parameter rejection.
 
@@ -100,12 +121,12 @@ Report per-region distributions and worst-region performance, not only a global 
 
 Do not add mutation, recombination, or multi-generation selection in this stage. Do not connect the controller to NeuralStem until the local/shared policy demonstrates repeatable gains over local-only and global-only baselines.
 
-## 8. Limits
+## 9. Limits
 
 The model has discrete states, synthetic cues, a majority-vote broadcast, and simple multiplicative fitness. It omits continuous spatial fields, cell populations, developmental morphogens, real signal transport, energy budgets, topology learning, and biological regulatory networks. Its output is an engineering comparison, not a biological claim.
 
 The next experimental refinement should introduce spatially structured regions and weighted neighborhood communication. Only after that should the project define a production `RegionalEnvironmentalPolicy` contract.
 
-## 9. Ownership and provenance
+## 10. Ownership and provenance
 
 This document, benchmark implementation, tests, and original experimental protocol are original AILocal Universal project materials, subject to the project's proprietary license. Scientific concepts and cited publications remain attributable to their respective authors.
