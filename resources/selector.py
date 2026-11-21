@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from engines.base import ModelInfo
+from engines.base import ModelInfo, RunningModelSnapshot
 from engines.model_selector import ModelSelectionError
 from model_hub.contracts import ModelRecord
 from model_hub.hardware import HardwareProfile
@@ -15,6 +15,11 @@ from resources.contracts import (
 )
 from resources.estimator import ResourceEstimator
 from resources.profiles import ResourceProfile, normalize_resource_profile
+from resources.residency import (
+    ResidentCapacityAssessment,
+    ResidentCapacityStatus,
+    assess_resident_capacity,
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -24,6 +29,7 @@ class ModelSelectionResult:
     explanation: str
     estimate: ModelResourceEstimate
     alternatives: tuple[str, ...] = ()
+    residency_assessment: ResidentCapacityAssessment | None = None
 
 
 class AdaptiveModelSelector:
@@ -51,6 +57,25 @@ class AdaptiveModelSelector:
             reasons=("Não há ficha local suficiente para estimar a memória.",),
         )
 
+    @staticmethod
+    def _resident_estimate(
+        record: ModelRecord,
+        context_tokens: int,
+        assessment: ResidentCapacityAssessment,
+    ) -> ModelResourceEstimate:
+        return ModelResourceEstimate(
+            model_id=record.record_id,
+            context_tokens=context_tokens,
+            quantization=None,
+            weight_bytes=0,
+            kv_cache_bytes=0,
+            runtime_overhead_bytes=0,
+            total_required_bytes=0,
+            placement=ResourcePlacement.RESIDENT,
+            confidence=EstimateConfidence.OBSERVED,
+            reasons=(assessment.reason,),
+        )
+
     def select(
         self,
         models: list[ModelInfo],
@@ -61,7 +86,15 @@ class AdaptiveModelSelector:
         context_tokens: int = 4096,
         task_category: str | None = None,
         resource_profile: str | ResourceProfile = ResourceProfile.MEDIUM,
+        running_models: list[RunningModelSnapshot] | None = None,
+        concurrent_requests: int = 1,
     ) -> ModelSelectionResult:
+        if (
+            isinstance(concurrent_requests, bool)
+            or not isinstance(concurrent_requests, int)
+            or concurrent_requests <= 0
+        ):
+            raise ValueError("concurrent_requests precisa ser um inteiro positivo.")
         selected_profile = normalize_resource_profile(resource_profile)
         profile_note = (
             f"Perfil de processamento: {selected_profile.value} "
@@ -77,14 +110,31 @@ class AdaptiveModelSelector:
             )
 
         evaluated: list[tuple[ModelInfo, ModelResourceEstimate, ModelRecord | None]] = []
+        residency_assessments: dict[str, ResidentCapacityAssessment] = {}
         for model in candidates:
             record_id = f"ollama:{model.name.casefold()}"
             record = records.get(record_id)
-            estimate = (
-                self.estimator.estimate(record, hardware, context_tokens=context_tokens)
-                if record is not None
-                else self._unknown_estimate(model.name, context_tokens)
-            )
+            assessment = None
+            if record is not None and running_models is not None:
+                assessment = assess_resident_capacity(
+                    record,
+                    running_models,
+                    context_tokens=context_tokens,
+                    concurrent_requests=concurrent_requests,
+                )
+                residency_assessments[model.name] = assessment
+            if (
+                assessment is not None
+                and assessment.status is ResidentCapacityStatus.REUSE_READY
+                and record is not None
+            ):
+                estimate = self._resident_estimate(record, context_tokens, assessment)
+            else:
+                estimate = (
+                    self.estimator.estimate(record, hardware, context_tokens=context_tokens)
+                    if record is not None
+                    else self._unknown_estimate(model.name, context_tokens)
+                )
             evaluated.append((model, estimate, record))
 
         viable = [
@@ -94,6 +144,7 @@ class AdaptiveModelSelector:
                 ResourcePlacement.GPU,
                 ResourcePlacement.CPU,
                 ResourcePlacement.HYBRID,
+                ResourcePlacement.RESIDENT,
             }
         ]
         if viable:
@@ -103,9 +154,15 @@ class AdaptiveModelSelector:
             )
             if preferred is not None:
                 chosen = preferred
-                reason = "A preferência do usuário foi mantida porque a estimativa cabe."
+                reason = (
+                    "A preferência do usuário foi mantida; o runner residente "
+                    "já comporta o contexto solicitado."
+                    if preferred[1].placement is ResourcePlacement.RESIDENT
+                    else "A preferência do usuário foi mantida porque a estimativa cabe."
+                )
             else:
                 placement_rank = {
+                    ResourcePlacement.RESIDENT: 4,
                     ResourcePlacement.GPU: 3,
                     ResourcePlacement.HYBRID: 2,
                     ResourcePlacement.CPU: 1,
@@ -127,9 +184,14 @@ class AdaptiveModelSelector:
 
                 chosen = sorted(viable, key=rank)[0]
                 reason = (
-                    "Selecionado entre os candidatos cuja estimativa cabe nos recursos "
-                    "disponíveis, priorizando a categoria da tarefa quando informada "
-                    "e o posicionamento em GPU."
+                    "Runner já residente reutilizado: nenhuma nova alocação de "
+                    "pesos/KV/buffers do runner é prevista."
+                    if chosen[1].placement is ResourcePlacement.RESIDENT
+                    else (
+                        "Selecionado entre os candidatos cuja estimativa cabe nos recursos "
+                        "disponíveis, priorizando a categoria da tarefa quando informada "
+                        "e o posicionamento em GPU."
+                    )
                 )
             model, estimate, _record = chosen
             alternatives = tuple(
@@ -143,10 +205,15 @@ class AdaptiveModelSelector:
             )
             return ModelSelectionResult(
                 model=model,
-                strategy="adaptive",
+                strategy=(
+                    "resident_reuse"
+                    if estimate.placement is ResourcePlacement.RESIDENT
+                    else "adaptive"
+                ),
                 explanation=explanation,
                 estimate=estimate,
                 alternatives=alternatives,
+                residency_assessment=residency_assessments.get(model.name),
             )
 
         unknown = [
@@ -181,6 +248,7 @@ class AdaptiveModelSelector:
                 alternatives=tuple(
                     item[0].name for item in unknown if item[0].name != model.name
                 ),
+                residency_assessment=residency_assessments.get(model.name),
             )
 
         raise ModelSelectionError(
