@@ -194,7 +194,7 @@ fn planner_rejects_components_that_exceed_the_resource_budget() {
     assert!(matches!(
         runtime.plan(&request()),
         Err(kia_cognitive_runtime::RuntimeError::NoEligibleComponent(id))
-            if id == "mathematics"
+            if id == kia_cognitive_runtime::CapabilityId::from("mathematics")
     ));
 }
 
