@@ -24,6 +24,7 @@ from engines.ollama_engine import OllamaEngine
 from engines.registry import EngineRegistry
 from model_hub.catalog import CatalogDocument, CatalogEntry, CatalogVariant, ModelCatalogClient
 from model_hub.compatibility import CompatibilityEngine
+from model_hub.contracts import ModelArtifact, ModelRecord
 from model_hub.hardware import HardwareProfiler
 from model_hub.registry import ModelRegistry, ModelRegistryError
 from storage.configuration import AppConfig, ConfigurationError, ConfigurationStore
@@ -319,6 +320,72 @@ class MainWindow(QMainWindow):
             self._catalog_worker = None
         worker.deleteLater()
 
+    def _merge_catalog_metadata(
+        self, document: CatalogDocument, installed_refs: set[str]
+    ) -> None:
+        """Enriquece el inventário local sem sobrescrever o estado real do runtime."""
+        installed_folded = {item.casefold() for item in installed_refs}
+        for entry in document.entries:
+            for variant in entry.variants:
+                record_id = f"ollama:{variant.reference.casefold()}"
+                existing = self.model_hub_registry.get(record_id)
+                previous = (
+                    next(
+                        (
+                            item for item in existing.artifacts
+                            if item.runtime == "ollama"
+                            and item.reference.casefold() == variant.reference.casefold()
+                        ),
+                        None,
+                    )
+                    if existing is not None
+                    else None
+                )
+                artifacts = (
+                    [
+                        item for item in existing.artifacts
+                        if not (
+                            item.runtime == "ollama"
+                            and item.reference.casefold() == variant.reference.casefold()
+                        )
+                    ]
+                    if existing is not None
+                    else []
+                )
+                artifacts.append(
+                    ModelArtifact(
+                        runtime="ollama",
+                        reference=variant.reference,
+                        installed=(
+                            variant.reference.casefold() in installed_folded
+                            or bool(previous and previous.installed)
+                        ),
+                        size_bytes=variant.size_bytes,
+                        digest=previous.digest if previous else None,
+                        quantization=variant.quantization,
+                    )
+                )
+                self.model_hub_registry.upsert(
+                    ModelRecord(
+                        record_id=record_id,
+                        display_name=entry.display_name,
+                        family=entry.family,
+                        category=entry.categories[0],
+                        capabilities=entry.capabilities,
+                        modalities=entry.modalities,
+                        parameter_count=entry.parameter_count,
+                        active_parameter_count=entry.active_parameter_count,
+                        context_window=entry.context_window,
+                        license_name=entry.license_name,
+                        license_url=entry.license_url,
+                        license_verified=entry.license_verified,
+                        source_url=entry.source_url,
+                        publisher=entry.publisher,
+                        metadata_source="catalog_import",
+                        artifacts=tuple(artifacts),
+                    )
+                )
+
     def _on_model_catalog_loaded(self, document: object) -> None:
         if not isinstance(document, CatalogDocument):
             self._on_model_catalog_failed("Resposta de catálogo inválida.")
@@ -330,6 +397,7 @@ class MainWindow(QMainWindow):
             for artifact in record.artifacts
             if artifact.runtime == "ollama" and artifact.installed
         }
+        self._merge_catalog_metadata(document, installed_refs)
         self.model_hub_view.set_catalog_data(document, installed_refs)
         self.model_hub_view.set_catalog_loading(False)
         if document.warning:
