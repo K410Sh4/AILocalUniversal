@@ -12,6 +12,13 @@ from resources.residency import (
     ResidentCapacityStatus,
 )
 from resources.selector import AdaptiveModelSelector, ModelSelectionResult
+from resources.telemetry import (
+    OllamaProcessMemorySnapshot,
+    ProcessMemoryDelta,
+    ProcessMemoryProbeStatus,
+    compare_process_memory,
+    probe_ollama_process_memory,
+)
 
 __all__ = [
     "AdaptiveModelSelector",
@@ -23,4 +30,9 @@ __all__ = [
     "ResourceEstimator",
     "ResidentCapacityAssessment",
     "ResidentCapacityStatus",
+    "OllamaProcessMemorySnapshot",
+    "ProcessMemoryDelta",
+    "ProcessMemoryProbeStatus",
+    "compare_process_memory",
+    "probe_ollama_process_memory",
 ]
