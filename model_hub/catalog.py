@@ -164,7 +164,9 @@ class CatalogEntry:
         for field_name in ("display_name", "family", "summary", "publisher"):
             value = getattr(self, field_name)
             if not isinstance(value, str) or not value.strip() or len(value) > 600:
-                raise CatalogError(f"{field_name} precisa ser texto não vazio de até 600 caracteres.")
+                raise CatalogError(
+                    f"{field_name} precisa ser texto não vazio de até 600 caracteres."
+                )
         if not self.categories or any(
             item not in CATALOG_CATEGORIES for item in self.categories
         ):
@@ -211,7 +213,9 @@ class CatalogEntry:
             not isinstance(value, list)
             for value in (categories, capabilities, modalities, variants)
         ):
-            raise CatalogError("Categorias, capacidades, modalidades e variantes precisam ser listas.")
+            raise CatalogError(
+                "Categorias, capacidades, modalidades e variantes precisam ser listas."
+            )
         return cls(
             record_id=str(payload.get("record_id", "")),
             display_name=str(payload.get("display_name", "")),
