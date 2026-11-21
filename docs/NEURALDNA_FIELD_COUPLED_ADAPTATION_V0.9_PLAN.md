@@ -118,7 +118,16 @@ A failed hypothesis is a useful result. The objective is not to prove that field
 
 The Brain Artificial (BA) remains a distinct artificial developmental and adaptive system, not conventional AI. K.IA remains a separate coordination runtime.
 
-## 10. Ownership and scientific attribution
+## 10. Research references
+
+- Kicheva & Briscoe (2023), *Control of Tissue Development by Morphogens*, Annual Review of Cell and Developmental Biology. https://doi.org/10.1146/annurev-cellbio-020823-011522
+- Suzuki & Economo (2021), *From species sorting to mass effects: spatial network structure mediates the shift between metacommunity archetypes*, Ecography. https://doi.org/10.1111/ecog.05453
+- *Short-range quorum sensing controls horizontal gene transfer at micron scale in bacterial communities* (2021), Nature Communications. https://doi.org/10.1038/s41467-021-22649-4
+- Stapornwongkul & Vincent (2021), *Generation of extracellular morphogen gradients: the case for diffusion*, Nature Reviews Genetics. https://doi.org/10.1038/s41576-021-00342-y
+
+These publications support the research questions about signal range, local uptake, spatial mixing, and regional adaptation. They do not validate this project's specific algorithm or establish biological equivalence.
+
+## 11. Ownership and scientific attribution
 
 The original research design, causal contracts, benchmark protocol, tests, and code authored for AILocal Universal are proprietary project materials.
 
