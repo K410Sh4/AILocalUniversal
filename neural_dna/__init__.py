@@ -10,6 +10,12 @@ from .development import (
     NicheState,
     develop_population,
 )
+from .lineage import (
+    LineagePolicy,
+    RegionalNiche,
+    RegionalStepResult,
+    advance_region,
+)
 
 __all__ = [
     "DevelopmentGenome",
@@ -18,4 +24,8 @@ __all__ = [
     "NicheState",
     "NeuralStemCell",
     "develop_population",
+    "LineagePolicy",
+    "RegionalNiche",
+    "RegionalStepResult",
+    "advance_region",
 ]
