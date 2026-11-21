@@ -3,10 +3,10 @@
 from __future__ import annotations
 
 from PySide6.QtWidgets import (
+    QComboBox,
     QDialog,
     QDialogButtonBox,
     QFormLayout,
-    QComboBox,
     QLabel,
     QLineEdit,
     QMessageBox,
