@@ -1,0 +1,230 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "NeuralInjector Hardware Profile",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "profile_id",
+    "profile_version",
+    "requirements",
+    "budget",
+    "execution",
+    "degradation",
+    "benchmark",
+    "quantization_policy"
+  ],
+  "properties": {
+    "profile_id": {
+      "enum": [
+        "ultra_light",
+        "minimal",
+        "balanced",
+        "performance",
+        "max_quality"
+      ]
+    },
+    "profile_version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "description": {
+      "type": "string"
+    },
+    "requirements": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "min_ram_mb",
+        "min_vram_mb",
+        "min_disk_mb",
+        "min_context_tokens"
+      ],
+      "properties": {
+        "min_ram_mb": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "min_vram_mb": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "min_disk_mb": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "min_context_tokens": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "objectives": {
+      "type": "object",
+      "properties": {
+        "priority": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "memory",
+              "reliability",
+              "latency",
+              "quality"
+            ]
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "interactive": {
+          "type": "boolean"
+        }
+      }
+    },
+    "budget": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "max_ram_fraction",
+        "target_context_tokens",
+        "max_parallelism",
+        "max_cpu_threads"
+      ],
+      "properties": {
+        "max_ram_fraction": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 1
+        },
+        "target_context_tokens": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "max_parallelism": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "max_cpu_threads": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "execution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "preferred_backends",
+        "allow_cpu_fallback",
+        "require_gpu"
+      ],
+      "properties": {
+        "preferred_backends": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "cpu",
+              "gpu"
+            ]
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "allow_cpu_fallback": {
+          "type": "boolean"
+        },
+        "require_gpu": {
+          "type": "boolean"
+        }
+      }
+    },
+    "degradation": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "disable_optional_components": {
+          "type": "boolean"
+        },
+        "reduce_context": {
+          "type": "boolean"
+        },
+        "reduce_parallelism": {
+          "type": "boolean"
+        },
+        "allow_artifact_fallback": {
+          "type": "boolean"
+        }
+      }
+    },
+    "benchmark": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "default",
+        "allowed"
+      ],
+      "properties": {
+        "default": {
+          "enum": [
+            "none",
+            "quick",
+            "full"
+          ]
+        },
+        "allowed": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "none",
+              "quick",
+              "full"
+            ]
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        }
+      }
+    },
+    "quantization_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "preferred",
+        "low_memory_preferred",
+        "low_memory_threshold_mb",
+        "allow_lower_precision_fallback"
+      ],
+      "properties": {
+        "preferred": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "low_memory_preferred": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "low_memory_threshold_mb": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "allow_lower_precision_fallback": {
+          "type": "boolean"
+        }
+      }
+    },
+    "notes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}
