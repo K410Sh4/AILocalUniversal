@@ -403,8 +403,8 @@ A estrutura abaixo é um mapa lógico dos domínios do projeto; os caminhos exat
 | `workers/` | Operações assíncronas da aplicação |
 | `storage/` | Configurações, conversas e persistência local |
 | `knowledge/` | RAG, loaders, chunks, índices, NeSA e evidências |
-| `kia/` | Crates e runtime cognitivo Rust |
-| `kia_bridge/` | Comunicação e contratos entre Python e Rust |
+| `kba/` | Crate e runtime operacional Rust do K.BA |
+| `kba_bridge/` | Comunicação e contratos entre Python e Rust |
 | `resources/` | Perfil de hardware, estimativas e seleção |
 | `napa/` | Áreas cognitivas e classificação multilabel |
 | `neural_elastic/` | Simuladores e pesquisas de execução elástica |
