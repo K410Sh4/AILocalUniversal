@@ -248,7 +248,7 @@ pub fn compare_local_to_shared_global(
     let mut global_conditions = [0.0; 2];
     for region in &initial.regions {
         for (axis, value) in region.environment.conditions.iter().enumerate() {
-            global_conditions[axis] += value;
+            global_conditions[axis] += *value;
         }
     }
     for value in &mut global_conditions {
