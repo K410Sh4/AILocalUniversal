@@ -56,11 +56,7 @@ fn main() {
     let mut output = io::BufWriter::new(stdout.lock());
     let mut host = RuntimeHost::default();
 
-    loop {
-        let line = match read_bounded_line(&mut input) {
-            Ok(Some(line)) => line,
-            Ok(None) | Err(_) => break,
-        };
+    while let Ok(Some(line)) = read_bounded_line(&mut input) {
         if line.trim().is_empty() {
             continue;
         }
