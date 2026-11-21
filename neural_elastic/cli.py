@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import argparse
 import json
-from math import isfinite
 from collections.abc import Sequence
+from math import isfinite
 from pathlib import Path
 
 from neural_elastic.contracts import AccessTrace, TraceFormatError
