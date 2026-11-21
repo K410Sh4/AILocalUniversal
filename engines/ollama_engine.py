@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+from datetime import UTC, datetime
 import json
 from collections.abc import AsyncIterator
 from typing import Any
@@ -246,6 +247,7 @@ class OllamaEngine(EngineAdapter):
                 return None
 
             snapshots: list[RunningModelSnapshot] = []
+            observed_at = datetime.now(UTC).isoformat()
             for item in raw_models:
                 if not isinstance(item, dict):
                     continue
@@ -273,6 +275,7 @@ class OllamaEngine(EngineAdapter):
                             else None
                         ),
                         details=details if isinstance(details, dict) else {},
+                        observed_at=observed_at,
                     )
                 )
             return snapshots
