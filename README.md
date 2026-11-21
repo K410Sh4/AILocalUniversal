@@ -98,7 +98,8 @@ A Validation Layer atual é estrutural e determinística: reproduz cálculos/con
 - storage/: configurações e histórico local.
 - pipeline/: futuras etapas cognitivas.
 - knowledge/: loaders, chunking, índice lexical SQLite FTS5, recuperação híbrida extensível, composição de contexto e validação estrutural de evidências (branch `feature/rag-v1`).
-- resources/: futuro gerenciamento de recursos.
+- resources/: estimativa de recursos e seleção adaptativa de modelos.
+- neural_elastic/: simulador offline de políticas de cache de especialistas MoE (Fase 5.0).
 - swarm/: futura comunicação cooperativa P2P.
 - docs/: arquitetura, contratos, roadmap, segurança e status.
 
@@ -221,6 +222,7 @@ Consulte docs/SECURITY.md.
 
 - Arquitetura: docs/ARCHITECTURE.md
 - Roadmap: docs/ROADMAP.md
+- Neural Elastic Execution: docs/NEURAL_ELASTIC_EXECUTION.md
 - Estado da implementação: docs/IMPLEMENTATION_STATUS.md
 - Contratos de dados: docs/DATA_CONTRACTS.md
 - RAG e proveniência: docs/RAG.md
