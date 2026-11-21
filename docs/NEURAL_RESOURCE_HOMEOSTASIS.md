@@ -177,4 +177,5 @@ Nenhuma fase posterior deve ser marcada como concluída apenas por analogia biol
 - Josselyn, S. A. & Frankland, P. W. (2018). *Memory Allocation: Mechanisms and Function*. Annual Review of Neuroscience 41, 389–413. https://doi.org/10.1146/annurev-neuro-080317-061956
 - Ollama API, `/api/ps`: https://github.com/ollama/ollama/blob/main/docs/openapi.yaml
 - Ollama llama.cpp runner memory accounting: https://github.com/ollama/ollama/blob/main/llm/llama_server.go
+- Linux procfs, PSS/RSS em `smaps` e `smaps_rollup`: https://man7.org/linux/man-pages/man5/proc_pid_smaps.5.html
 - Linux kernel, cgroup v2 memory accounting: https://docs.kernel.org/admin-guide/cgroup-v2.html
