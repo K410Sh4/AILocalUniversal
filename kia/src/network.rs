@@ -48,7 +48,9 @@ pub struct PlasticityUpdate {
 
 impl AdaptiveCognitiveNetwork {
     fn next_version(&self) -> Result<u64, NetworkError> {
-        self.version.checked_add(1).ok_or(NetworkError::VersionOverflow)
+        self.version
+            .checked_add(1)
+            .ok_or(NetworkError::VersionOverflow)
     }
 
     pub fn version(&self) -> u64 {
