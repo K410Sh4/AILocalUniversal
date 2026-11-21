@@ -171,7 +171,10 @@ fn leases_enforce_resource_capacity_and_release_with_raii() {
     assert_eq!(manager.snapshot().unwrap().active, 1);
     assert_eq!(manager.snapshot().unwrap().reserved.cpu_millis, 600);
     assert_eq!(
-        manager.acquire(ResourceVector::default(), &control).err().unwrap(),
+        manager
+            .acquire(ResourceVector::default(), &control)
+            .err()
+            .unwrap(),
         kia_cognitive_runtime::LeaseError::QueueFull
     );
 
@@ -280,7 +283,10 @@ fn cooperative_adapter_observes_cancellation_during_execution() {
 
     started_rx.recv_timeout(Duration::from_secs(2)).unwrap();
     control.cancel();
-    let report = report_rx.recv_timeout(Duration::from_secs(2)).unwrap().unwrap();
+    let report = report_rx
+        .recv_timeout(Duration::from_secs(2))
+        .unwrap()
+        .unwrap();
 
     assert!(!report.complete);
     assert_eq!(report.events[0].status, ExecutionStatus::Cancelled);
