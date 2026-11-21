@@ -29,6 +29,11 @@ class ModelInfo:
     size_bytes: int | None = None
     digest: str | None = None
     capabilities: EngineCapabilities = field(default_factory=EngineCapabilities)
+    parameter_count: int | None = None
+    architecture: str | None = None
+    quantization: str | None = None
+    context_window: int | None = None
+    kv_cache_bytes_per_token: int | None = None
 
 
 @dataclass(slots=True)
