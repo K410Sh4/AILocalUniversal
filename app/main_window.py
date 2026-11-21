@@ -120,6 +120,9 @@ class MainWindow(QMainWindow):
         self.chat_view.settings_requested.connect(self.open_settings)
         self.chat_view.new_conversation_requested.connect(self.new_conversation)
         self.chat_view.conversation_selected.connect(self.select_conversation)
+        self.chat_view.delete_conversation_requested.connect(
+            self._confirm_conversation_delete
+        )
         self.chat_view.mode_changed.connect(self.change_mode)
         self.chat_view.model_changed.connect(self.change_manual_model)
         self.chat_view.preferred_requested.connect(self.set_preferred_model)
@@ -643,6 +646,63 @@ class MainWindow(QMainWindow):
                 self._render_current_conversation()
                 return
 
+    def _confirm_conversation_delete(self, conversation_id: str) -> None:
+        """Exclui a conversa identificada somente após confirmação humana."""
+        if self._chat_worker is not None and self._chat_worker.isRunning():
+            return
+        target = next(
+            (item for item in self.conversations if item.id == conversation_id),
+            None,
+        )
+        if target is None:
+            self._refresh_history()
+            return
+
+        answer = QMessageBox.question(
+            self,
+            "Excluir conversa",
+            f'Excluir "{target.title}" e todas as suas mensagens? Esta ação remove o histórico local e não pode ser desfeita.',
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No,
+        )
+        if answer != QMessageBox.StandardButton.Yes:
+            return
+
+        try:
+            deleted = self.conversation_store.delete(
+                conversation_id,
+                conversations=self.conversations,
+            )
+        except (OSError, ValueError) as exc:
+            QMessageBox.warning(
+                self,
+                "Falha ao excluir conversa",
+                f"Não foi possível persistir a exclusão: {exc}",
+            )
+            return
+        if not deleted:
+            self._refresh_history()
+            return
+
+        self.conversations = [
+            item for item in self.conversations if item.id != conversation_id
+        ]
+        if self.current_conversation.id == conversation_id:
+            if self.conversations:
+                self.conversations.sort(
+                    key=lambda item: item.updated_at,
+                    reverse=True,
+                )
+                self.current_conversation = self.conversations[0]
+            else:
+                self.current_conversation = Conversation()
+                self.conversations.append(self.current_conversation)
+                self._persist_conversations()
+
+        self._refresh_history()
+        self._render_current_conversation()
+        self.statusBar().showMessage("Conversa excluída do histórico local.", 5000)
+
     def _resolve_model(self) -> str:
         if not self.models:
             raise ModelSelectionError(
@@ -676,10 +736,21 @@ class MainWindow(QMainWindow):
             self.model_hub_registry,
             preferred_model=self.config.preferred_model,
             context_tokens=4096,
+            resource_profile=self.config.resource_profile,
         )
         self.model_hub_view.set_resource_recommendation(selection.explanation)
         self.statusBar().showMessage(selection.explanation, 10000)
         return selection.model.name
+
+    def _build_chat_request_options(self) -> dict[str, Any]:
+        """Aplica o orçamento aproximado de threads de CPU oferecido pelo Ollama."""
+        options: dict[str, Any] = {"keep_alive": self.config.keep_alive}
+        thread_limit = self.resource_manager.cpu_thread_limit(
+            resource_profile=self.config.resource_profile,
+        )
+        if thread_limit is not None:
+            options["options"] = {"num_thread": thread_limit}
+        return options
 
     def send_message(self, text: str) -> None:
         if self._chat_worker is not None and self._chat_worker.isRunning():
@@ -1002,10 +1073,11 @@ class MainWindow(QMainWindow):
         else:
             messages.extend(history_messages)
 
+        request_options = self._build_chat_request_options()
         request = EngineRequest(
             model=model,
             messages=messages,
-            options={"keep_alive": self.config.keep_alive},
+            options=request_options,
         )
         cognitive_task.status = TaskStatus.RUNNING
         self.cognitive_view.set_task(cognitive_task)
@@ -1015,7 +1087,7 @@ class MainWindow(QMainWindow):
                 cognitive_task,
                 model,
                 messages,
-                {"keep_alive": self.config.keep_alive},
+                request_options,
                 self,
             )
             worker.progress.connect(self._on_executor_progress)

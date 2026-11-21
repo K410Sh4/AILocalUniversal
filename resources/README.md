@@ -21,6 +21,12 @@ O pacote `resources/` contém a primeira implementação do Adaptive Resource Ma
 
 Esses coeficientes são estimativas de planejamento, não medições ou garantias de carregamento. Metadados ausentes geram estado parcial/desconhecido e não são preenchidos por heurística de nome.
 
+## Perfis de processamento
+
+`profiles.py` define os orçamentos Leve (33%), Médio (66%) e Ultra (95%). O gerenciador converte o alvo em um limite aproximado de threads lógicas enviado ao Ollama por `num_thread`. Isso não equivale a limitar exatamente o percentual de CPU nem controla genericamente a utilização da GPU. O perfil é persistido nas Configurações e o padrão para arquivos antigos é Médio.
+
+Os perfis não são aplicados como quotas de RAM/VRAM; a seleção continua usando estimativas de memória independentes. A opção `num_thread` é do runner e pode exigir recarga do modelo para surtir efeito.
+
 ## Próximas entregas
 
 - Validar estimativas contra medições locais no Arch e dados do `ollama ps`.

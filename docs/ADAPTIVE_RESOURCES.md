@@ -93,6 +93,24 @@ A identificação da GPU pelo sistema não prova que o backend do Ollama esteja 
 
 O seletor não altera o modo Manual e não define a qualidade real do modelo. A categoria de tarefa ainda não é inferida automaticamente pelo Cognitive Pipeline nesta entrega.
 
+## Orçamento de processamento — perfis Leve, Médio e Ultra
+
+A Fase 4.6 adiciona três perfis persistidos em `AppConfig.resource_profile` e disponíveis em Configurações:
+
+| Perfil | Orçamento-alvo |
+|---|---:|
+| Leve (`light`) | 33% |
+| Médio (`medium`) | 66% |
+| Ultra (`ultra`) | 95% |
+
+Na integração inicial com Ollama, o percentual é convertido em um limite aproximado de threads de CPU (`num_thread`), arredondado para o inteiro mais próximo e limitado à quantidade de núcleos lógicos detectada. Exemplo: em 12 threads lógicas, os limites calculados são 4, 8 e 11. A granularidade de threads faz com que o percentual resultante seja apenas uma aproximação.
+
+**O que este controle realmente faz:** define o número de threads de CPU enviado ao Ollama para o runner. Não limita exatamente a porcentagem de CPU medida, não define afinidade de CPU e não impõe um limitador genérico de utilização de GPU. O Ollama não oferece, nesta integração, controle portátil de percentual de computação da GPU. O `num_thread` é uma opção do runner aplicada durante o carregamento do modelo; um modelo que já esteja carregado pode precisar ser descarregado/recarregado pelo runtime para refletir a alteração.
+
+O perfil não é convertido em porcentagem de RAM/VRAM. A elegibilidade de modelos continua usando a estimativa separada de pesos, cache KV, RAM/VRAM disponível e margem de segurança. O seletor registra o perfil na explicação, mas não reduz artificialmente a memória disponível nem presume que 33% de CPU signifique 33% da memória. Como ainda não há benchmark de custo computacional por modelo, o seletor não afirma que um modelo consome exatamente a fração selecionada; a limitação concreta desta integração é o orçamento de threads.
+
+A configuração antiga sem `resource_profile` é carregada como `medium`. O modo Manual continua respeitando o modelo selecionado pelo usuário; o orçamento de threads é aplicado às solicitações de inferência Ollama tanto no modo Manual quanto no Automático.
+
 ## Limites desta versão
 
 Ainda não implementado:

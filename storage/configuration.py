@@ -52,6 +52,7 @@ class AppConfig:
     keep_alive: str = "5m"
     embedding_model: str | None = None
     knowledge_enabled: bool = False
+    resource_profile: str = "medium"
 
     def validate(self) -> None:
         if not isinstance(self.base_url, str):
@@ -76,6 +77,13 @@ class AppConfig:
             raise ConfigurationError("System prompt precisa ser texto.")
         if not isinstance(self.knowledge_enabled, bool):
             raise ConfigurationError("knowledge_enabled precisa ser booleano.")
+        if (
+            not isinstance(self.resource_profile, str)
+            or self.resource_profile not in {"light", "medium", "ultra"}
+        ):
+            raise ConfigurationError(
+                "resource_profile precisa ser light, medium ou ultra."
+            )
         if self.embedding_model is not None and not isinstance(self.embedding_model, str):
             raise ConfigurationError("Modelo de embeddings precisa ser texto ou None.")
         if isinstance(self.embedding_model, str):
@@ -96,6 +104,7 @@ class AppConfig:
             "keep_alive",
             "embedding_model",
             "knowledge_enabled",
+            "resource_profile",
         }
         try:
             config = cls(**{key: value for key, value in payload.items() if key in allowed})

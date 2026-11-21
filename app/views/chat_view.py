@@ -442,6 +442,7 @@ class ChatView(QWidget):
     settings_requested = Signal()
     new_conversation_requested = Signal()
     conversation_selected = Signal(str)
+    delete_conversation_requested = Signal(str)
     mode_changed = Signal(str)
     model_changed = Signal(str)
     preferred_requested = Signal()
@@ -458,6 +459,7 @@ class ChatView(QWidget):
         self.settings_button.clicked.connect(self.settings_requested.emit)
         self.knowledge_checkbox.toggled.connect(self.knowledge_enabled_changed.emit)
         self.new_button.clicked.connect(self.new_conversation_requested.emit)
+        self.delete_button.clicked.connect(self._delete_selected_conversation)
         self.preferred_button.clicked.connect(self.preferred_requested.emit)
         self.history_list.currentItemChanged.connect(self._conversation_changed)
 
@@ -489,10 +491,14 @@ class ChatView(QWidget):
         self.history_list = QListWidget()
         self.history_list.setMinimumWidth(190)
         self.new_button = QPushButton("＋ Nova conversa")
+        self.delete_button = QPushButton("Excluir conversa")
+        self.delete_button.setEnabled(False)
+        self.delete_button.setToolTip("Exclui a conversa selecionada após confirmação.")
         history_panel = QWidget()
         history_layout = QVBoxLayout(history_panel)
         history_layout.setContentsMargins(0, 0, 0, 0)
         history_layout.addWidget(self.new_button)
+        history_layout.addWidget(self.delete_button)
         history_layout.addWidget(self.history_list)
 
         self.transcript = QTextBrowser()
@@ -552,8 +558,16 @@ class ChatView(QWidget):
         current: QListWidgetItem | None,
         _previous: QListWidgetItem | None,
     ) -> None:
+        self.delete_button.setEnabled(current is not None)
         if current is not None:
             self.conversation_selected.emit(str(current.data(Qt.ItemDataRole.UserRole)))
+
+    def _delete_selected_conversation(self) -> None:
+        current = self.history_list.currentItem()
+        if current is not None:
+            conversation_id = current.data(Qt.ItemDataRole.UserRole)
+            if isinstance(conversation_id, str) and conversation_id:
+                self.delete_conversation_requested.emit(conversation_id)
 
     def set_mode(self, mode: str) -> None:
         index = self.mode_combo.findData(mode)
@@ -584,6 +598,7 @@ class ChatView(QWidget):
         if selected_item is not None:
             self.history_list.setCurrentItem(selected_item)
         self.history_list.blockSignals(False)
+        self.delete_button.setEnabled(selected_item is not None)
 
     def render_messages(self, messages: list[dict[str, str]]) -> None:
         self.transcript.setHtml(build_transcript_html(messages))
@@ -612,6 +627,9 @@ class ChatView(QWidget):
         self.settings_button.setEnabled(not busy)
         self.knowledge_checkbox.setEnabled(not busy)
         self.new_button.setEnabled(not busy)
+        self.delete_button.setEnabled(
+            not busy and self.history_list.currentItem() is not None
+        )
         self.mode_combo.setEnabled(not busy)
         self.model_combo.setEnabled(not busy)
         self.preferred_button.setEnabled(not busy and self.mode_combo.currentData() == "auto")

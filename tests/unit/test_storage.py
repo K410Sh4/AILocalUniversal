@@ -40,6 +40,30 @@ def test_conversation_store_round_trip(tmp_path) -> None:
     assert restored[0].messages == conversation.messages
 
 
+def test_conversation_store_deletes_only_the_requested_id(tmp_path) -> None:
+    path = tmp_path / "conversations.json"
+    store = ConversationStore(path)
+    first = Conversation(title="Primeira")
+    second = Conversation(title="Segunda")
+    store.save_all([first, second])
+
+    assert store.delete(first.id) is True
+    restored = store.load_all()
+    assert [item.id for item in restored] == [second.id]
+    assert store.delete(first.id) is False
+
+
+def test_conversation_store_delete_accepts_in_memory_snapshot(tmp_path) -> None:
+    path = tmp_path / "conversations.json"
+    store = ConversationStore(path)
+    existing = Conversation(title="Persistida")
+    new_item = Conversation(title="Ainda não sincronizada")
+
+    assert store.delete(existing.id, conversations=[existing, new_item]) is True
+    restored = store.load_all()
+    assert [item.id for item in restored] == [new_item.id]
+
+
 def test_conversation_store_rejects_invalid_roles(tmp_path) -> None:
     path = tmp_path / "conversations.json"
     path.write_text(

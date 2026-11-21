@@ -68,6 +68,7 @@ async def test_stream_chat_normalizes_tokens_and_metadata() -> None:
         assert payload["model"] == "qwen2.5:7b"
         assert payload["stream"] is True
         assert payload["keep_alive"] == "5m"
+        assert payload["options"] == {"num_thread": 8}
         assert payload["messages"][0]["role"] == "user"
         return httpx.Response(200, text=body)
 
@@ -78,7 +79,7 @@ async def test_stream_chat_normalizes_tokens_and_metadata() -> None:
             EngineRequest(
                 model="qwen2.5:7b",
                 messages=[{"role": "user", "content": "Oi"}],
-                options={"keep_alive": "5m"},
+                options={"keep_alive": "5m", "options": {"num_thread": 8}},
             )
         )
     ]
