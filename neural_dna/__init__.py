@@ -4,8 +4,10 @@ SPDX-License-Identifier: LicenseRef-AILocal-Universal-Proprietary
 """
 from .development import DevelopmentGenome, DevelopmentResult, Fate, NicheState, NeuralStemCell, develop_population
 from .lineage import LineagePolicy, RegionalNiche, RegionalStepResult, advance_region
+from .environment import CueCalibration, CueEvidence, ReactionExpression, ReactionNorm
 
 __all__ = [
     "DevelopmentGenome", "DevelopmentResult", "Fate", "NicheState", "NeuralStemCell",
     "develop_population", "LineagePolicy", "RegionalNiche", "RegionalStepResult", "advance_region",
+    "CueCalibration", "CueEvidence", "ReactionExpression", "ReactionNorm",
 ]
