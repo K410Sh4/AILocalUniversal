@@ -207,6 +207,7 @@ def test_field_values_remain_finite_and_non_negative_under_high_transport():
         {"sensitivity_kd": 0.0},
         {"hill_coefficient": 0.0},
         {"exposure_clearance": -0.1},
+        {"max_substeps": 0},
         {"degradation": (0.1, 0.2)},
     ],
 )
@@ -254,3 +255,9 @@ def test_invalid_production_is_rejected(production):
     field = SignalField(2, 1, line_edges(2), SignalFieldConfig())
     with pytest.raises(ValueError):
         field.step(production)
+
+
+def test_unstable_transport_is_rejected_when_substep_budget_is_exceeded():
+    field = make_field(8, diffusion=100.0, max_substeps=1)
+    with pytest.raises(ValueError, match="max_substeps"):
+        field.step(source(8))
