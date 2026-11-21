@@ -38,7 +38,7 @@ class FakeCloseEvent:
 
 @pytest.mark.parametrize(
     ("worker_attribute", "timeout"),
-    [("_chat_worker", 5000), ("_status_worker", 2000)],
+    [("_chat_worker", 5000), ("_status_worker", 2000), ("_neuralmap_worker", 5000)],
 )
 def test_close_event_refuses_to_close_while_worker_is_still_running(
     monkeypatch,
@@ -57,6 +57,7 @@ def test_close_event_refuses_to_close_while_worker_is_still_running(
         _delete_worker=None,
         _catalog_worker=None,
         _chat_worker=None,
+        _neuralmap_worker=None,
         _status_worker=None,
         _kia_runtime_client=None,
         _kia_memory_store=None,
@@ -81,6 +82,7 @@ def test_close_event_accepts_after_chat_worker_stops(monkeypatch) -> None:
         _delete_worker=None,
         _catalog_worker=None,
         _chat_worker=worker,
+        _neuralmap_worker=None,
         _status_worker=None,
         _kia_runtime_client=None,
         _kia_memory_store=None,
