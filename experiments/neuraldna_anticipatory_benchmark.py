@@ -266,15 +266,15 @@ def simulate_trial(
         elif strategy == "history":
             plasticity, reserve, mode = 0.0, 0.0, "history"
         elif strategy == "adaptive":
-            plasticity = 0.05 + 0.95 * cue_advantage
-            reserve = 0.05 + 0.75 * residual_uncertainty
+            plasticity = 0.95 * cue_advantage
+            reserve = 0.02 + 0.75 * residual_uncertainty**2
             mode = "combined"
         elif strategy == "adaptive_plasticity":
-            plasticity = 0.05 + 0.95 * cue_advantage
+            plasticity = 0.95 * cue_advantage
             reserve, mode = 0.0, "combined"
         else:
             plasticity = 0.0
-            reserve = 0.05 + 0.75 * (1.0 - history_skill)
+            reserve = 0.02 + 0.75 * (1.0 - history_skill) ** 2
             mode = "history"
 
         target = environment[step + development_latency]
