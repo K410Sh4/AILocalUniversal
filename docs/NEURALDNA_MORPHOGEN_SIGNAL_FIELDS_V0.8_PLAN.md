@@ -34,38 +34,45 @@ These findings motivate testable abstractions; they do not validate this computa
 
 ## 3. Proposed signal-field abstraction
 
-For region (i) and signal class (k), track free signal concentration (C_{i,k}). Each region can produce a signal based on a forecast it has already made. The field is transported over weighted spatial edges, then altered by local degradation and uptake.
+For region index `i` and signal class `k`, track free signal concentration `C[i,k]`. Each region can produce a signal based on a forecast it has already made. The field is transported over weighted spatial edges, then altered by local degradation and uptake.
 
 A graph-diffusion step is:
 
-`C^{diff}_{i,k} = C_{i,k} + Delta t,D
-sum_j g_{ij}(C_{j,k}-C_{i,k})`
+```text
+Cdiff[i,k] = C[i,k] + dt * D * sum_j(g[i,j] * (C[j,k] - C[i,k]))
+```
 
 where:
-- (D) is the transport coefficient;
-- (g_{ij}=g_{ji}geq0) is edge conductance;
+- `D` is the transport coefficient;
+- `g[i,j] = g[j,i] >= 0` is edge conductance;
 - conductance incorporates edge permeability and distance;
-- the symmetric flux preserves total signal under closed-boundary diffusion before sources and sinks.
+- symmetric flux preserves total signal under closed-boundary diffusion before sources and sinks.
 
 After transport, apply local decay and saturable uptake:
 
-`C^{decay}_{i,k}=C^{diff}_{i,k}e^{-lambda_iDelta t}`
+```text
+Cdecay[i,k] = Cdiff[i,k] * exp(-lambda[i] * dt)
+uptake[i,k] = min(
+    Cdecay[i,k],
+    Vmax[i] * dt * Cdecay[i,k] / (Km[i] + Cdecay[i,k])
+)
+Cnext[i,k] = max(0, Cdecay[i,k] - uptake[i,k] + P[i,k] * dt)
+```
 
-`U_{i,k}= min(C^{decay}_{i,k},
-V_{max,i}Delta t,rac{C^{decay}_{i,k}}{K_{m,i}+C^{decay}_{i,k}})`
-
-`C_{i,k}(t+Delta t)=max(0,C^{decay}_{i,k}-U_{i,k}+P_{i,k}Delta t)`
-
-where (lambda_i) is degradation, (V_{max,i}) is maximum uptake, (K_{m,i}) controls uptake saturation, and (P_{i,k}) is local production.
+where `lambda[i]` is degradation, `Vmax[i]` is maximum uptake, `Km[i]` controls uptake saturation, and `P[i,k]` is local production.
 
 Receiver response is a saturating threshold function:
 
-`R_{i,k}=rac{C_{i,k}^{n_i}}{K_{d,i}^{n_i}+C_{i,k}^{n_i}}`
+```text
+response[i,k] = Cnext[i,k]^n[i] / (Kd[i]^n[i] + Cnext[i,k]^n[i])
+```
 
 A separate exposure state can model duration:
 
-`X_{i,k}(t+Delta t)=X_{i,k}(t)e^{-gamma_iDelta t}
-+R_{i,k}Delta t`
+```text
+exposure_next[i,k] = exposure[i,k] * exp(-gamma[i] * dt)
+                    + response[i,k] * dt
+```
 
 This separates:
 - free signal concentration;
@@ -95,16 +102,16 @@ The 0.45 stability margin is a numerical safety bound for this explicit update, 
 
 | Variable | Sweep / controls | Main question |
 |---|---|---|
-| Transport (D) | zero → low → medium → high | When does the field become too mixed? |
+| Transport `D` | zero → low → medium → high | When does the field become too mixed? |
 | Distance | near → intermediate → far | How does physical separation affect signal? |
 | Edge permeability | 0 → 1 | Can niche boundaries restrict cross-talk? |
-| Degradation (lambda) | zero → fast | How far does a signal persist? |
-| Uptake (V_{max}) | zero → high | Does local absorption sharpen the field? |
-| Uptake saturation (K_m) | low → high | Does receiver/source saturation change range? |
-| Sensitivity (K_d) | low → high | Which concentrations trigger a response? |
-| Hill coefficient (n) | 1 → 4 | Does response become more switch-like? |
-| Exposure clearance (gamma) | slow → fast | Does duration matter beyond peak concentration? |
-| Production (P) | sparse → distributed | How do local sources and multiple sources interact? |
+| Degradation `lambda` | zero → fast | How far does a signal persist? |
+| Uptake `Vmax` | zero → high | Does local absorption sharpen the field? |
+| Uptake saturation `Km` | low → high | Does receiver/source saturation change range? |
+| Sensitivity `Kd` | low → high | Which concentrations trigger a response? |
+| Hill coefficient `n` | 1 → 4 | Does response become more switch-like? |
+| Exposure clearance `gamma` | slow → fast | Does duration matter beyond peak concentration? |
+| Production `P` | sparse → distributed | How do local sources and multiple sources interact? |
 | Spatial autocorrelation | high → medium → low | Does topology match the environmental pattern? |
 | Niche barrier | absent → partial → closed | Does a boundary preserve local specialization? |
 | Time step | coarse → refined | Are results numerically stable? |
