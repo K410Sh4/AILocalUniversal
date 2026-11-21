@@ -1304,6 +1304,34 @@ class MainWindow(QMainWindow):
             )
             event.ignore()
             return
+        if self._pull_worker is not None and self._pull_worker.isRunning():
+            self._pull_worker.cancel()
+            if not self._pull_worker.wait(5000):
+                QMessageBox.information(
+                    self,
+                    "Download em andamento",
+                    "O download ainda está encerrando. Cancele ou aguarde antes de fechar.",
+                )
+                event.ignore()
+                return
+        if self._delete_worker is not None and self._delete_worker.isRunning():
+            if not self._delete_worker.wait(5000):
+                QMessageBox.information(
+                    self,
+                    "Remoção em andamento",
+                    "A remoção ainda está em andamento. Aguarde antes de fechar.",
+                )
+                event.ignore()
+                return
+        if self._catalog_worker is not None and self._catalog_worker.isRunning():
+            if not self._catalog_worker.wait(5000):
+                QMessageBox.information(
+                    self,
+                    "Catálogo em atualização",
+                    "A consulta do catálogo ainda está em andamento. Aguarde antes de fechar.",
+                )
+                event.ignore()
+                return
         if self._chat_worker is not None and self._chat_worker.isRunning():
             self._chat_worker.cancel()
             self._chat_worker.wait(5000)
