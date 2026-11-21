@@ -106,8 +106,10 @@ def test_selector_preserves_preference_when_estimate_is_viable() -> None:
         _hardware(),
         preferred_model=preferred.name,
         context_tokens=4096,
+        resource_profile="light",
     )
 
+    assert "light (33%)" in result.explanation
     assert result.model.name == preferred.name
     assert result.strategy == "adaptive"
 

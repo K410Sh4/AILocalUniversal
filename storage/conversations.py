@@ -94,6 +94,22 @@ class ConversationStore:
                 pass
             raise
 
+    def delete(
+        self,
+        conversation_id: str,
+        *,
+        conversations: list[Conversation] | None = None,
+    ) -> bool:
+        """Remove uma conversa pelo ID e persiste atomicamente as restantes."""
+        if not isinstance(conversation_id, str) or not conversation_id.strip():
+            raise ValueError("O identificador da conversa precisa ser texto não vazio.")
+        source = list(conversations) if conversations is not None else self.load_all()
+        retained = [item for item in source if item.id != conversation_id]
+        if len(retained) == len(source):
+            return False
+        self.save_all(retained)
+        return True
+
     def save(self, conversation: Conversation) -> None:
         conversation.updated_at = _now()
         conversations = self.load_all()

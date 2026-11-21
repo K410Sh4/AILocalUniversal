@@ -8,6 +8,7 @@ on:
       - feature/rag-v1
       - feature/neural-model-hub-v1
       - feature/adaptive-resource-manager-v1
+      - feature/chat-management-resource-profiles-v1
   pull_request:
     branches:
       - main
@@ -15,6 +16,7 @@ on:
       - feature/rag-v1
       - feature/neural-model-hub-v1
       - feature/adaptive-resource-manager-v1
+      - feature/chat-management-resource-profiles-v1
 
 jobs:
   unit-tests:

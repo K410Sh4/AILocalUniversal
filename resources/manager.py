@@ -7,6 +7,11 @@ from model_hub.hardware import HardwareProfile, HardwareProfiler
 from model_hub.registry import ModelRegistry
 from resources.contracts import ModelResourceEstimate
 from resources.estimator import ResourceEstimator
+from resources.profiles import (
+    ResourceProfile,
+    cpu_thread_budget,
+    normalize_resource_profile,
+)
 from resources.selector import AdaptiveModelSelector, ModelSelectionResult
 
 
@@ -26,6 +31,19 @@ class AdaptiveResourceManager:
     def snapshot(self) -> HardwareProfile:
         """Retorna uma nova fotografia de CPU/RAM/disco/GPU."""
         return self.hardware_profiler.probe()
+
+    def cpu_thread_limit(
+        self,
+        resource_profile: str | ResourceProfile = ResourceProfile.MEDIUM,
+        *,
+        hardware: HardwareProfile | None = None,
+    ) -> int | None:
+        """Retorna o limite aproximado de threads para o perfil selecionado."""
+        selected_hardware = hardware or self.snapshot()
+        return cpu_thread_budget(
+            selected_hardware.cpu_logical_cores,
+            normalize_resource_profile(resource_profile),
+        )
 
     def estimate_model(
         self,
@@ -53,6 +71,7 @@ class AdaptiveResourceManager:
         context_tokens: int = 4096,
         task_category: str | None = None,
         hardware: HardwareProfile | None = None,
+        resource_profile: str | ResourceProfile = ResourceProfile.MEDIUM,
     ) -> ModelSelectionResult:
         profile = hardware or self.snapshot()
         records = {
@@ -66,4 +85,5 @@ class AdaptiveResourceManager:
             preferred_model=preferred_model,
             context_tokens=context_tokens,
             task_category=task_category,
+            resource_profile=normalize_resource_profile(resource_profile),
         )

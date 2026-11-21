@@ -9,7 +9,7 @@ Este documento diferencia código integrado, cobertura automatizada e validaçã
 | Interface PySide6 | Chat, Modelos, configurações e Cognitive Inspector | Refinamentos conforme validação visual no Arch |
 | Engine Adapter | Contrato e registry | Novos backends em fases futuras |
 | Ollama | Health, inventário, capacidades, NDJSON e streaming | Expandir testes de integração e erros de runtime |
-| Storage | Histórico e configuração JSON, escrita atômica | Avaliar migração para banco conforme escala |
+| Storage | Histórico e configuração JSON, escrita atômica; exclusão de conversa por ID na Fase 4.6 | Avaliar migração para banco conforme escala |
 | CognitiveTask | Contrato versionado, serialização e relatório de validação | Migrações formais quando houver mudança incompatível |
 | Input Processing | Normalização e preservação do original | Suporte posterior a anexos |
 | Semantic Analysis | Intenção e indicadores heurísticos | Embeddings, calibração e avaliação |
@@ -21,7 +21,7 @@ Este documento diferencia código integrado, cobertura automatizada e validaçã
 | Cognitive Inspector | Mostra resultados, estados, trace e relatório de validação | Mostra apenas a última tarefa da sessão |
 | RAG / Context Composer | Base lexical/vetorial, aba Conhecimento e integração opt-in ao Chat implementadas na `feature/rag-v1`; EmbeddingGemma e Qwen3 Embedding validados no Arch; CI atual: Ruff + 155 testes Pytest (Python 3.11) | Reranker concreto, benchmark representativo de corpus, OCR, orçamento por tokenizer e verificação factual/entailment permanecem fora desta entrega |
 | NeuralModel Hub | Registro local, perfil de hardware e compatibilidade conservadora; catálogo remoto curado por categorias com fallback local; fichas e variantes Ollama com fontes; busca/filtros; pull NDJSON com progresso/cancelamento e remoção com confirmação, na branch `feature/neural-model-hub-v1` | Catálogo inicial ainda pequeno; catálogo expandido, licença/proveniência por versão/artefato, compatibilidade medida por runtime/contexto, Adaptive Model Selector e validação de cancelamento/retomada/remoção no Arch pendentes; pull e uso no Chat já validados pelo usuário |
-| Adaptive Resource Manager | Planejado | Fase 4 |
+| Adaptive Resource Manager | Estimativa de RAM/VRAM e seleção automática conservadora na `feature/adaptive-resource-manager-v1`; Fase 4.6 acrescenta perfis persistidos e orçamento aproximado de threads CPU para Ollama | Validar no Arch; medição real, controle genérico de GPU e ciclo de vida automático continuam pendentes |
 | Roteamento especialista | Planejado | Fase 5 |
 | Swarm P2P | Planejado | Fase 6 |
 | BitNet / RPC | Experimental futuro | Fase 7 |
@@ -184,3 +184,16 @@ Implementado na branch `feature/adaptive-resource-manager-v1`:
 - Benchmark de qualidade/latência, telemetria contínua, leases, concorrência e carregamento/descarregamento automático ainda não foram implementados.
 - A validação operacional com Qwen3 4B, Qwen3.5 e Qwen3-Coder-Next 80B ainda precisa comparar estimativa com `ollama ps`, RAM/VRAM observadas e estabilidade no Arch Linux.
 
+
+
+## Fase 4.6 — conversas e orçamento de processamento
+
+Implementação inicial na branch `feature/chat-management-resource-profiles-v1`:
+- exclusão de conversa individual pela interface do Chat com confirmação e persistência atômica por ID;
+- a conversa selecionada é substituída pela mais recente, ou uma nova conversa vazia é criada após excluir a última;
+- Configurações oferece Leve (33%), Médio (66%) e Ultra (95%), persistidos em `AppConfig.resource_profile`;
+- arquivos de configuração legados sem a nova chave usam Médio;
+- Ollama recebe `num_thread` proporcional ao percentual configurado e à quantidade de núcleos lógicos;
+- a execução cognitiva em múltiplas etapas usa o mesmo orçamento de threads.
+
+Ainda exige validação manual no Arch Linux. O controle de threads é aproximado: não garante percentual exato de CPU e não limita diretamente a computação da GPU. A opção do runner pode exigir recarga do modelo já carregado. O seletor mantém estimativas independentes de RAM/VRAM e ainda não possui benchmark de custo computacional por modelo para prometer uma escolha ótima em cada perfil.

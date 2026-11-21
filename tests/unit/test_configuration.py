@@ -1,5 +1,6 @@
 import pytest
 
+from resources.profiles import ResourceProfile
 from storage.configuration import AppConfig, ConfigurationError, ConfigurationStore
 
 
@@ -76,3 +77,31 @@ def test_legacy_configuration_defaults_knowledge_rag_to_disabled(tmp_path) -> No
 def test_knowledge_enabled_must_be_boolean() -> None:
     with pytest.raises(ConfigurationError, match="booleano"):
         AppConfig(knowledge_enabled="yes").validate()
+
+
+@pytest.mark.parametrize(
+    ("profile", "percent"),
+    [("light", 33), ("medium", 66), ("ultra", 95)],
+)
+def test_resource_profile_is_persisted(tmp_path, profile, percent) -> None:
+    path = tmp_path / "config.json"
+    store = ConfigurationStore(path)
+    store.save(AppConfig(resource_profile=profile))
+
+    assert store.load().resource_profile == profile
+    assert ResourceProfile(profile).usage_percent == percent
+
+
+def test_invalid_resource_profile_is_rejected() -> None:
+    with pytest.raises(ConfigurationError, match="resource_profile"):
+        AppConfig(resource_profile="unlimited").validate()
+
+
+def test_legacy_configuration_defaults_to_medium_resource_profile(tmp_path) -> None:
+    path = tmp_path / "legacy.json"
+    path.write_text(
+        '{"base_url":"http://localhost:11434","mode":"auto","keep_alive":"5m"}',
+        encoding="utf-8",
+    )
+
+    assert ConfigurationStore(path).load().resource_profile == "medium"

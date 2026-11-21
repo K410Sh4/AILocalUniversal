@@ -14,6 +14,7 @@ from resources.contracts import (
     ResourcePlacement,
 )
 from resources.estimator import ResourceEstimator
+from resources.profiles import ResourceProfile, normalize_resource_profile
 
 
 @dataclass(frozen=True, slots=True)
@@ -59,7 +60,13 @@ class AdaptiveModelSelector:
         preferred_model: str | None = None,
         context_tokens: int = 4096,
         task_category: str | None = None,
+        resource_profile: str | ResourceProfile = ResourceProfile.MEDIUM,
     ) -> ModelSelectionResult:
+        selected_profile = normalize_resource_profile(resource_profile)
+        profile_note = (
+            f"Perfil de processamento: {selected_profile.value} "
+            f"({selected_profile.usage_percent}%). "
+        )
         candidates = [
             item for item in models
             if item.capabilities.verified and item.capabilities.chat
@@ -129,7 +136,8 @@ class AdaptiveModelSelector:
                 item[0].name for item in viable if item[0].name != model.name
             )
             explanation = (
-                f"Seletor adaptativo: {model.name}; posicionamento sugerido="
+                profile_note
+                + f"Seletor adaptativo: {model.name}; posicionamento sugerido="
                 f"{estimate.placement.value}; contexto={context_tokens}; "
                 f"memória estimada={estimate.total_required_bytes} bytes. {reason}"
             )
@@ -161,7 +169,8 @@ class AdaptiveModelSelector:
                 chosen = sorted(unknown, key=lambda item: item[0].name.casefold())[0]
             model, estimate, _record = chosen
             explanation = (
-                f"Fallback conservador para {model.name}: não há metadados suficientes "
+                profile_note
+                + f"Fallback conservador para {model.name}: não há metadados suficientes "
                 "para garantir a memória de inferência. Nenhuma compatibilidade foi presumida."
             )
             return ModelSelectionResult(

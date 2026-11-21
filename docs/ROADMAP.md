@@ -98,6 +98,20 @@ As fases são entregas progressivas. Uma funcionalidade só é considerada concl
 
 **Saída:** primeira seleção automática orientada por memória, com justificativa e fallback explícito, sem afirmar compatibilidade quando os dados são incompletos.
 
+## Fase 4.6 — Gerenciamento de conversas e perfis de processamento (implementação inicial)
+
+- [x] Adicionar exclusão individual de conversa pela lista lateral do Chat.
+- [x] Solicitar confirmação explícita com o título da conversa; a exclusão usa o ID estável e persiste atomicamente.
+- [x] Manter uma conversa ativa válida após excluir a conversa selecionada; criar uma conversa vazia quando a última for removida.
+- [x] Adicionar Leve (33%), Médio (66%) e Ultra (95%) na tela Configurações, com persistência em `AppConfig` e padrão Médio para configurações antigas.
+- [x] Aplicar o perfil ao orçamento aproximado de threads de CPU enviado ao Ollama via `num_thread`, inclusive na execução cognitiva em múltiplas etapas.
+- [x] Manter a estimativa de RAM/VRAM separada do percentual de processamento; não prometer limitação exata de GPU.
+- [ ] Validar interface, persistência, exclusão e os três perfis no Arch Linux.
+- [ ] Medir CPU/RAM/VRAM, latência e responsividade para comparar os perfis no hardware real.
+- [ ] Calibrar custo de inferência por modelo/backend e tornar o seletor consciente do perfil para filtrar candidatos acima do orçamento computacional medido.
+
+**Limite desta implementação:** o Ollama recebe um limite aproximado de threads de CPU, aplicado pelo runner no carregamento do modelo. O percentual real de CPU não é garantido, e não existe aqui um limitador portátil de computação da GPU. A elegibilidade de modelos continua baseada em viabilidade de memória independente do perfil de CPU.
+
 ## Fase 5 — Agentes especialistas e autoengenharia
 
 - [ ] System Analyst em modo somente leitura.
