@@ -64,7 +64,7 @@ fn request() -> CognitiveRequest {
     CognitiveRequest {
         schema_version: CONTRACT_SCHEMA_VERSION,
         request_id: "req-001".to_owned(),
-        intent: "calculate production cost".to_owned(),
+        intent: "calculation".to_owned(),
         context_tags: BTreeSet::from(["cost_estimate".to_owned()]),
         required_capabilities: vec!["mathematics".into()],
         input: json!({"units": 250, "unit_cost": 12.5}),
