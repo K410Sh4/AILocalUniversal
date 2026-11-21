@@ -26,7 +26,7 @@ Equações simplificadas:
 A função saturante tipo Hill é inspirada em modelos regulatórios, não ajustada a parâmetros fisiológicos.
 
 ## Testes e experimentos
-- 16 testes locais previstos na suíte test_lineage.py após incluir regressão de capacidade; a execução de CI ainda é necessária para confirmar.
+- 17 casos de teste definidos na suíte test_lineage.py após incluir regressão de capacidade (14 funções de teste, uma parametrizada em quatro casos); a execução de CI ainda é necessária para confirmar.
 - Varredura exploratória de 373.248 combinações de população, demanda, atividade, recurso, capacidade, ativação, feedback, autorrenovação, homeostase, pressão de diferenciação e custo: invariantes de capacidade, conservação e orçamento preservados. A regra de capacidade foi corrigida para preservar progenitores residentes não selecionados; descendentes que não cabem no nicho diferenciam-se em vez de remover células residentes arbitrariamente.
 - A suíte automatizada inclui uma varredura reduzida para CI.
 - Os testes não demonstram aprendizagem, inteligência, superioridade evolutiva ou fidelidade biológica.
