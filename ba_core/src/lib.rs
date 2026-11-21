@@ -30,9 +30,8 @@ pub struct Unit {
 impl Unit {
     fn adapt_toward(&mut self, target: [f64; 2]) {
         for (axis, target_value) in target.iter().enumerate() {
-            let delta = (target_value - self.phenotype[axis])
-                * self.sensitivity[axis]
-                * self.learning_rate;
+            let delta =
+                (target_value - self.phenotype[axis]) * self.sensitivity[axis] * self.learning_rate;
             self.phenotype[axis] = (self.phenotype[axis] + delta).clamp(0.0, 1.0);
         }
     }
@@ -88,9 +87,7 @@ impl World {
         if self.regions.is_empty() {
             return Err(ValidationError::EmptyWorld);
         }
-        if !self.diffusion_rate.is_finite()
-            || !(0.0..=1.0).contains(&self.diffusion_rate)
-        {
+        if !self.diffusion_rate.is_finite() || !(0.0..=1.0).contains(&self.diffusion_rate) {
             return Err(ValidationError::InvalidValue("diffusion_rate"));
         }
 
@@ -101,7 +98,11 @@ impl World {
                 return Err(ValidationError::DuplicateRegion(region.id));
             }
             if !valid_unit_interval(region.signal)
-                || region.environment.conditions.iter().any(|v| !valid_unit_interval(*v))
+                || region
+                    .environment
+                    .conditions
+                    .iter()
+                    .any(|v| !valid_unit_interval(*v))
             {
                 return Err(ValidationError::InvalidValue("region_state"));
             }
