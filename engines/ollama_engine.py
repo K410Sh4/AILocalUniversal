@@ -282,9 +282,13 @@ class OllamaEngine(EngineAdapter):
                 "Confirme se o serviço está ativo."
             ) from exc
         except httpx.TimeoutException as exc:
-            raise OllamaConnectionError("Tempo limite ao consultar modelos residentes no Ollama.") from exc
+            raise OllamaConnectionError(
+                "Tempo limite ao consultar modelos residentes no Ollama."
+            ) from exc
         except httpx.HTTPError as exc:
-            raise OllamaConnectionError(f"Falha HTTP ao consultar modelos residentes: {exc}") from exc
+            raise OllamaConnectionError(
+                f"Falha HTTP ao consultar modelos residentes: {exc}"
+            ) from exc
         except ValueError as exc:
             raise OllamaProtocolError("Ollama retornou JSON inválido em /api/ps.") from exc
 
