@@ -36,6 +36,36 @@ class ModelInfo:
     kv_cache_bytes_per_token: int | None = None
 
 
+@dataclass(frozen=True, slots=True)
+class RunningModelSnapshot:
+    """Snapshot de residência reportado pelo backend, sem inferir RAM total."""
+
+    name: str
+    model: str | None = None
+    digest: str | None = None
+    size_bytes: int | None = None
+    size_vram_bytes: int | None = None
+    context_length: int | None = None
+    expires_at: str | None = None
+    details: dict[str, Any] = field(default_factory=dict)
+
+    def __post_init__(self) -> None:
+        if not self.name.strip():
+            raise ValueError("O nome do modelo residente não pode ser vazio.")
+        for field_name in ("size_bytes", "size_vram_bytes"):
+            value = getattr(self, field_name)
+            if value is not None and (
+                isinstance(value, bool) or not isinstance(value, int) or value < 0
+            ):
+                raise ValueError(f"{field_name} precisa ser inteiro não negativo ou None.")
+        if self.context_length is not None and (
+            isinstance(self.context_length, bool)
+            or not isinstance(self.context_length, int)
+            or self.context_length <= 0
+        ):
+            raise ValueError("context_length precisa ser inteiro positivo ou None.")
+
+
 @dataclass(slots=True)
 class EngineRequest:
     """Solicitação de chat independente de backend."""
@@ -71,6 +101,10 @@ class EngineAdapter(ABC):
     @abstractmethod
     async def stream_chat(self, request: EngineRequest) -> AsyncIterator[EngineEvent]:
         """Executa chat e emite eventos de streaming."""
+
+    async def list_running_models(self) -> list[RunningModelSnapshot]:
+        """Lista modelos residentes, quando o backend oferece essa telemetria."""
+        return []
 
     async def close(self) -> None:
         """Libera recursos persistentes do adaptador, se existirem."""
