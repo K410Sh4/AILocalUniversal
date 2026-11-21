@@ -27,7 +27,7 @@ Este documento diferencia código integrado, cobertura automatizada e validaçã
 | Neural Elastic Execution Simulator | Simulador offline de traces MoE com LRU, LFU, política estatística e Belady MIN (somente tamanhos uniformes); CLI e testes | Ainda sem traces reais de roteamento; sem modelagem de latência de SSD, prefetch ou integração com runtime |
 | NAPA 1.0 | Registro e classificação multilabel; fronteira ACCA valida IDs, afinidades, sinais e correspondência entre áreas/ativações | Afinidades heurísticas; sem predictor de custos, plasticidade, busca progressiva ou reorganização |
 | NeSA 0.1 | Catálogo persistente de páginas com resumo extrativo, candidatos lexicais, palavras-chave, referências e busca FTS5 de páginas; integrado à ingestão RAG | Sem sumário abstrativo, NER padrão, embeddings por página, grafo ou recuperação hierárquica; validar no Arch |
-| K.IA 0.5 | Runtime Rust com planner seletivo, host JSONL v2, memória SQLite e leases RAII; fluxo ACCA agora recebe avaliação residente e envia custo incremental de RAM ao planner | Host/protocolo continuam síncronos; leases ainda não são compartilhados entre tarefas da aplicação nem protegem unload; cancelamento não interrompe adaptadores bloqueantes; sem quotas físicas ou validação operacional no Arch |
+| K.BA 0.5 | Runtime Rust com planner seletivo, host JSONL v2, memória SQLite e leases RAII; fluxo ACCA agora recebe avaliação residente e envia custo incremental de RAM ao planner | Host/protocolo continuam síncronos; leases ainda não são compartilhados entre tarefas da aplicação nem protegem unload; cancelamento não interrompe adaptadores bloqueantes; sem quotas físicas ou validação operacional no Arch |
 | Roteamento especialista | Planejado | Fase 5 |
 | Swarm P2P | Planejado | Fase 6 |
 | BitNet / RPC | Experimental futuro | Fase 7 |
@@ -246,10 +246,10 @@ Implementado na branch `feature/nesa-semantic-page-indexer-v0.1`:
 **Limites:** isso é um catálogo compacto de páginas, não um grafo semântico ou busca vetorial de páginas. Os conceitos são candidatos lexicais, não ontologia validada; FTS5 não compreende sinônimos. Os resumos são extrativos, não paráfrases semanticamente abstrativas. NER, sumários gerativos, associações tipadas e recuperação progressiva ficam para etapas posteriores. A validação operacional no Arch Linux permanece pendente.
 
 
-## K.IA 0.1 — Rust Cognitive Runtime
+## K.BA 0.1 — Rust Cognitive Runtime
 
 Implementado na branch feature/kia-rust-cognitive-runtime-v0.1:
-- crate Rust independente kia-cognitive-runtime em kia/;
+- crate Rust independente kba-cognitive-runtime em kba/;
 - contratos serializáveis e IDs tipados para capacidades e componentes; CognitiveRequest identifica schema_version;
 - grafo versionado em memória com relações tipadas;
 - planner que seleciona componentes por capacidade, intenção, contexto, executor habilitado e orçamento;
@@ -263,10 +263,10 @@ Implementado na branch feature/kia-rust-cognitive-runtime-v0.1:
 **Limites:** nenhum provider Ollama/llama.cpp, persistência, coleta física de hardware, execução concorrente, cancelamento, treinamento paramétrico ou mudanças estruturais de modelos. A reserva é lógica, não quota efetiva do sistema operacional. Validação manual no Arch Linux permanece pendente.
 
 
-## K.IA 0.2 — Runtime Host & Python Bridge
+## K.BA 0.2 — Runtime Host & Python Bridge
 
-Implementado na branch `feature/kia-runtime-host-bridge-v0.2`:
-- binário persistente `kia-runtime-host` com JSONL v1 e comandos health, replace_state, plan, record_feedback, inspect e shutdown;
+Implementado na branch `feature/kba-runtime-host-bridge-v0.2`:
+- binário persistente `kba-runtime-host` com JSONL v1 e comandos health, replace_state, plan, record_feedback, inspect e shutdown;
 - validação de estado desserializado, IDs do grafo, referências, alvos, budget e executores anunciados pela aplicação;
 - planejamento Rust sem inferência falsa: o host recebe IDs de executores Python disponíveis, retorna o plano e deixa a aplicação executar;
 - cliente Python thread-safe com processo persistente, handshake, timeout, correlação de respostas, tratamento de EOF e shutdown;
@@ -278,10 +278,10 @@ Implementado na branch `feature/kia-runtime-host-bridge-v0.2`:
 **Limite:** a ponte está disponível como pacote reutilizável, mas ainda não foi inserida no ciclo de vida do MainWindow/CognitiveTaskExecutor. O Python ainda executa os motores; Rust planeja. A próxima etapa integra o plano à execução cognitiva e instala adaptadores de inferência explícitos.
 
 
-## K.IA 0.3 — ACCA Vertical Flow
+## K.BA 0.3 — ACCA Vertical Flow
 
 Implementação em andamento na branch feature/kia-acca-vertical-flow-v0.3:
-- Chat pode iniciar kia-runtime-host sob demanda; sem binário ou plano executável, usa o fluxo anterior como fallback.
+- Chat pode iniciar kba-runtime-host sob demanda; sem binário ou plano executável, usa o fluxo anterior como fallback.
 - O pipeline realiza normalização, NAPA e decomposição sem pré-executar a ferramenta determinística.
 - O coordenador constrói rede com áreas NAPA, modelos de chat instalados, ferramentas determinísticas e snapshot do Adaptive Resource Manager.
 - Calculator/unit_converter só são candidatos para suas intenções próprias e quando o risco é baixo.
@@ -296,13 +296,13 @@ Implementação em andamento na branch feature/kia-acca-vertical-flow-v0.3:
 **Limites:** plasticidade operacional permanece em memória do processo, sem persistência após reinício. A reserva sequencial é lógica, não quota do kernel. O custo CPU usa teto de threads configurado, não FLOPs medidos. GPU/híbrido, RAG/NeSA como provedor de plano, ANN/CSR semântico, energia, terminação entre etapas, treinamento e LoRA ainda não estão integrados. CI não substitui validação real no Arch Linux.
 
 
-## K.IA 0.4 — Persistent Cognitive Memory & Semantic Integration
+## K.BA 0.4 — Persistent Cognitive Memory & Semantic Integration
 
 Implementação em andamento na branch feature/kia-persistent-semantic-memory-v0.4:
 - Protocolo JSONL v2 com comandos restore_learning e export_network. O host valida snapshots antes de aceitar plasticidade anterior.
 - Cliente Python restaura a rede persistida antes do primeiro replace_state e grava um snapshot após sincronização e feedback.
 - SQLite local com tabela de snapshots e event log limitado a 10.000 eventos; save usa BEGIN IMMEDIATE, atualização transacional e SHA-256 do JSON canônico. Notas livres do feedback são removidas antes de gravar; pesos, contadores e validation_ref permanecem.
-- Diretórios próprios da K.IA recebem modo 0700; banco recebe modo 0600. O schema do banco é versionado por PRAGMA user_version.
+- Diretórios próprios da K.BA recebem modo 0700; banco recebe modo 0600. O schema do banco é versionado por PRAGMA user_version.
 - Snapshot guarda somente a AdaptiveCognitiveNetwork: capacidades, componentes, conexões, pesos e feedback avaliado. Hardware, budget e executores são sempre reconstruídos.
 - Persistência rejeita chaves que indicariam prompt, input de usuário, conversa, mensagens ou conteúdo documental. Eventos armazenam apenas contagens e hash do snapshot.
 - NeuralComponent de memória memory-knowledge-library passa pelo planner Rust quando knowledge_enabled estiver ativo; o plano requer retrieval + generation. Python executa a busca existente em worker Qt e o modelo continua no Ollama.
@@ -312,7 +312,7 @@ Implementação em andamento na branch feature/kia-persistent-semantic-memory-v0
 **Limites:** snapshot local não é criptografado; permissões privadas e hash protegem acesso casual/integridade, não substituem criptografia em disco. Persistência é local e por namespace; não sincroniza entre dispositivos. O log mantém no máximo 10.000 eventos e a rede carrega até 4.096 feedbacks durante carry_learning_from. Fichas NeSA continuam sendo busca lexical FTS5, não embeddings semânticos, e seus scores não são probabilidades. O custo e a priorização do provedor Knowledge são valores iniciais explícitos, ainda não calibrados por benchmark. CI não substitui validação manual no Arch Linux.
 
 
-## K.IA 0.5 — Execution Safety Core (incremento inicial)
+## K.BA 0.5 — Execution Safety Core (incremento inicial)
 
 Implementação proposta na branch feature/kia-execution-safety-v0.5:
 - ExecutionControl compartilha um sinal atômico de cancelamento e deadline por tarefa.

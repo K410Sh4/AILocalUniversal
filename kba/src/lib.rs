@@ -1,4 +1,4 @@
-//! K.IA Cognitive Runtime — núcleo operacional inicial da Artificial Brain.
+//! K.BA Cognitive Runtime — núcleo operacional inicial da Artificial Brain.
 //!
 //! Esta crate oferece contratos serializáveis, rede de capacidades, seleção seletiva,
 //! orçamento lógico de recursos e feedback avaliado. Motores externos são conectados

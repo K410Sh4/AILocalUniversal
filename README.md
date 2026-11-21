@@ -27,13 +27,13 @@ O AILU não é um único modelo nem pretende substituir todos os modelos existen
 flowchart TB
     U[Usuário / Aplicação Desktop] --> UI[Python + PySide6]
     UI --> HOST[Orquestração e Runtime Host]
-    HOST --> KIA[K.IA - Rust Cognitive Runtime]
+    HOST --> KBA[K.BA - Rust Cognitive Runtime]
 
-    KIA --> NAPA[NAPA - Áreas e capacidades]
-    KIA --> BA[BA - Rede cognitiva adaptativa]
-    KIA --> ACCA[ACCA - Planejamento e seleção]
+    KBA --> NAPA[NAPA - Áreas e capacidades]
+    KBA --> BA[BA - Rede cognitiva adaptativa]
+    KBA --> ACCA[ACCA - Planejamento e seleção]
 
-    KIA --> EXEC[Camada de execução]
+    KBA --> EXEC[Camada de execução]
     EXEC --> TOOLS[Ferramentas determinísticas]
     EXEC --> MODELS[NeuralModel Hub e Engine Adapters]
     EXEC --> MAP[NeuralMap Workflows]
@@ -51,7 +51,7 @@ flowchart TB
 
     EXEC --> VALID[Validation Layer]
     VALID --> MEMORY[Memória, feedback e traces]
-    MEMORY --> KIA
+    MEMORY --> KBA
 ```
 
 O diagrama representa a arquitetura de referência. Nem todas as conexões e capacidades estão implementadas ou habilitadas nesta etapa.
@@ -62,7 +62,7 @@ O diagrama representa a arquitetura de referência. Nem todas as conexões e cap
 |---|---|
 | Interface e aplicação | Chat, configurações, modelos, conhecimento, inspeção e workflows |
 | Cognitive Core | Normalização, análise de intenção, decomposição e ferramentas determinísticas |
-| K.IA Runtime | Planejamento cognitivo, seleção de componentes, contratos e feedback |
+| K.BA Runtime | Planejamento cognitivo, seleção de componentes, contratos e feedback |
 | BA | Modelo de rede cognitiva hierárquica, conexões e ativação seletiva; em desenvolvimento conceitual/experimental |
 | ACCA | Formalização da seleção adaptativa, custos, orçamento e estratégia de execução |
 | NAPA | Registro e classificação multilabel de áreas cognitivas |
@@ -80,93 +80,107 @@ O diagrama representa a arquitetura de referência. Nem todas as conexões e cap
 
 ---
 
-## 2. K.IA — Artificial Brain / Rust Cognitive Runtime
+## 2. K.BA — Núcleo operacional da Brain Artificial
 
-A **K.IA** é o núcleo de coordenação cognitiva do AILU. Ela não é um LLM isolado: é um runtime que representa capacidades e componentes, planeja rotas e coordena executores registrados.
+**K.BA** é o núcleo operacional em Rust que fornece contratos, planejamento, coordenação, controle de execução, persistência e integração de recursos para o ecossistema da Brain Artificial.
 
-### 2.1. Responsabilidades
+K.BA não é uma IA convencional nem um modelo de linguagem. Também não deve ser confundido com a BA completa: o runtime atual é a infraestrutura operacional inicial sobre a qual o sistema BA será desenvolvido.
+
+### 2.1. Responsabilidades atuais
 
 - Manter uma rede tipada de capacidades, componentes e conexões.
-- Avaliar intenção, contexto, prioridades e disponibilidade.
-- Selecionar componentes compatíveis com a tarefa.
-- Respeitar orçamento lógico de recursos e requisitos declarados.
-- Produzir planos de execução rastreáveis.
+- Avaliar intenção, contexto, prioridades e disponibilidade declarada.
+- Planejar rotas para componentes compatíveis.
+- Aplicar orçamentos lógicos e leases de recursos.
+- Produzir planos e eventos rastreáveis.
 - Receber feedback avaliado e atualizar prioridades operacionais.
-- Persistir o estado cognitivo permitido, sem armazenar automaticamente prompts ou respostas como memória da rede.
+- Persistir somente o estado cognitivo permitido, sem absorver automaticamente prompts ou documentos.
 - Comunicar-se com a aplicação Python por protocolo local versionado.
 
-### 2.2. Evolução do runtime
+### 2.2. Evolução do núcleo operacional
 
 | Versão | Escopo |
 |---|---|
-| K.IA 0.1 | Crate Rust, contratos tipados, rede de capacidades, planner, executores registrados e plasticidade operacional inicial |
-| K.IA 0.2 | Processo persistente `kia-runtime-host`, protocolo JSONL e ponte Python |
-| K.IA 0.3 | Fluxo ACCA integrado ao Chat, NAPA, ferramentas, Ollama e Validation Layer |
-| K.IA 0.4 | Snapshot SQLite, restauração validada, event log e integração Knowledge/NeSA |
-| K.IA 0.5 | Incrementos de segurança de execução, cancelamento, deadlines e leases de recursos |
+| K.BA 0.1 | Crate Rust, contratos tipados, rede de capacidades, planner, executores registrados e plasticidade operacional inicial |
+| K.BA 0.2 | Processo persistente `kba-runtime-host`, protocolo JSONL e ponte Python |
+| K.BA 0.3 | Fluxo ACCA integrado ao Chat, NAPA, ferramentas, Ollama e Validation Layer |
+| K.BA 0.4 | Snapshot SQLite, restauração validada, event log e integração Knowledge/NeSA |
+| K.BA 0.5 | Cancelamento cooperativo, deadlines, admissão e leases de recursos |
 
-As versões representam incrementos da linha de desenvolvimento. A presença de uma versão no histórico não significa que todos os recursos estejam validados operacionalmente em qualquer hardware.
+As versões descrevem o núcleo operacional existente. Não significam que o sistema BA desenvolvimental esteja concluído ou que todos os recursos estejam validados em qualquer hardware.
 
 ### 2.3. Limites atuais
 
-O runtime coordena executores por contratos; não modifica automaticamente os pesos internos de modelos como Qwen ou Gemma. A plasticidade implementada é operacional, baseada em feedback e prioridades de conexões. Ela não equivale a treinamento neural geral.
+K.BA planeja e coordena executores; a execução concreta de ferramentas e modelos continua nos adaptadores da aplicação. Não modifica automaticamente pesos de modelos externos. A plasticidade existente é operacional: atualiza pesos de conexões de roteamento após feedback determinístico validado. Isso não equivale à plasticidade estrutural, ao desenvolvimento ou à evolução da BA.
 
-A estimativa de orçamento também não é, por si só, um limitador do kernel, da GPU ou do consumo físico. Telemetria e controle efetivo precisam ser confirmados pelos adaptadores e pelo sistema operacional.
+As reservas de recursos são lógicas; não são quotas do kernel nem garantem consumo físico de CPU, GPU ou memória.
 
-Documentação: [K.IA Architecture](docs/KIA_ARCHITECTURE.md), [Runtime Host Protocol](docs/KIA_RUNTIME_HOST_PROTOCOL.md), [Cognitive Memory](docs/KIA_COGNITIVE_MEMORY.md).
+Documentação: [K.BA Architecture](docs/KBA_ARCHITECTURE.md), [Runtime Host Protocol](docs/KBA_RUNTIME_HOST_PROTOCOL.md), [Cognitive Memory](docs/KBA_COGNITIVE_MEMORY.md).
 
 ---
 
-## 3. BA — Brain Architecture
+## 3. BA — Brain Artificial
 
-A **BA** é a proposta de arquitetura de rede cognitiva hierárquica que deverá organizar capacidades, regiões, sub-regiões, unidades, conexões e mecanismos de ativação.
+A **Brain Artificial (BA)** é o sistema artificial adaptativo e desenvolvimental do projeto. Não é uma IA convencional, não é um LLM e não se define pela soma de modelos externos. Seu fundamento é uma organização interna capaz de se desenvolver, adaptar e evoluir conforme os ambientes em que suas unidades e regiões existem.
 
-A intenção é permitir que a K.IA não precise tratar todas as capacidades como um conjunto plano. A rede poderá organizar especializações por domínio e ativar somente as regiões e conexões pertinentes a uma tarefa.
+### 3.1. Princípio central: adaptação ao ambiente
 
-### 3.1. Modelo conceitual
+A BA deve ser construída a partir de mecanismos estruturais inspirados na natureza:
+
+- **Regiões e sub-regiões:** especializações locais com autonomia limitada e coordenação entre escalas.
+- **Unidades artificiais:** elementos computacionais que recebem estímulos, mantêm estado, interagem e podem se especializar.
+- **Nichos ambientais:** cada região opera sob condições locais, recursos, pressões e sinais próprios.
+- **Campos de sinalização:** sinais se propagam, degradam, são absorvidos e interpretados de acordo com a distância, o meio e a sensibilidade local.
+- **Plasticidade e homeostase:** conexões e atividades se ajustam sem permitir crescimento descontrolado ou perda de funções essenciais.
+- **Desenvolvimento:** diferenciação gradual de unidades e regiões conforme histórico, ambiente e necessidades.
+- **Hereditariedade e evolução:** NeuralDNA descreve predisposições e programas herdáveis; variação e seleção exigem linhagens e gerações avaliadas, não simples alteração de pesos.
+
+A BA deve preservar diversidade regional. Um sinal global não pode substituir automaticamente informações locais: em ambientes divergentes, a mistura excessiva pode destruir especializações úteis.
+
+### 3.2. Organização conceitual
 
 ```text
 BA/
-├── cognitive_regions/
-│   ├── mathematics/
-│   │   ├── subregions/
+├── environment/
+│   ├── local_niches/
+│   ├── gradients/
+│   └── resource_fields/
+├── regions/
+│   ├── subregions/
 │   │   └── units/
-│   ├── programming/
-│   │   ├── subregions/
-│   │   └── units/
-│   ├── reasoning/
-│   │   ├── subregions/
-│   │   └── units/
-│   └── language/
-│       ├── subregions/
-│       └── units/
-├── connection_graph/
-├── activation/
+│   ├── local_regulation/
+│   └── regional_homeostasis/
+├── signal_fields/
+├── connection_topology/
 ├── plasticity/
-├── specialists/
-├── persistent_memory/
-├── cache/
-└── evaluation/
+├── development/
+├── neural_dna/
+├── memory/
+└── evaluation_and_selection/
 ```
 
-Esta é uma organização lógica proposta, não a afirmação de que cada unidade já seja um neurônio artificial treinável ou que exista uma implementação física completa da BA.
+Essa estrutura é um modelo de desenvolvimento. Os termos biológicos orientam princípios de projeto; não afirmam equivalência literal com células, tecidos, neurônios ou organismos vivos.
 
-### 3.2. Ativação seletiva e armazenamento hierárquico
+### 3.3. Separação entre BA, K.BA e modelos externos
 
-A direção de pesquisa é manter dados persistentes em SSD/HDD, estruturas frequentes em RAM e componentes necessários à execução em VRAM, com cache e prefetch controlados pelo runtime.
+- **BA:** sistema adaptativo e desenvolvimental.
+- **K.BA:** núcleo operacional que hospeda, coordena e fornece serviços à BA.
+- **Modelos externos de IA:** provedores opcionais de capacidades específicas, como linguagem, percepção ou especialização. Não são a BA e não determinam sua arquitetura interna.
+- **AILocal Universal:** plataforma de desenvolvimento, integração, interface, distribuição e gerenciamento.
 
-Armazenamento em disco não equivale a memória de GPU: latência, largura de banda, PCIe, RAM e VRAM impõem limites físicos. A arquitetura deverá ser validada com medições reais de I/O, carregamento, cache e execução.
+### 3.4. Estado real da implementação
 
-### 3.3. Plasticidade
+O runtime Rust atual ainda mantém um grafo de capacidades, componentes e conexões. Ele não implementa, por si só, regiões espaciais, unidades autônomas, gradientes ambientais, diferenciação, genoma executável ou evolução multi-geracional.
 
-A evolução deverá distinguir:
-- Plasticidade de prioridades de roteamento.
-- Plasticidade de conexões entre componentes.
-- Aprendizado de modelos roteadores.
-- Adaptadores paramétricos, como LoRA/DoRA.
-- Transformações estruturais de modelos.
+NeuralDNA, NeuralStem, comunicação espacial e campos de sinal estão sendo avaliados em branches e benchmarks separados. Esses experimentos não devem ser apresentados como uma BA completa nem integrados ao núcleo antes de demonstrarem ganhos reproduzíveis contra baselines locais.
 
-Cada mecanismo deverá possuir avaliação, limites, versionamento e possibilidade de rollback.
+### 3.5. Armazenamento e execução hierárquicos
+
+A pesquisa considera SSD/HDD para estruturas persistentes, RAM para estruturas ativas e VRAM para operações aceleradas, com cache e prefetch orientados pela atividade. Disco não equivale a memória de GPU: latência, largura de banda, PCIe, RAM e VRAM precisam ser medidos. A decisão de residência deve considerar frequência de acesso, tamanho, custo de transferência e pressão ambiental de recursos.
+
+### 3.6. Critério de evolução
+
+Uma mudança só deve ser preservada quando melhora a adaptação em múltiplos ambientes sem destruir especializações raras. Avaliar aquisição, retenção, interferência, estabilidade, custo energético/computacional, diversidade regional e desempenho de pior caso. Toda promoção estrutural precisa de versão, comparação, histórico e rollback.
 
 ---
 
@@ -218,7 +232,7 @@ A NAPA organiza a classificação e o registro de áreas cognitivas ativadas por
 
 NAPA 1.0 possui registro de áreas e classificação multilabel com sinais explicáveis. Suas afinidades são heurísticas, não probabilidades calibradas.
 
-NAPA não é, isoladamente, um roteador de modelos, um sistema de treinamento ou um conjunto de LLMs independentes. Ela fornece sinais para o planejamento da K.IA/ACCA.
+NAPA não é, isoladamente, um roteador de modelos, um sistema de treinamento ou um conjunto de LLMs independentes. Ela fornece sinais para o planejamento da K.BA/ACCA.
 
 Documentação: [NAPA](docs/NAPA.md).
 
@@ -362,10 +376,10 @@ Um fluxo completo pretendido é:
 2. Cognitive Core normaliza e analisa intenção, dificuldade, risco e urgência.
 3. NAPA registra as áreas cognitivas relevantes.
 4. Knowledge Runtime consulta RAG/NeSA quando necessário e autorizado.
-5. ACCA/K.IA avaliam capacidades, dependências, custos e restrições.
+5. ACCA/K.BA avaliam capacidades, dependências, custos e restrições.
 6. BA fornece a organização hierárquica e as conexões cognitivas conforme sua implementação evoluir.
 7. Adaptive Resource Manager informa os recursos disponíveis e limites.
-8. K.IA seleciona executores, ferramentas, modelos ou workflows.
+8. K.BA seleciona executores, ferramentas, modelos ou workflows.
 9. NeuralMap pode fornecer um grafo declarativo para a tarefa.
 10. NeuralPlugin/NeuralInjector disponibilizam especializações compatíveis quando instaladas.
 11. Os adaptadores executam as operações nos motores registrados.
@@ -494,7 +508,7 @@ Resultados de CI, smoke tests e validação manual devem ser reportados separada
 | 1. Fundação | Consolidar aplicação, Cognitive Core, contratos e testes |
 | 2. Conhecimento | Integrar RAG, NeSA e validação de evidências |
 | 3. Modelos e recursos | Integrar NeuralModel Hub, Hardware Profiler e Adaptive Resource Manager |
-| 4. K.IA | Consolidar runtime Rust, bridge, ACCA, memória e segurança |
+| 4. K.BA | Consolidar runtime Rust, bridge, ACCA, memória e segurança |
 | 5. Workflows | Integrar NeuralMap e seus contratos de execução |
 | 6. Especialização | Implementar NeuralPlugin Manager e NeuralInjector Engine/NIP |
 | 7. BA | Formalizar e implementar regiões, unidades, conexões e ativação esparsa |
@@ -530,9 +544,9 @@ Consulte [LICENSE](LICENSE), [NOTICE.md](NOTICE.md), [SECURITY](docs/SECURITY.md
 - [Estado da implementação](docs/IMPLEMENTATION_STATUS.md)
 - [Roadmap](docs/ROADMAP.md)
 - [Contratos de dados](docs/DATA_CONTRACTS.md)
-- [K.IA Architecture](docs/KIA_ARCHITECTURE.md)
-- [K.IA Runtime Host Protocol](docs/KIA_RUNTIME_HOST_PROTOCOL.md)
-- [K.IA Cognitive Memory](docs/KIA_COGNITIVE_MEMORY.md)
+- [K.BA Architecture](docs/KBA_ARCHITECTURE.md)
+- [K.BA Runtime Host Protocol](docs/KBA_RUNTIME_HOST_PROTOCOL.md)
+- [K.BA Cognitive Memory](docs/KBA_COGNITIVE_MEMORY.md)
 - [ACCA Mathematical Model](docs/ACCA_MATHEMATICAL_MODEL.md)
 - [NAPA](docs/NAPA.md)
 - [RAG](docs/RAG.md)

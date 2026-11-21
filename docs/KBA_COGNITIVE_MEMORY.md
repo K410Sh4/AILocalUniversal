@@ -1,12 +1,12 @@
-# K.IA — Persistent Cognitive Memory & Semantic Integration v0.4
+# K.BA — Persistent Cognitive Memory & Semantic Integration v0.4
 
 ## Escopo
 
-A K.IA 0.4 adiciona memória operacional durável e integra o catálogo NeSA ao caminho de recuperação já existente. Não é memória paramétrica: pesos de LLM, LoRA, adaptadores e parâmetros de modelos não são alterados.
+A K.BA 0.4 adiciona memória operacional durável e integra o catálogo NeSA ao caminho de recuperação já existente. Não é memória paramétrica: pesos de LLM, LoRA, adaptadores e parâmetros de modelos não são alterados.
 
 ## Ciclo de persistência
 
-1. O processo Python inicia `kia-runtime-host` com protocolo JSONL v2.
+1. O processo Python inicia `kba-runtime-host` com protocolo JSONL v2.
 2. Antes do primeiro `replace_state`, o cliente consulta o snapshot SQLite local.
 3. Se houver snapshot, envia `restore_learning`; Rust valida a rede com `AdaptiveCognitiveNetwork.validate()`.
 4. Python envia o estado operacional atual. Rust aplica `carry_learning_from`, preservando somente conexões com identidade tipada compatível.
@@ -20,16 +20,16 @@ HardwareSnapshot, ResourceBudget e IDs de executores nunca são restaurados: RAM
 Padrão:
 
 ```text
-$XDG_DATA_HOME/ailocal-universal/kia/cognitive-memory.sqlite3
+$XDG_DATA_HOME/ailocal-universal/kba/cognitive-memory.sqlite3
 ```
 
 Fallback:
 
 ```text
-~/.local/share/ailocal-universal/kia/cognitive-memory.sqlite3
+~/.local/share/ailocal-universal/kba/cognitive-memory.sqlite3
 ```
 
-Permissões: diretório `ailocal-universal` 0700, subdiretório `kia` 0700, arquivo SQLite 0600. O banco usa transação `BEGIN IMMEDIATE`, `synchronous=FULL`, journal DELETE e `PRAGMA user_version=1`.
+Permissões: diretório `ailocal-universal` 0700, subdiretório `kba` 0700, arquivo SQLite 0600. O banco usa transação `BEGIN IMMEDIATE`, `synchronous=FULL`, journal DELETE e `PRAGMA user_version=1`.
 
 Tabelas:
 - `cognitive_snapshots`: uma rede atual por namespace, versão de esquema/rede, hash e JSON canônico;
@@ -67,3 +67,10 @@ Com Knowledge desativado, o provedor não é publicado no grafo e nenhum estági
 - NeSA ainda usa FTS5 lexical para páginas; não há embeddings de páginas, ANN, reranker ou relações factuais tipadas.
 - O custo do provedor Knowledge é uma reserva inicial explícita e ainda não calibrada por benchmark.
 - A aceitação operacional no Arch Linux e testes com a base real de documentos permanecem necessários.
+
+
+## Migração de nomenclatura e compatibilidade
+
+Na primeira inicialização após a atualização, o caminho padrão passa de `ailocal-universal/kia/cognitive-memory.sqlite3` para `ailocal-universal/kba/cognitive-memory.sqlite3`. Se o novo arquivo ainda não existir e o banco legado estiver presente, o cliente move o arquivo atomicamente para o novo caminho, preservando o conteúdo e reaplicando as permissões privadas. Se os dois arquivos existirem, nenhum deles é sobrescrito nem mesclado automaticamente; a migração deve ser reconciliada manualmente para evitar perda de estado.
+
+O cliente prioriza `KBA_RUNTIME_HOST`, mas aceita temporariamente `KIA_RUNTIME_HOST` e o host legado para facilitar atualização. Novas compilações devem usar `kba/` e `kba-runtime-host`.

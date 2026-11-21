@@ -5,10 +5,10 @@ from pathlib import Path
 
 import pytest
 
-from kia_bridge import (
-    KiaRuntimeClient,
-    KiaRuntimeError,
-    KiaRuntimeUnavailable,
+from kba_bridge import (
+    KbaRuntimeClient,
+    KbaRuntimeError,
+    KbaRuntimeUnavailable,
     build_network_payload,
     cognitive_request_from_napa,
     host_state_payload,
@@ -30,7 +30,7 @@ for line in sys.stdin:
     request = json.loads(line)
     kind = request["command"]["type"]
     if kind == "health":
-        result = {"service": "kia-cognitive-runtime", "version": "0.4.0"}
+        result = {"service": "kba-cognitive-runtime", "version": "0.4.0"}
     elif kind == "shutdown":
         result = {"shutdown": True}
     elif kind == "inspect":
@@ -59,8 +59,8 @@ def test_client_starts_persistent_process_correlates_requests_and_shuts_down(
 ) -> None:
     command = _fake_host(tmp_path / "fake-host.py")
 
-    with KiaRuntimeClient(command, timeout_seconds=2.0) as client:
-        assert client.health()["service"] == "kia-cognitive-runtime"
+    with KbaRuntimeClient(command, timeout_seconds=2.0) as client:
+        assert client.health()["service"] == "kba-cognitive-runtime"
         assert client._request("echo", {"value": "á"}).get("value") == "á"
         assert client.inspect()["network_version"] == 1
 
@@ -72,8 +72,8 @@ def test_client_rejects_oversized_utf8_request_without_desynchronizing_host(
     tmp_path: Path,
 ) -> None:
     command = _fake_host(tmp_path / "bounded-host.py")
-    with KiaRuntimeClient(command, timeout_seconds=2.0) as client:
-        with pytest.raises(KiaRuntimeError) as error:
+    with KbaRuntimeClient(command, timeout_seconds=2.0) as client:
+        with pytest.raises(KbaRuntimeError) as error:
             client._request("echo", {"value": "é" * (2 * 1024 * 1024 + 1)})
         assert error.value.code == "request_too_large"
         assert client._request("echo", {"value": "still-aligned"}) == {
@@ -83,16 +83,16 @@ def test_client_rejects_oversized_utf8_request_without_desynchronizing_host(
 
 def test_client_rejects_non_json_request_payload(tmp_path: Path) -> None:
     command = _fake_host(tmp_path / "json-host.py")
-    with KiaRuntimeClient(command, timeout_seconds=2.0) as client:
-        with pytest.raises(KiaRuntimeError) as error:
+    with KbaRuntimeClient(command, timeout_seconds=2.0) as client:
+        with pytest.raises(KbaRuntimeError) as error:
             client._request("echo", {"value": object()})
         assert error.value.code == "invalid_request_payload"
-        assert client.health()["service"] == "kia-cognitive-runtime"
+        assert client.health()["service"] == "kba-cognitive-runtime"
 
 
 def test_client_rejects_missing_executable() -> None:
-    with pytest.raises(KiaRuntimeUnavailable):
-        KiaRuntimeClient("/definitely/not/a/kia-runtime-host")
+    with pytest.raises(KbaRuntimeUnavailable):
+        KbaRuntimeClient("/definitely/not/a/kba-runtime-host")
 
 
 def test_client_rejects_incompatible_or_malformed_host_response(
@@ -116,8 +116,8 @@ for line in sys.stdin:
     )
     script.chmod(0o700)
 
-    with pytest.raises(KiaRuntimeError, match="Versão do protocolo"):
-        KiaRuntimeClient([sys.executable, str(script)], timeout_seconds=2.0)
+    with pytest.raises(KbaRuntimeError, match="Versão do protocolo"):
+        KbaRuntimeClient([sys.executable, str(script)], timeout_seconds=2.0)
 
 
 def test_napa_registry_exports_all_declared_areas_and_active_request() -> None:
@@ -331,7 +331,7 @@ def test_resource_budget_rejects_free_memory_larger_than_total() -> None:
 
 
 def test_engine_registry_names_select_only_matching_installed_model_artifacts() -> None:
-    from kia_bridge import executor_ids_for_registered_engines
+    from kba_bridge import executor_ids_for_registered_engines
 
     record = ModelRecord(
         record_id="ollama:qwen3:4b",

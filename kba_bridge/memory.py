@@ -1,4 +1,4 @@
-"""Memória cognitiva persistente local da K.IA.
+"""Memória cognitiva persistente local da K.BA.
 
 Guarda snapshots de rede e metadados de eventos. Não armazena prompts, respostas
 ou conteúdo documental.
@@ -21,13 +21,13 @@ MAX_EVENTS = 10_000
 DEFAULT_NAMESPACE = "default"
 
 
-class KiaMemoryError(RuntimeError):
+class KbaMemoryError(RuntimeError):
     """Falha de integridade, esquema ou persistência da memória cognitiva."""
 
 
-def default_kia_memory_path() -> Path:
+def default_kba_memory_path() -> Path:
     root = Path(os.environ.get("XDG_DATA_HOME", Path.home() / ".local" / "share"))
-    return root / "ailocal-universal" / "kia" / "cognitive-memory.sqlite3"
+    return root / "ailocal-universal" / "kba" / "cognitive-memory.sqlite3"
 
 
 def _canonical_json(payload: dict[str, Any]) -> str:
@@ -40,10 +40,10 @@ def _canonical_json(payload: dict[str, Any]) -> str:
             allow_nan=False,
         )
     except (TypeError, ValueError) as exc:
-        raise KiaMemoryError("Snapshot cognitivo não pode ser serializado com segurança.") from exc
+        raise KbaMemoryError("Snapshot cognitivo não pode ser serializado com segurança.") from exc
 
 
-class KiaMemoryStore:
+class KbaMemoryStore:
     """Snapshot transacional e event log limitado, privado e validado por hash."""
 
     def __init__(
@@ -54,9 +54,13 @@ class KiaMemoryStore:
     ) -> None:
         if not isinstance(namespace, str) or not namespace.strip() or len(namespace) > 128:
             raise ValueError("namespace da memória precisa ser texto não vazio (até 128 chars).")
-        self.path = Path(path).expanduser() if path is not None else default_kia_memory_path()
+        self.path = Path(path).expanduser() if path is not None else default_kba_memory_path()
         self.namespace = namespace.strip()
         if path is None:
+            legacy_path = self.path.parent.parent / "kia" / "cognitive-memory.sqlite3"
+            if not self.path.exists() and legacy_path.is_file():
+                self.path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
+                os.replace(legacy_path, self.path)
             app_data_directory = self.path.parent.parent
             app_data_directory.mkdir(parents=True, exist_ok=True, mode=0o700)
             os.chmod(app_data_directory, 0o700)
@@ -82,7 +86,7 @@ class KiaMemoryStore:
             self._connection.execute("PRAGMA secure_delete=ON")
             self._initialize()
             os.chmod(self.path, 0o600)
-        except KiaMemoryError:
+        except KbaMemoryError:
             connection = getattr(self, "_connection", None)
             if connection is not None:
                 connection.close()
@@ -91,12 +95,12 @@ class KiaMemoryStore:
             connection = getattr(self, "_connection", None)
             if connection is not None:
                 connection.close()
-            raise KiaMemoryError(f"Não foi possível inicializar a memória K.IA: {exc}") from exc
+            raise KbaMemoryError(f"Não foi possível inicializar a memória K.BA: {exc}") from exc
 
     def _initialize(self) -> None:
         version = int(self._connection.execute("PRAGMA user_version").fetchone()[0])
         if version > SCHEMA_VERSION:
-            raise KiaMemoryError(
+            raise KbaMemoryError(
                 f"Banco de memória versão {version} é mais novo que a suportada {SCHEMA_VERSION}."
             )
         self._connection.execute("BEGIN IMMEDIATE")
@@ -144,23 +148,23 @@ class KiaMemoryStore:
         allow_free_text_notes: bool = False,
     ) -> int:
         if not isinstance(network, dict):
-            raise KiaMemoryError("Snapshot da rede precisa ser um objeto.")
+            raise KbaMemoryError("Snapshot da rede precisa ser um objeto.")
         required = ("capabilities", "components", "connections", "feedback_history", "version")
         if any(key not in network for key in required):
-            raise KiaMemoryError("Snapshot não contém todos os campos da rede cognitiva.")
+            raise KbaMemoryError("Snapshot não contém todos os campos da rede cognitiva.")
         if (
             not isinstance(network["capabilities"], dict)
             or not isinstance(network["components"], dict)
         ):
-            raise KiaMemoryError("Capacidades e componentes precisam ser objetos.")
+            raise KbaMemoryError("Capacidades e componentes precisam ser objetos.")
         if (
             not isinstance(network["connections"], list)
             or not isinstance(network["feedback_history"], list)
         ):
-            raise KiaMemoryError("Conexões e feedback precisam ser listas.")
+            raise KbaMemoryError("Conexões e feedback precisam ser listas.")
         version = network["version"]
         if isinstance(version, bool) or not isinstance(version, int) or version < 0:
-            raise KiaMemoryError("Versão da rede no snapshot é inválida.")
+            raise KbaMemoryError("Versão da rede no snapshot é inválida.")
 
         forbidden_keys = {
             "prompt",
@@ -177,7 +181,7 @@ class KiaMemoryStore:
             if isinstance(value, dict):
                 for key, item in value.items():
                     if str(key).casefold() in forbidden_keys:
-                        raise KiaMemoryError(
+                        raise KbaMemoryError(
                             "Snapshot contém campo de conteúdo conversacional/documental proibido."
                         )
                     reject_user_payload(item)
@@ -188,18 +192,18 @@ class KiaMemoryStore:
         reject_user_payload(network)
         for feedback in network["feedback_history"]:
             if not isinstance(feedback, dict):
-                raise KiaMemoryError("Registro de feedback persistido precisa ser objeto.")
+                raise KbaMemoryError("Registro de feedback persistido precisa ser objeto.")
             if (
                 feedback.get("notes") not in (None, "")
                 and not allow_free_text_notes
             ):
-                raise KiaMemoryError("Notas livres não podem ser persistidas na memória cognitiva.")
+                raise KbaMemoryError("Notas livres não podem ser persistidas na memória cognitiva.")
         return version
 
     def load_network(self) -> dict[str, Any] | None:
         with self._lock:
             if self._closed:
-                raise KiaMemoryError("Memória K.IA já foi encerrada.")
+                raise KbaMemoryError("Memória K.BA já foi encerrada.")
             try:
                 row = self._connection.execute(
                     "SELECT schema_version, payload_sha256, payload_json "
@@ -207,12 +211,12 @@ class KiaMemoryStore:
                     (self.namespace,),
                 ).fetchone()
             except sqlite3.Error as exc:
-                raise KiaMemoryError(f"Falha ao ler snapshot da memória K.IA: {exc}") from exc
+                raise KbaMemoryError(f"Falha ao ler snapshot da memória K.BA: {exc}") from exc
         if row is None:
             return None
         schema_version, expected_digest, payload_json = row
         if schema_version != SCHEMA_VERSION:
-            raise KiaMemoryError(
+            raise KbaMemoryError(
                 f"Snapshot usa esquema {schema_version}; suportado {SCHEMA_VERSION}."
             )
         if (
@@ -220,16 +224,16 @@ class KiaMemoryStore:
             or len(expected_digest) != 64
             or not isinstance(payload_json, str)
         ):
-            raise KiaMemoryError("Metadados ou conteúdo do snapshot estão corrompidos.")
+            raise KbaMemoryError("Metadados ou conteúdo do snapshot estão corrompidos.")
         actual_digest = hashlib.sha256(payload_json.encode("utf-8")).hexdigest()
         if not hmac.compare_digest(expected_digest, actual_digest):
-            raise KiaMemoryError("Hash do snapshot cognitivo diverge; restauração bloqueada.")
+            raise KbaMemoryError("Hash do snapshot cognitivo diverge; restauração bloqueada.")
         try:
             network = json.loads(payload_json)
         except json.JSONDecodeError as exc:
-            raise KiaMemoryError("Snapshot da memória contém JSON inválido.") from exc
+            raise KbaMemoryError("Snapshot da memória contém JSON inválido.") from exc
         if not isinstance(network, dict):
-            raise KiaMemoryError("Snapshot da rede não é um objeto JSON.")
+            raise KbaMemoryError("Snapshot da rede não é um objeto JSON.")
         self._validate_network(network)
         return network
 
@@ -262,7 +266,7 @@ class KiaMemoryStore:
         )
         with self._lock:
             if self._closed:
-                raise KiaMemoryError("Memória K.IA já foi encerrada.")
+                raise KbaMemoryError("Memória K.BA já foi encerrada.")
             try:
                 self._connection.execute("BEGIN IMMEDIATE")
                 self._connection.execute(
@@ -314,14 +318,14 @@ class KiaMemoryStore:
                     self._connection.execute("ROLLBACK")
                 except sqlite3.Error:
                     pass
-                raise KiaMemoryError(f"Falha ao persistir a rede cognitiva: {exc}") from exc
+                raise KbaMemoryError(f"Falha ao persistir a rede cognitiva: {exc}") from exc
 
     def list_events(self, *, limit: int = 100) -> list[dict[str, Any]]:
         if isinstance(limit, bool) or not isinstance(limit, int) or not 1 <= limit <= 1000:
             raise ValueError("limit precisa estar entre 1 e 1000.")
         with self._lock:
             if self._closed:
-                raise KiaMemoryError("Memória K.IA já foi encerrada.")
+                raise KbaMemoryError("Memória K.BA já foi encerrada.")
             try:
                 rows = self._connection.execute(
                     """
@@ -333,7 +337,7 @@ class KiaMemoryStore:
                     (self.namespace, limit),
                 ).fetchall()
             except sqlite3.Error as exc:
-                raise KiaMemoryError(f"Falha ao consultar eventos cognitivos: {exc}") from exc
+                raise KbaMemoryError(f"Falha ao consultar eventos cognitivos: {exc}") from exc
         events: list[dict[str, Any]] = []
         for row in rows:
             expected_digest, payload_json = row[4], row[5]
@@ -342,16 +346,16 @@ class KiaMemoryStore:
                 or len(expected_digest) != 64
                 or not isinstance(payload_json, str)
             ):
-                raise KiaMemoryError("Metadados de evento cognitivo estão corrompidos.")
+                raise KbaMemoryError("Metadados de evento cognitivo estão corrompidos.")
             actual_digest = hashlib.sha256(payload_json.encode("utf-8")).hexdigest()
             if not hmac.compare_digest(expected_digest, actual_digest):
-                raise KiaMemoryError("Hash de evento cognitivo diverge; leitura bloqueada.")
+                raise KbaMemoryError("Hash de evento cognitivo diverge; leitura bloqueada.")
             try:
                 summary = json.loads(payload_json)
             except json.JSONDecodeError as exc:
-                raise KiaMemoryError("Evento cognitivo contém JSON inválido.") from exc
+                raise KbaMemoryError("Evento cognitivo contém JSON inválido.") from exc
             if not isinstance(summary, dict):
-                raise KiaMemoryError("Resumo de evento cognitivo não é um objeto.")
+                raise KbaMemoryError("Resumo de evento cognitivo não é um objeto.")
             events.append(
                 {
                     "sequence": row[0],
@@ -371,7 +375,7 @@ class KiaMemoryStore:
             self._closed = True
             self._connection.close()
 
-    def __enter__(self) -> KiaMemoryStore:
+    def __enter__(self) -> KbaMemoryStore:
         return self
 
     def __exit__(self, *_: object) -> None:

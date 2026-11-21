@@ -98,7 +98,7 @@ As fases são entregas progressivas. Uma funcionalidade só é considerada concl
 - [x] Expor snapshot de residência Ollama via `/api/ps` no contrato Engine Adapter (`RunningModelSnapshot`), preservando digest, tamanho, VRAM, contexto e expiração reportados.
 - [x] Reconciliar snapshots com artefatos instalados por referência exata + digest; estados ausente/divergente/ambíguo permanecem inconclusivos e não reduzem a estimativa.
 - [x] Avaliar reutilização do runner residente quando digest e contexto coincidem, sem contabilizar pesos/KV/buffers já alocados novamente para uma solicitação serial.
-- [x] Integrar snapshots `/api/ps` ao seletor do modo Automático e ao fluxo ACCA/K.IA; manter modo Manual inalterado, carimbar observações e rejeitar snapshots com mais de 30 s ou próximos da expiração.
+- [x] Integrar snapshots `/api/ps` ao seletor do modo Automático e ao fluxo ACCA/K.BA; manter modo Manual inalterado, carimbar observações e rejeitar snapshots com mais de 30 s ou próximos da expiração.
 - [ ] Integrar slots concorrentes reais e leases Rust/Python, unload confirmado e medições frias/quentes no Arch Linux.
 - [ ] Validar seleção quente/fria no Arch Linux, comparando estimativas com RAM/VRAM observadas e confirmando o comportamento de unload/keep-alive.
 
@@ -177,9 +177,9 @@ A NAPA coordena Cognitive Core, NeuralModel Hub, NeuralMap, Knowledge/RAG, Adapt
 
 A NeSA organiza conhecimento e recupera evidências. A NAPA decide quando consultá-la; o RAG mantém a proveniência e a validação de evidências. O NeuralMap poderá visualizar os grafos, sem duplicar a propriedade dos dados do Atlas.
 
-## K.IA — Artificial Brain
+## K.BA — Artificial Brain
 
-### K.IA 0.1 — Rust Cognitive Runtime
+### K.BA 0.1 — Rust Cognitive Runtime
 - [x] Crate Rust independente com contratos serializáveis e IDs tipados.
 - [x] Adaptive Cognitive Network em memória com nós, relações tipadas e integridade de referências.
 - [x] Planner seletivo por capacidade, intenção, contexto, disponibilidade de executor e orçamento.
@@ -189,9 +189,9 @@ A NeSA organiza conhecimento e recupera evidências. A NAPA decide quando consul
 - [x] Plasticidade operacional inicial por feedback avaliado e referenciado.
 - [x] Testes Rust e CI com fmt, clippy e cargo test.
 
-**Limites:** sem adaptadores reais, persistência, Tokio, coleta física de hardware, concorrência/cancelamento, treinamento paramétrico ou plasticidade estrutural. Reserva de hardware é lógica, não quota real do kernel. Consulte docs/KIA_ARCHITECTURE.md.
+**Limites:** sem adaptadores reais, persistência, Tokio, coleta física de hardware, concorrência/cancelamento, treinamento paramétrico ou plasticidade estrutural. Reserva de hardware é lógica, não quota real do kernel. Consulte docs/KBA_ARCHITECTURE.md.
 
-### K.IA 0.2 — Runtime Host & Python Bridge
+### K.BA 0.2 — Runtime Host & Python Bridge
 - [x] Binário local persistente com JSONL v1 e comandos health, replace_state, plan, record_feedback, inspect e shutdown.
 - [x] Validação do grafo desserializado, snapshot, orçamento e executores declarados pelo lado Python.
 - [x] Cliente Python com processo persistente, handshake, timeout, correlação de request_id e shutdown.
@@ -199,7 +199,7 @@ A NeSA organiza conhecimento e recupera evidências. A NAPA decide quando consul
 - [x] Custos/alvos desconhecidos permanecem inelegíveis; tamanho de artefato não vira estimativa de memória.
 - [x] Testes do subprocesso JSONL Rust e da ponte Python.
 
-### K.IA 0.3 — ACCA Vertical Flow
+### K.BA 0.3 — ACCA Vertical Flow
 - [x] Adiar a execução determinística até o planner Rust quando o host estiver disponível.
 - [x] Exportar as ativações NAPA e o inventário instalado do NeuralModel Hub para uma rede cognitiva.
 - [x] Registrar ferramentas determinísticas Python com capacidades, custo estático limitado e executor real.
@@ -209,12 +209,12 @@ A NeSA organiza conhecimento e recupera evidências. A NAPA decide quando consul
 - [x] Reproduzir resultados determinísticos pela Validation Layer antes de atualizar prioridades.
 - [x] Preservar pesos/contadores das conexões compatíveis quando replace_state sincroniza o próximo turno.
 - [x] Validar resposta de LLM como estruturalmente presente, mas factual não verificada; completude não é presumida sem requisitos.
-- [x] Fallback para o pipeline anterior quando K.IA não está instalada ou não encontra plano executável.
+- [x] Fallback para o pipeline anterior quando K.BA não está instalada ou não encontra plano executável.
 - [ ] Integrar RAG/NeSA como provedores selecionáveis pelo plano Rust.
 - [ ] Ampliar seleção para GPU/híbrido após telemetria real de placement do backend.
 - [ ] Validar o fluxo no Arch Linux com Ollama e modelos instalados.
 
-### K.IA 0.4 — Persistent Cognitive Memory & Semantic Integration
+### K.BA 0.4 — Persistent Cognitive Memory & Semantic Integration
 - [x] Evoluir o protocolo local para v2 com restore_learning e export_network.
 - [x] Restaurar apenas a rede cognitiva validada antes do primeiro replace_state; sempre reconstruir hardware, budgets e executores.
 - [x] Persistir snapshots e event log em SQLite com transação, SHA-256, esquema versionado e permissões privadas.
@@ -226,11 +226,11 @@ A NeSA organiza conhecimento e recupera evidências. A NAPA decide quando consul
 - [x] Testar persistência/restauração, integridade de hash, permissões e seleção do provedor de memória.
 - [ ] Validar no Arch Linux o reinício do host, recuperação da plasticidade, busca NeSA progressiva e RAG no Chat.
 
-### K.IA 0.5–0.8 — evolução planejada
-- [ ] K.IA 0.5 — Adaptadores reais adicionais (llama.cpp), filas limitadas, timeout por tarefa, cancelamento e leases.
-- [ ] K.IA 0.6 — Semantic Engine com embeddings de capacidades, CSR top-k/ANN e expansão por incerteza.
-- [ ] K.IA 0.7 — Relações tipadas do NeSA com proveniência, dependência de fontes e resolução explícita de contradições.
-- [ ] K.IA 0.8 — Cognitive Termination Controller no executor multi-etapas e benchmark A/B/C da ACCA com qualidade equivalente.
+### K.BA 0.5–0.8 — evolução planejada
+- [ ] K.BA 0.5 — Adaptadores reais adicionais (llama.cpp), filas limitadas, timeout por tarefa, cancelamento e leases.
+- [ ] K.BA 0.6 — Semantic Engine com embeddings de capacidades, CSR top-k/ANN e expansão por incerteza.
+- [ ] K.BA 0.7 — Relações tipadas do NeSA com proveniência, dependência de fontes e resolução explícita de contradições.
+- [ ] K.BA 0.8 — Cognitive Termination Controller no executor multi-etapas e benchmark A/B/C da ACCA com qualidade equivalente.
 
 ### Neural Plasticity & Development
 - [ ] Plasticity 0.2 — benchmark de rotas, shadow mode, A/B, limiares e rollback.
@@ -289,7 +289,7 @@ A especificação matemática, limitações e metodologia de benchmark estão em
 - main só recebe uma fase depois de revisão, CI aprovado e validação de aceitação no ambiente-alvo.
 
 
-## K.IA 0.5 — Execution Safety Core (incremento inicial)
+## K.BA 0.5 — Execution Safety Core (incremento inicial)
 
 Implementado na branch feature/kia-execution-safety-v0.5:
 - controle compartilhável por tarefa com cancelamento e deadline absoluto;
@@ -299,4 +299,4 @@ Implementado na branch feature/kia-execution-safety-v0.5:
 - leases RAII liberam reservas ao sair do escopo, inclusive em retorno por erro;
 - interrupção, timeout e rejeição por admissão aparecem como estados distintos no relatório.
 
-Próximo incremento de K.IA 0.5: conectar os controles ao ciclo de vida das tarefas da aplicação/host, adaptar o cancelamento aos workers Python e adicionar adaptador llama.cpp somente após definir e testar sua interface de runtime.
+Próximo incremento de K.BA 0.5: conectar os controles ao ciclo de vida das tarefas da aplicação/host, adaptar o cancelamento aos workers Python e adicionar adaptador llama.cpp somente após definir e testar sua interface de runtime.

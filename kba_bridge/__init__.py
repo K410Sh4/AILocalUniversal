@@ -1,6 +1,6 @@
-"""Integração Python do K.IA Runtime Host."""
+"""Integração Python do K.BA Runtime Host."""
 
-from kia_bridge.adapters import (
+from kba_bridge.adapters import (
     build_network_payload,
     capabilities_from_napa,
     cognitive_request_from_napa,
@@ -10,37 +10,37 @@ from kia_bridge.adapters import (
     resource_budget_from_profile,
     resource_snapshot_from_hardware,
 )
-from kia_bridge.client import (
+from kba_bridge.client import (
     HOST_PROTOCOL_VERSION,
-    KiaRuntimeClient,
-    KiaRuntimeError,
-    KiaRuntimeUnavailable,
+    KbaRuntimeClient,
+    KbaRuntimeError,
+    KbaRuntimeUnavailable,
 )
-from kia_bridge.flow import (
-    KiaExecutionCoordinator,
-    KiaFlowError,
-    KiaPlanDecision,
-    append_kia_plan_to_task,
+from kba_bridge.flow import (
+    KbaExecutionCoordinator,
+    KbaFlowError,
+    KbaPlanDecision,
+    append_kba_plan_to_task,
     execute_deterministic_selection,
     record_validated_deterministic_feedback,
 )
-from kia_bridge.memory import (
-    KiaMemoryError,
-    KiaMemoryStore,
-    default_kia_memory_path,
+from kba_bridge.memory import (
+    KbaMemoryError,
+    KbaMemoryStore,
+    default_kba_memory_path,
 )
 
 __all__ = [
     "HOST_PROTOCOL_VERSION",
-    "KiaExecutionCoordinator",
-    "KiaMemoryError",
-    "KiaMemoryStore",
-    "KiaFlowError",
-    "KiaPlanDecision",
-    "KiaRuntimeClient",
-    "KiaRuntimeError",
-    "KiaRuntimeUnavailable",
-    "append_kia_plan_to_task",
+    "KbaExecutionCoordinator",
+    "KbaMemoryError",
+    "KbaMemoryStore",
+    "KbaFlowError",
+    "KbaPlanDecision",
+    "KbaRuntimeClient",
+    "KbaRuntimeError",
+    "KbaRuntimeUnavailable",
+    "append_kba_plan_to_task",
     "build_network_payload",
     "capabilities_from_napa",
     "cognitive_request_from_napa",
@@ -51,5 +51,5 @@ __all__ = [
     "record_validated_deterministic_feedback",
     "resource_budget_from_profile",
     "resource_snapshot_from_hardware",
-    "default_kia_memory_path",
+    "default_kba_memory_path",
 ]

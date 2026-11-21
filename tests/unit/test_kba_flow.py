@@ -10,11 +10,11 @@ from core.cognitive_task import CognitiveTask
 from core.deterministic_tools import DeterministicToolRegistry
 from core.validation_layer import ValidationLayer
 from engines.base import RunningModelSnapshot
-from kia_bridge.flow import (
-    KiaExecutionCoordinator,
-    KiaFlowError,
+from kba_bridge.flow import (
+    KbaExecutionCoordinator,
+    KbaFlowError,
     _classification_from_task,
-    append_kia_plan_to_task,
+    append_kba_plan_to_task,
     execute_deterministic_selection,
     record_validated_deterministic_feedback,
 )
@@ -165,7 +165,7 @@ async def test_rust_plan_selects_python_calculator_then_validation_allows_feedba
     )
     client = FakeRuntimeClient()
     tools = DeterministicToolRegistry()
-    coordinator = KiaExecutionCoordinator(
+    coordinator = KbaExecutionCoordinator(
         client,
         tools=tools,
         napa_registry=create_default_registry(),
@@ -192,7 +192,7 @@ async def test_rust_plan_selects_python_calculator_then_validation_allows_feedba
     assert report["status"] == "passed"
     assert report["factual_status"] == "verified_deterministic"
 
-    append_kia_plan_to_task(task, decision)
+    append_kba_plan_to_task(task, decision)
     updates = record_validated_deterministic_feedback(client, task)
 
     assert updates
@@ -211,7 +211,7 @@ async def test_rust_plan_selects_registered_chat_model_with_explicit_cpu_estimat
         execute_deterministic=False,
     )
     client = FakeRuntimeClient()
-    coordinator = KiaExecutionCoordinator(client)
+    coordinator = KbaExecutionCoordinator(client)
 
     decision = coordinator.plan_task(
         task,
@@ -242,7 +242,7 @@ async def test_unknown_model_memory_estimate_is_never_plannable(tmp_path) -> Non
         execute_deterministic=False,
     )
     client = FakeRuntimeClient()
-    coordinator = KiaExecutionCoordinator(client)
+    coordinator = KbaExecutionCoordinator(client)
 
     decision = coordinator.plan_task(
         task,
@@ -268,7 +268,7 @@ async def test_high_risk_task_does_not_advertise_deterministic_executors(tmp_pat
         execute_deterministic=False,
     )
     client = FakeRuntimeClient()
-    coordinator = KiaExecutionCoordinator(client)
+    coordinator = KbaExecutionCoordinator(client)
 
     decision = coordinator.plan_task(
         task,
@@ -287,13 +287,13 @@ async def test_high_risk_task_does_not_advertise_deterministic_executors(tmp_pat
 
 
 @pytest.mark.asyncio
-async def test_kia_planner_selects_knowledge_memory_provider_only_when_enabled(tmp_path) -> None:
+async def test_kba_planner_selects_knowledge_memory_provider_only_when_enabled(tmp_path) -> None:
     task = await analyze_request(
         "Explique como funcionam as integrais definidas.",
         execute_deterministic=False,
     )
     client = FakeRuntimeClient()
-    coordinator = KiaExecutionCoordinator(client)
+    coordinator = KbaExecutionCoordinator(client)
 
     decision = coordinator.plan_task(
         task,
@@ -317,13 +317,13 @@ async def test_kia_planner_selects_knowledge_memory_provider_only_when_enabled(t
 
 
 @pytest.mark.asyncio
-async def test_kia_planner_does_not_publish_knowledge_provider_when_disabled(tmp_path) -> None:
+async def test_kba_planner_does_not_publish_knowledge_provider_when_disabled(tmp_path) -> None:
     task = await analyze_request(
         "Explique como funcionam as integrais definidas.",
         execute_deterministic=False,
     )
     client = FakeRuntimeClient()
-    coordinator = KiaExecutionCoordinator(client)
+    coordinator = KbaExecutionCoordinator(client)
 
     decision = coordinator.plan_task(
         task,
@@ -380,7 +380,7 @@ async def test_kia_planner_does_not_publish_knowledge_provider_when_disabled(tmp
 def test_napa_task_boundary_rejects_malformed_activation_payloads(payload) -> None:
     task = CognitiveTask(original_text="Crie uma função Python.", cognitive_areas=payload)
 
-    with pytest.raises(KiaFlowError):
+    with pytest.raises(KbaFlowError):
         _classification_from_task(task, create_default_registry())
 
 
@@ -409,7 +409,7 @@ def test_napa_task_boundary_accepts_valid_activation_payload() -> None:
 
 
 @pytest.mark.asyncio
-async def test_kia_plan_reuses_confirmed_resident_model_without_cold_ram_reservation(
+async def test_kba_plan_reuses_confirmed_resident_model_without_cold_ram_reservation(
     tmp_path,
 ) -> None:
     task = await analyze_request(
@@ -417,7 +417,7 @@ async def test_kia_plan_reuses_confirmed_resident_model_without_cold_ram_reserva
         execute_deterministic=False,
     )
     client = FakeRuntimeClient()
-    coordinator = KiaExecutionCoordinator(client)
+    coordinator = KbaExecutionCoordinator(client)
     registry = model_registry(tmp_path, digest="sha256:resident")
     manager = FakeResourceManager(
         placement=ResourcePlacement.DOES_NOT_FIT,

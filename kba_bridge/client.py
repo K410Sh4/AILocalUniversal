@@ -1,4 +1,4 @@
-"""Cliente local JSONL para o processo kia-runtime-host."""
+"""Cliente local JSONL para o processo kba-runtime-host."""
 
 from __future__ import annotations
 
@@ -15,7 +15,7 @@ HOST_PROTOCOL_VERSION = 2
 MAX_REQUEST_BYTES = 4 * 1024 * 1024
 
 
-class KiaRuntimeError(RuntimeError):
+class KbaRuntimeError(RuntimeError):
     """Falha de protocolo ou erro retornado pelo runtime Rust."""
 
     def __init__(self, message: str, *, code: str = "runtime_error") -> None:
@@ -23,7 +23,7 @@ class KiaRuntimeError(RuntimeError):
         self.code = code
 
 
-class KiaRuntimeUnavailable(KiaRuntimeError):
+class KbaRuntimeUnavailable(KbaRuntimeError):
     """O executável Rust não pôde ser localizado ou iniciado."""
 
 
@@ -35,15 +35,17 @@ def _resolve_command(
             str(part) for part in command
         ]
         if not resolved or not resolved[0]:
-            raise KiaRuntimeUnavailable("Comando do K.IA Runtime Host vazio.")
+            raise KbaRuntimeUnavailable("Comando do K.BA Runtime Host vazio.")
         return resolved
 
-    configured = os.environ.get("KIA_RUNTIME_HOST")
+    configured = os.environ.get("KBA_RUNTIME_HOST") or os.environ.get("KIA_RUNTIME_HOST")
     if configured:
         return [configured]
 
     root = Path(__file__).resolve().parents[1]
     candidates = (
+        root / "kba" / "target" / "release" / "kba-runtime-host",
+        root / "kba" / "target" / "debug" / "kba-runtime-host",
         root / "kia" / "target" / "release" / "kia-runtime-host",
         root / "kia" / "target" / "debug" / "kia-runtime-host",
     )
@@ -51,14 +53,14 @@ def _resolve_command(
         if candidate.is_file():
             return [str(candidate)]
 
-    raise KiaRuntimeUnavailable(
-        "Executável kia-runtime-host não encontrado. Compile com "
-        "'cd kia && cargo build --release --bin kia-runtime-host' e configure "
-        "KIA_RUNTIME_HOST com o caminho do executável."
+    raise KbaRuntimeUnavailable(
+        "Executável kba-runtime-host não encontrado. Compile com "
+        "'cd kba && cargo build --release --bin kba-runtime-host' e configure "
+        "KBA_RUNTIME_HOST com o caminho do executável."
     )
 
 
-class KiaRuntimeClient:
+class KbaRuntimeClient:
     """Mantém um processo Rust e serializa chamadas JSONL request/response.
 
     O cliente é síncrono e thread-safe: apenas uma solicitação fica em voo por vez.
@@ -95,23 +97,23 @@ class KiaRuntimeClient:
                 close_fds=True,
             )
         except (OSError, ValueError) as exc:
-            raise KiaRuntimeUnavailable(
-                f"Não foi possível iniciar kia-runtime-host: {exc}"
+            raise KbaRuntimeUnavailable(
+                f"Não foi possível iniciar kba-runtime-host: {exc}"
             ) from exc
 
         assert self._process.stdout is not None
         self._reader = threading.Thread(
             target=self._read_stdout,
             args=(self._process.stdout,),
-            name="kia-runtime-stdout",
+            name="kba-runtime-stdout",
             daemon=True,
         )
         self._reader.start()
         try:
             health = self._request("health")
-            if health.get("service") != "kia-cognitive-runtime":
-                raise KiaRuntimeError(
-                    "O processo respondeu, mas não se identificou como K.IA Runtime Host.",
+            if health.get("service") not in {"kba-cognitive-runtime", "kia-cognitive-runtime"}:
+                raise KbaRuntimeError(
+                    "O processo respondeu, mas não se identificou como K.BA Runtime Host.",
                     code="invalid_host_identity",
                 )
         except Exception:
@@ -127,10 +129,10 @@ class KiaRuntimeClient:
 
     def _request(self, command: str, payload: dict[str, Any] | None = None) -> dict[str, Any]:
         if self._closed:
-            raise KiaRuntimeError("K.IA Runtime Client já foi encerrado.", code="client_closed")
+            raise KbaRuntimeError("K.BA Runtime Client já foi encerrado.", code="client_closed")
         if self._process.poll() is not None:
-            raise KiaRuntimeUnavailable(
-                f"K.IA Runtime Host encerrou com código {self._process.returncode}.",
+            raise KbaRuntimeUnavailable(
+                f"K.BA Runtime Host encerrou com código {self._process.returncode}.",
                 code="host_exited",
             )
         self._sequence += 1
@@ -152,14 +154,14 @@ class KiaRuntimeClient:
                 allow_nan=False,
             )
         except (TypeError, ValueError) as exc:
-            raise KiaRuntimeError(
-                f"Payload do comando K.IA não é serializável em JSON: {exc}",
+            raise KbaRuntimeError(
+                f"Payload do comando K.BA não é serializável em JSON: {exc}",
                 code="invalid_request_payload",
             ) from exc
 
         encoded_size = len(encoded.encode("utf-8"))
         if encoded_size > MAX_REQUEST_BYTES:
-            raise KiaRuntimeError(
+            raise KbaRuntimeError(
                 f"Solicitação excede o limite JSONL de {MAX_REQUEST_BYTES} bytes.",
                 code="request_too_large",
             )
@@ -169,8 +171,8 @@ class KiaRuntimeClient:
             self._process.stdin.write(encoded + "\n")
             self._process.stdin.flush()
         except (BrokenPipeError, OSError, ValueError) as exc:
-            raise KiaRuntimeUnavailable(
-                f"Falha ao enviar comando ao K.IA Runtime Host: {exc}",
+            raise KbaRuntimeUnavailable(
+                f"Falha ao enviar comando ao K.BA Runtime Host: {exc}",
                 code="host_write_failed",
             ) from exc
 
@@ -178,48 +180,48 @@ class KiaRuntimeClient:
             line = self._responses.get(timeout=self.timeout_seconds)
         except queue.Empty as exc:
             self._terminate()
-            raise KiaRuntimeUnavailable(
-                f"K.IA Runtime Host excedeu o timeout de {self.timeout_seconds:g}s.",
+            raise KbaRuntimeUnavailable(
+                f"K.BA Runtime Host excedeu o timeout de {self.timeout_seconds:g}s.",
                 code="host_timeout",
             ) from exc
         if line is None:
-            raise KiaRuntimeUnavailable(
-                f"K.IA Runtime Host fechou o stdout; código {self._process.poll()}.",
+            raise KbaRuntimeUnavailable(
+                f"K.BA Runtime Host fechou o stdout; código {self._process.poll()}.",
                 code="host_eof",
             )
         try:
             response = json.loads(line)
         except json.JSONDecodeError as exc:
-            raise KiaRuntimeError(
+            raise KbaRuntimeError(
                 "O Runtime Host retornou uma linha que não é JSON válido.",
                 code="invalid_host_response",
             ) from exc
         if not isinstance(response, dict):
-            raise KiaRuntimeError(
+            raise KbaRuntimeError(
                 "O Runtime Host retornou um envelope incompatível.",
                 code="invalid_host_response",
             )
         if response.get("protocol_version") != HOST_PROTOCOL_VERSION:
-            raise KiaRuntimeError(
+            raise KbaRuntimeError(
                 "Versão do protocolo retornada pelo host não é compatível.",
                 code="protocol_mismatch",
             )
         if response.get("request_id") != request_id:
-            raise KiaRuntimeError(
+            raise KbaRuntimeError(
                 "request_id da resposta não corresponde à solicitação enviada.",
                 code="response_correlation_failed",
             )
         if response.get("ok") is not True:
             error = response.get("error")
             if isinstance(error, dict):
-                raise KiaRuntimeError(
+                raise KbaRuntimeError(
                     str(error.get("message", "Falha não especificada pelo host.")),
                     code=str(error.get("code", "host_error")),
                 )
-            raise KiaRuntimeError("O host rejeitou a solicitação.", code="host_error")
+            raise KbaRuntimeError("O host rejeitou a solicitação.", code="host_error")
         result = response.get("result", {})
         if not isinstance(result, dict):
-            raise KiaRuntimeError(
+            raise KbaRuntimeError(
                 "O host retornou um resultado incompatível.",
                 code="invalid_host_result",
             )
@@ -239,7 +241,7 @@ class KiaRuntimeClient:
                 raise ValueError("export_network não retornou uma rede.")
             self._memory_store.save_network(network, event_type=event_type)
         except Exception as exc:
-            raise KiaRuntimeError(
+            raise KbaRuntimeError(
                 f"Não foi possível persistir a memória cognitiva: {exc}",
                 code="memory_persistence_failed",
             ) from exc
@@ -256,7 +258,7 @@ class KiaRuntimeClient:
                             {"network": previous_network},
                         )
                 except Exception as exc:
-                    raise KiaRuntimeError(
+                    raise KbaRuntimeError(
                         f"Não foi possível restaurar a memória cognitiva: {exc}",
                         code="memory_restore_failed",
                     ) from exc
@@ -318,7 +320,7 @@ class KiaRuntimeClient:
                 try:
                     with self._lock:
                         self._request("shutdown")
-                except KiaRuntimeError:
+                except KbaRuntimeError:
                     # O finally abaixo encerra o processo mesmo quando o protocolo falhou.
                     pass
                 try:
@@ -347,7 +349,7 @@ class KiaRuntimeClient:
                         pass
             self._reader.join(timeout=1.0)
 
-    def __enter__(self) -> KiaRuntimeClient:
+    def __enter__(self) -> KbaRuntimeClient:
         return self
 
     def __exit__(self, *_: object) -> None:

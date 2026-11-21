@@ -1,12 +1,12 @@
-# K.IA — Artificial Brain
+# K.BA — Núcleo operacional da Brain Artificial
 
 Especificação e implementação inicial: 0.1
 
 ## Visão
 
-K.IA é a inteligência que o AILocal Universal pretende construir. Artificial Brain (BA) descreve o paradigma: uma arquitetura cognitiva composta por capacidades, modelos, ferramentas, memórias, especialistas e adaptadores coordenados por um runtime próprio, em vez de depender da identidade ou das capacidades de um único modelo.
+K.BA é o núcleo operacional e de coordenação da Brain Artificial (BA). A BA é um sistema artificial adaptativo e desenvolvimental, distinto de uma IA convencional e não definido por modelos de linguagem. K.BA fornece o runtime, contratos, planejamento, persistência e interfaces para que a BA possa ser construída e executada. Modelos de IA externos são provedores opcionais de capacidades específicas; não constituem a BA nem determinam sua identidade.
 
-O AILocal Universal permanece a plataforma de desenvolvimento, integração, interface, distribuição e gerenciamento. K.IA é o runtime/inteligência que evolui dentro dela.
+O AILocal Universal permanece a plataforma de desenvolvimento, integração, interface, distribuição e gerenciamento. K.BA é o núcleo operacional que evolui junto da implementação da BA dentro da plataforma.
 
 ## Princípios
 
@@ -37,7 +37,7 @@ O AILocal Universal permanece a plataforma de desenvolvimento, integração, int
 
 ## Rust Cognitive Runtime 0.1 — escopo implementado
 
-A crate independente está em kia/ (kia-cognitive-runtime) e fornece:
+A crate independente está em kba/ (kba-cognitive-runtime) e fornece o runtime operacional atual; ela ainda não implementa a BA desenvolvimental completa:
 
 - IDs tipados CapabilityId e ComponentId;
 - contratos serializáveis para CognitiveCapability, NeuralComponent, CognitiveConnection, CognitiveRequest e CognitiveFeedback;
@@ -105,7 +105,7 @@ A crate independente está em kia/ (kia-cognitive-runtime) e fornece:
 Na raiz do repositório:
 
 ~~~bash
-cd kia
+cd kba
 cargo fmt --all -- --check
 cargo clippy --all-targets --all-features -- -D warnings
 cargo test --all-targets
@@ -114,24 +114,24 @@ cargo test --all-targets
 A CI roda estes três comandos separadamente dos testes Python.
 
 
-## K.IA 0.2 — Runtime Host & Python Bridge
+## K.BA 0.2 — Runtime Host & Python Bridge
 
-A crate agora gera o binário local `kia-runtime-host`. Ele mantém o grafo em memória e atende JSONL versionado pelo stdin/stdout. Comandos: health, replace_state, plan, record_feedback, inspect e shutdown.
+A crate agora gera o binário local `kba-runtime-host`. Ele mantém o grafo em memória e atende JSONL versionado pelo stdin/stdout. Comandos: health, replace_state, plan, record_feedback, inspect e shutdown.
 
 O protocolo aceita IDs de executores declarados pela aplicação; isso não faz o Rust executar os modelos. O host escolhe componentes e devolve ExecutionPlan. Python continua responsável por executar a seleção através dos adapters existentes. A sincronização de estado valida referências, alvos, snapshots e orçamento antes de substituir o estado em memória.
 
-O pacote `kia_bridge` fornece:
-- `KiaRuntimeClient`: inicia o executável sem shell, valida o handshake, serializa chamadas com lock, correlaciona request_id, aplica timeout de leitura e encerra por shutdown;
+O pacote `kba_bridge` fornece:
+- `KbaRuntimeClient`: inicia o executável sem shell, valida o handshake, serializa chamadas com lock, correlaciona request_id, aplica timeout de leitura e encerra por shutdown;
 - conversão das áreas NAPA para nós de capacidade;
 - conversão de ModelRecord/artefatos instalados em componentes, sem inferir RAM/VRAM pelo tamanho do arquivo;
 - custos e alvos explicitamente fornecidos; custo/alvo ausente torna o componente inelegível;
 - conversão de HardwareProfile para ResourceSnapshot, mantendo CPU/GPU/NPU conservadores;
 - criação de CognitiveRequest com as áreas efetivamente ativadas pela NAPA.
 
-Consulte `docs/KIA_RUNTIME_HOST_PROTOCOL.md` para o schema JSONL.
+Consulte `docs/KBA_RUNTIME_HOST_PROTOCOL.md` para o schema JSONL.
 
 
-## K.IA 0.3 — ACCA Vertical Flow
+## K.BA 0.3 — ACCA Vertical Flow
 
 O fluxo de chat com o host disponível passa por:
 1. InputProcessing e SemanticAnalysis (NAPA) sem pré-executar a ferramenta determinística;
@@ -150,7 +150,7 @@ O host mantém pesos e contadores compatíveis quando recebe novo replace_state 
 A ValidationLayer separa presença, cobertura de requisitos estruturados, completude ponderada e estado factual. Sem requisitos estruturados, completude fica como not_assessed; conteúdo LLM permanece not_independently_verified. Consulte docs/ACCA_MATHEMATICAL_MODEL.md.
 
 
-## K.IA 0.4 — Memória cognitiva persistente
+## K.BA 0.4 — Memória cognitiva persistente
 
 O cliente Python coordena a recuperação entre processos sem transferir o controle de execução do app:
 1. Na primeira sincronização da sessão, lê o snapshot da rede em SQLite e o envia ao host como restore_learning.
@@ -159,7 +159,7 @@ O cliente Python coordena a recuperação entre processos sem transferir o contr
 4. HardwareSnapshot, ResourceBudget e available_executors nunca são recuperados do disco; são reconstruídos a cada inicialização.
 5. A gravação de snapshot e do evento é transacional; o hash SHA-256 protege contra alteração silenciosa do payload. O host Rust continua sendo a autoridade de validação semântica do grafo.
 
-O banco padrão é `$XDG_DATA_HOME/ailocal-universal/kia/cognitive-memory.sqlite3` (fallback em `~/.local/share`). O diretório da aplicação é 0700, o subdiretório Kia é 0700 e o arquivo SQLite é 0600. Não há criptografia implementada. O snapshot armazena somente a rede cognitiva e não deve receber prompts, conteúdo de chat ou documentos.
+O banco padrão é `$XDG_DATA_HOME/ailocal-universal/kba/cognitive-memory.sqlite3` (fallback em `~/.local/share`). O diretório da aplicação é 0700, o subdiretório Kba é 0700 e o arquivo SQLite é 0600. Não há criptografia implementada. O snapshot armazena somente a rede cognitiva e não deve receber prompts, conteúdo de chat ou documentos.
 
 ## Integração NeSA + Knowledge
 

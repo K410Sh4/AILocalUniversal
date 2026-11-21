@@ -21,13 +21,16 @@ A política cobre o material original presente no repositório, inclusive materi
 - adaptadores, perfis e políticas originais do Resource Manager, quando efetivamente implementados;
 - Neural Elastic Execution: contratos de traces, simulador de cache, políticas de substituição, métricas, predição e otimização originais quando efetivamente implementados;
 - componentes, protocolos, documentação e código originais de Swarm/execução cooperativa, quando efetivamente implementados;
+- K.BA: runtime Rust, contratos, Adaptive Cognitive Network, planner, leases, ponte Python, protocolo local e memória operacional originais;
+- Brain Artificial (BA): arquitetura desenvolvimental, NeuralDNA, NeuralStem, plasticidade, homeostase, nichos ambientais, campos de sinal e benchmarks originais quando presentes;
+- NeuroBridge: contratos e adaptadores de interoperabilidade BCI originais, sem reivindicar tecnologia, firmware, APIs, dados ou marcas de terceiros;
 - documentação técnica, diagramas, templates, testes, exemplos e arquivos de configuração originais.
 
 O registro de componentes não significa que tudo esteja implementado. A licença protege expressões concretas que existam no repositório, não funcionalidades descritas apenas como plano.
 
 ## 2. O que não é coberto pela licença proprietária
 
-Não são convertidos em propriedade do projeto pelo simples uso ou integração:
+Não são convertidos em propriedade do projeto pelo simples uso ou integração. A licença proprietária protege apenas a implementação e a documentação originais do AILocal Universal; não concede licença sobre Neuralink, seus dispositivos, firmware, protocolos fechados, marcas, patentes, dados ou SDKs de terceiros:
 - bibliotecas, frameworks, linguagens, runtimes, ferramentas e serviços de terceiros;
 - Ollama e seus componentes;
 - modelos, pesos, tokenizers, adaptadores, datasets e saídas de terceiros;

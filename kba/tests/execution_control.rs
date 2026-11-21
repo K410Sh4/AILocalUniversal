@@ -1,4 +1,4 @@
-use kia_cognitive_runtime::{
+use kba_cognitive_runtime::{
     AdaptiveCognitiveNetwork, CognitiveCapability, CognitiveConnection, CognitiveRequest,
     CognitiveRuntime, ComponentExecutor, ComponentId, ConnectionKind, ExecutionControl,
     ExecutionLeaseManager, ExecutionStatus, ExecutionTarget, ExecutorRegistry, NetworkNode,
@@ -175,7 +175,7 @@ fn leases_enforce_resource_capacity_and_release_with_raii() {
             .acquire(ResourceVector::default(), &control)
             .err()
             .unwrap(),
-        kia_cognitive_runtime::LeaseError::QueueFull
+        kba_cognitive_runtime::LeaseError::QueueFull
     );
 
     drop(lease);
@@ -213,12 +213,12 @@ fn bounded_wait_queue_rejects_new_work_when_full() {
             .acquire(ResourceVector::default(), &control)
             .err()
             .unwrap(),
-        kia_cognitive_runtime::LeaseError::QueueFull
+        kba_cognitive_runtime::LeaseError::QueueFull
     );
     control.cancel();
     assert_eq!(
         rx.recv_timeout(Duration::from_secs(2)).unwrap(),
-        Err(kia_cognitive_runtime::LeaseError::Cancelled)
+        Err(kba_cognitive_runtime::LeaseError::Cancelled)
     );
     worker.join().unwrap();
     drop(lease);
@@ -242,7 +242,7 @@ fn deadline_expires_while_waiting_for_a_lease() {
             .acquire(ResourceVector::default(), &control)
             .err()
             .unwrap(),
-        kia_cognitive_runtime::LeaseError::DeadlineExceeded
+        kba_cognitive_runtime::LeaseError::DeadlineExceeded
     );
     assert_eq!(manager.snapshot().unwrap().waiting, 0);
     drop(holder);

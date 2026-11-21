@@ -1,4 +1,4 @@
-use kia_cognitive_runtime::{
+use kba_cognitive_runtime::{
     AdaptiveCognitiveNetwork, CognitiveCapability, CognitiveConnection, CognitiveFeedback,
     CognitiveRequest, CognitiveRuntime, ComponentExecutor, ComponentId, ConnectionKind,
     ExecutionTarget, ExecutorRegistry, FeedbackOutcome, NetworkNode, NeuralComponent,
@@ -157,7 +157,7 @@ fn runtime_executes_without_copying_user_payload_into_telemetry() {
     assert!(!serialized.contains("unit_cost"));
     assert_eq!(
         report.events[0].status,
-        kia_cognitive_runtime::ExecutionStatus::Completed
+        kba_cognitive_runtime::ExecutionStatus::Completed
     );
 }
 
@@ -193,8 +193,8 @@ fn planner_rejects_components_that_exceed_the_resource_budget() {
 
     assert!(matches!(
         runtime.plan(&request()),
-        Err(kia_cognitive_runtime::RuntimeError::NoEligibleComponent(id))
-            if id == kia_cognitive_runtime::CapabilityId::from("mathematics")
+        Err(kba_cognitive_runtime::RuntimeError::NoEligibleComponent(id))
+            if id == kba_cognitive_runtime::CapabilityId::from("mathematics")
     ));
 }
 
@@ -218,7 +218,7 @@ fn unmeasured_components_are_not_selected_as_zero_cost() {
 
     assert!(matches!(
         runtime.plan(&request()),
-        Err(kia_cognitive_runtime::RuntimeError::NoEligibleComponent(_))
+        Err(kba_cognitive_runtime::RuntimeError::NoEligibleComponent(_))
     ));
 }
 
@@ -276,7 +276,7 @@ fn unsupported_contract_schema_is_rejected_before_planning() {
 
 #[test]
 fn sequential_plan_reserves_peak_resources_instead_of_summing_components() {
-    use kia_cognitive_runtime::CognitiveCapability;
+    use kba_cognitive_runtime::CognitiveCapability;
 
     let mut network = AdaptiveCognitiveNetwork::default();
     network.add_capability(capability()).unwrap();
@@ -396,7 +396,7 @@ fn network_version_overflow_is_rejected_without_mutating_state() {
 
     assert!(matches!(
         result,
-        Err(kia_cognitive_runtime::NetworkError::VersionOverflow)
+        Err(kba_cognitive_runtime::NetworkError::VersionOverflow)
     ));
     assert_eq!(network, before);
 }
@@ -420,7 +420,7 @@ fn feedback_counter_overflow_is_rejected_without_mutating_state() {
 
     assert!(matches!(
         result,
-        Err(kia_cognitive_runtime::NetworkError::CounterOverflow)
+        Err(kba_cognitive_runtime::NetworkError::CounterOverflow)
     ));
     assert_eq!(network, before);
 }
@@ -436,7 +436,7 @@ fn carrying_learning_rejects_version_overflow() {
 
     assert!(matches!(
         result,
-        Err(kia_cognitive_runtime::NetworkError::VersionOverflow)
+        Err(kba_cognitive_runtime::NetworkError::VersionOverflow)
     ));
     assert!(replacement.capabilities().is_empty());
     assert_eq!(replacement.version(), 0);

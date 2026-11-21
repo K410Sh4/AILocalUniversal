@@ -79,9 +79,9 @@ As fichas são persistidas na mesma base SQLite e transação dos documentos/chu
 A NAPA coordena quando consultar o Atlas; o NeuralModel Hub e o Adaptive Resource Manager continuam responsáveis pelos modelos e recursos; EvidenceValidator permanece responsável pela integridade das evidências recuperadas.
 
 
-## K.IA — Rust Cognitive Runtime
+## K.BA — Núcleo operacional da Brain Artificial
 
-O runtime próprio começa como crate Rust independente em kia/. Ele possui contratos serializáveis para capacidades, componentes, conexões, solicitações e feedback avaliado. A rede de capacidades é fonte de verdade para a seleção dentro do runtime; subsistemas existentes serão sincronizados por contratos versionados, em vez de serem reescritos imediatamente.
+O runtime próprio começa como crate Rust independente em kba/. Ele possui contratos serializáveis para capacidades, componentes, conexões, solicitações e feedback avaliado. A rede de capacidades é fonte de verdade para a seleção dentro do runtime; subsistemas existentes serão sincronizados por contratos versionados, em vez de serem reescritos imediatamente.
 
 O planner escolhe provedores por capacidade, afinidade heurística de intenção/contexto, prioridade operacional e disponibilidade de executor. Um orçamento lógico impede que a soma dos custos estimados ultrapasse os limites configurados. A execução inicial é sequencial por ComponentExecutor, sem acoplamento ao motor de inferência.
 

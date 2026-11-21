@@ -197,7 +197,7 @@ impl RuntimeHost {
                 HostResponse::success(
                     request_id,
                     json!({
-                        "service": "kia-cognitive-runtime",
+                        "service": "kba-cognitive-runtime",
                         "version": env!("CARGO_PKG_VERSION"),
                         "protocol_version": HOST_PROTOCOL_VERSION,
                         "contract_schema_version": CONTRACT_SCHEMA_VERSION

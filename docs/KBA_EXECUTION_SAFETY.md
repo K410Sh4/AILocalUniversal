@@ -1,4 +1,4 @@
-# K.IA 0.5 — Execution Safety Core
+# K.BA 0.5 — Execution Safety Core
 
 ## Objetivo
 

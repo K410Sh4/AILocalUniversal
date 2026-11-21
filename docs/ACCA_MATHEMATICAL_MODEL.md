@@ -2,7 +2,7 @@
 
 ## Objetivo e limites
 
-ACCA é a camada matemática e operacional da K.IA que decide **quais operações devem ser executadas, por quais componentes, sob qual orçamento, com quais verificações e quando encerrar**. Ela não substitui a atenção dos Transformers. O modelo de linguagem continua executando sua arquitetura neural quando selecionado; ACCA reduz chamadas desnecessárias e organiza o trabalho externo ao modelo.
+ACCA é a camada matemática e operacional da K.BA que decide **quais operações devem ser executadas, por quais componentes, sob qual orçamento, com quais verificações e quando encerrar**. Ela não substitui a atenção dos Transformers. O modelo de linguagem continua executando sua arquitetura neural quando selecionado; ACCA reduz chamadas desnecessárias e organiza o trabalho externo ao modelo.
 
 As fórmulas abaixo definem contratos e hipóteses. Coeficientes só se tornam parâmetros calibrados depois de treinamento/validação em um conjunto de avaliação representativo. Nenhuma economia percentual é assumida sem benchmark.
 
@@ -144,7 +144,7 @@ S=1-rac{C_{ACCA}}{C_{baseline}}
 
 (C) deve ser a mesma métrica nas duas configurações. Não converter economia na operação isolada em economia total de conversa. Não afirmar vantagem sem equivalência de qualidade e intervalos de incerteza.
 
-## 8. Escopo da K.IA 0.3
+## 8. Escopo da K.BA 0.3
 
 O primeiro fluxo vertical implementa NAPA → plano Rust → ferramenta determinística Python ou modelo Ollama selecionado → Validation Layer → feedback operacional somente para resultado determinístico reproduzido. O feedback permanece no host durante sua vida e é preservado em sincronizações de estado compatíveis.
 

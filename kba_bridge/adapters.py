@@ -1,4 +1,4 @@
-"""Conversores explícitos entre NAPA/NeuralModel Hub e contratos Rust K.IA."""
+"""Conversores explícitos entre NAPA/NeuralModel Hub e contratos Rust K.BA."""
 
 from __future__ import annotations
 

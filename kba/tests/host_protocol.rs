@@ -1,4 +1,4 @@
-use kia_cognitive_runtime::{
+use kba_cognitive_runtime::{
     AdaptiveCognitiveNetwork, CognitiveCapability, CognitiveConnection, ComponentId,
     ConnectionKind, ExecutionTarget, HostState, NetworkNode, NeuralComponent, NeuralComponentKind,
     ResourceBudget, ResourceSnapshot, ResourceVector,
@@ -94,7 +94,7 @@ fn read(reader: &mut impl BufRead) -> serde_json::Value {
 
 #[test]
 fn host_process_handles_health_state_sync_plan_and_shutdown_over_jsonl() {
-    let mut child = Command::new(env!("CARGO_BIN_EXE_kia-runtime-host"))
+    let mut child = Command::new(env!("CARGO_BIN_EXE_kba-runtime-host"))
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::null())
@@ -114,7 +114,7 @@ fn host_process_handles_health_state_sync_plan_and_shutdown_over_jsonl() {
     let health = read(&mut output);
     assert_eq!(health["ok"], true);
     assert_eq!(health["request_id"], "health-1");
-    assert_eq!(health["result"]["service"], "kia-cognitive-runtime");
+    assert_eq!(health["result"]["service"], "kba-cognitive-runtime");
     assert_eq!(health["result"]["protocol_version"], 2);
 
     let state = serde_json::to_value(state()).unwrap();
@@ -263,7 +263,7 @@ fn host_process_handles_health_state_sync_plan_and_shutdown_over_jsonl() {
 
 #[test]
 fn host_rejects_unsupported_protocol_versions() {
-    let mut child = Command::new(env!("CARGO_BIN_EXE_kia-runtime-host"))
+    let mut child = Command::new(env!("CARGO_BIN_EXE_kba-runtime-host"))
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::null())
@@ -299,7 +299,7 @@ fn host_rejects_unsupported_protocol_versions() {
 
 #[test]
 fn host_restores_persisted_learning_before_fresh_resource_state_and_exports_it() {
-    use kia_cognitive_runtime::{CognitiveFeedback, FeedbackOutcome};
+    use kba_cognitive_runtime::{CognitiveFeedback, FeedbackOutcome};
 
     let mut persisted_network = state().network;
     persisted_network
@@ -316,7 +316,7 @@ fn host_restores_persisted_learning_before_fresh_resource_state_and_exports_it()
         .unwrap();
     let persisted = serde_json::to_value(persisted_network).unwrap();
 
-    let mut child = Command::new(env!("CARGO_BIN_EXE_kia-runtime-host"))
+    let mut child = Command::new(env!("CARGO_BIN_EXE_kba-runtime-host"))
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::null())

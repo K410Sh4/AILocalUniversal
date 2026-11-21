@@ -26,7 +26,7 @@ from .adapters import (
     resource_budget_from_profile,
     resource_snapshot_from_hardware,
 )
-from .client import KiaRuntimeClient
+from .client import KbaRuntimeClient
 
 
 MIB = 1024 * 1024
@@ -43,12 +43,12 @@ _TOOL_AREAS: dict[str, tuple[str, ...]] = {
 }
 
 
-class KiaFlowError(RuntimeError):
-    """O plano K.IA não pode ser executado com segurança nesta versão."""
+class KbaFlowError(RuntimeError):
+    """O plano K.BA não pode ser executado com segurança nesta versão."""
 
 
 @dataclass(frozen=True, slots=True)
-class KiaPlanDecision:
+class KbaPlanDecision:
     """Plano Rust e catálogo exato que permite resolver IDs para executores."""
 
     request: dict[str, Any]
@@ -66,7 +66,7 @@ class KiaPlanDecision:
             component_id = str(selection.get("component_id", ""))
             component = components.get(component_id)
             if not isinstance(component, dict):
-                raise KiaFlowError(
+                raise KbaFlowError(
                     f"O plano Rust referencia um componente inexistente: {component_id}"
                 )
             selected.append(
@@ -107,7 +107,7 @@ def _classification_from_task(
 ) -> NapaClassification:
     payload = task.cognitive_areas
     if not isinstance(payload, dict):
-        raise KiaFlowError("A classificação NAPA da tarefa precisa ser um objeto.")
+        raise KbaFlowError("A classificação NAPA da tarefa precisa ser um objeto.")
 
     active_ids = payload.get("active_areas", [])
     activations = payload.get("activations", [])
@@ -117,28 +117,28 @@ def _classification_from_task(
         or any(not isinstance(area_id, str) or not area_id for area_id in active_ids)
         or len(active_ids) != len(set(active_ids))
     ):
-        raise KiaFlowError("A classificação NAPA da tarefa está malformada.")
+        raise KbaFlowError("A classificação NAPA da tarefa está malformada.")
 
     by_id: dict[str, dict[str, Any]] = {}
     for item in activations:
         if not isinstance(item, dict):
-            raise KiaFlowError("A classificação NAPA contém uma ativação inválida.")
+            raise KbaFlowError("A classificação NAPA contém uma ativação inválida.")
         area_id = item.get("area_id")
         if not isinstance(area_id, str) or not area_id or area_id in by_id:
-            raise KiaFlowError(
+            raise KbaFlowError(
                 "A classificação NAPA contém IDs de ativação inválidos ou duplicados."
             )
         by_id[area_id] = item
 
     if set(by_id) != set(active_ids):
-        raise KiaFlowError("Áreas ativas e ativações NAPA não correspondem.")
+        raise KbaFlowError("Áreas ativas e ativações NAPA não correspondem.")
 
     resolved: list[AreaActivation] = []
     for area_id in active_ids:
         area = registry.find(area_id)
         activation = by_id[area_id]
         if area is None:
-            raise KiaFlowError(f"A área NAPA '{area_id}' não possui contrato válido.")
+            raise KbaFlowError(f"A área NAPA '{area_id}' não possui contrato válido.")
 
         affinity = activation.get("affinity")
         signals = activation.get("signals")
@@ -149,7 +149,7 @@ def _classification_from_task(
             or not signals
             or any(not isinstance(signal, str) or not signal for signal in signals)
         ):
-            raise KiaFlowError(f"A ativação NAPA '{area_id}' possui campos inválidos.")
+            raise KbaFlowError(f"A ativação NAPA '{area_id}' possui campos inválidos.")
         try:
             resolved.append(
                 AreaActivation(
@@ -160,7 +160,7 @@ def _classification_from_task(
                 )
             )
         except (TypeError, ValueError) as exc:
-            raise KiaFlowError(
+            raise KbaFlowError(
                 f"A ativação NAPA '{area_id}' não respeita o contrato."
             ) from exc
 
@@ -172,7 +172,7 @@ def _classification_from_task(
         or not isinstance(method, str)
         or not method.strip()
     ):
-        raise KiaFlowError("Metadados da versão NAPA estão malformados.")
+        raise KbaFlowError("Metadados da versão NAPA estão malformados.")
 
     return NapaClassification(
         activations=tuple(resolved),
@@ -275,24 +275,24 @@ def _add_tool_components(
 
 def execute_deterministic_selection(
     task: CognitiveTask,
-    decision: KiaPlanDecision,
+    decision: KbaPlanDecision,
     tools: DeterministicToolRegistry,
 ) -> ToolResult:
     """Executa somente a ferramenta Python que o plano Rust efetivamente selecionou."""
     selections = decision.deterministic_selections()
     models = decision.model_selections()
     if len(selections) != 1 or models or len(decision.selections) != 1:
-        raise KiaFlowError(
+        raise KbaFlowError(
             "A execução local direta exige exatamente uma ferramenta e nenhum modelo."
         )
 
     component = selections[0]["component"]
     expected_tool = component.get("metadata", {}).get("tool_name")
     if not isinstance(expected_tool, str) or not expected_tool:
-        raise KiaFlowError("O componente selecionado não declarou tool_name.")
+        raise KbaFlowError("O componente selecionado não declarou tool_name.")
     result = tools.execute(task.normalized_text or task.original_text)
     if result is None or not result.matched or result.name != expected_tool:
-        raise KiaFlowError(
+        raise KbaFlowError(
             "A ferramenta Python não corresponde ao componente selecionado pelo Rust."
         )
     task.deterministic_results.append(result.to_dict())
@@ -311,7 +311,7 @@ def _add_knowledge_component(network_payload: dict[str, Any]) -> None:
     network = network_payload["network"]
     capabilities = network["capabilities"]
     if "retrieval" not in capabilities:
-        raise KiaFlowError("A NAPA não declarou a capacidade retrieval.")
+        raise KbaFlowError("A NAPA não declarou a capacidade retrieval.")
     component_id = "memory-knowledge-library"
     component = {
         "id": component_id,
@@ -353,9 +353,9 @@ def _add_knowledge_component(network_payload: dict[str, Any]) -> None:
     network_payload["available_executors"] = sorted(executor_ids)
 
 
-def append_kia_plan_to_task(
+def append_kba_plan_to_task(
     task: CognitiveTask,
-    decision: KiaPlanDecision,
+    decision: KbaPlanDecision,
     *,
     selected_model: str | None = None,
 ) -> None:
@@ -363,7 +363,7 @@ def append_kia_plan_to_task(
     task.execution_plan.append(
         {
             "step": len(task.execution_plan),
-            "component": "kia_runtime",
+            "component": "kba_runtime",
             "protocol_version": 1,
             "network_version": decision.plan.get("network_version"),
             "request_id": decision.plan.get("request_id"),
@@ -374,7 +374,7 @@ def append_kia_plan_to_task(
     )
     task.execution_trace.append(
         {
-            "stage": "kia_runtime",
+            "stage": "kba_runtime",
             "status": "planned",
             "details": {
                 "network_version": decision.plan.get("network_version"),
@@ -388,7 +388,7 @@ def append_kia_plan_to_task(
 
 
 def record_validated_deterministic_feedback(
-    client: KiaRuntimeClient,
+    client: KbaRuntimeClient,
     task: CognitiveTask,
     *,
     learning_rate: float = 0.05,
@@ -404,7 +404,7 @@ def record_validated_deterministic_feedback(
     route_step = next(
         (
             step for step in reversed(task.execution_plan)
-            if step.get("component") == "kia_runtime"
+            if step.get("component") == "kba_runtime"
         ),
         None,
     )
@@ -434,12 +434,12 @@ def record_validated_deterministic_feedback(
     return updates
 
 
-class KiaExecutionCoordinator:
+class KbaExecutionCoordinator:
     """Monta a rede adaptativa, solicita o plano ao Rust e preserva IDs executáveis."""
 
     def __init__(
         self,
-        client: KiaRuntimeClient,
+        client: KbaRuntimeClient,
         *,
         tools: DeterministicToolRegistry | None = None,
         napa_registry: CognitiveAreaRegistry | None = None,
@@ -466,12 +466,12 @@ class KiaExecutionCoordinator:
         running_models: list[RunningModelSnapshot] | None = None,
         concurrent_requests: int = 1,
         max_components: int = 8,
-    ) -> KiaPlanDecision:
+    ) -> KbaPlanDecision:
         if not task.intent:
-            raise KiaFlowError("A tarefa precisa ter uma intenção NAPA/semântica.")
+            raise KbaFlowError("A tarefa precisa ter uma intenção NAPA/semântica.")
         classification = _classification_from_task(task, self.napa_registry)
         if not classification.active_area_ids:
-            raise KiaFlowError("NAPA não ativou nenhuma área cognitiva.")
+            raise KbaFlowError("NAPA não ativou nenhuma área cognitiva.")
 
         records = model_registry.list_records(installed_only=True)
         records = [
@@ -639,7 +639,7 @@ class KiaExecutionCoordinator:
             )
         self.client.replace_state(state)
         plan = self.client.plan(request)
-        decision = KiaPlanDecision(
+        decision = KbaPlanDecision(
             request=request,
             network_payload=network_payload,
             plan=plan,

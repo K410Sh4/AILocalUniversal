@@ -1,4 +1,4 @@
-use kia_cognitive_runtime::{RuntimeHost, MAX_REQUEST_BYTES};
+use kba_cognitive_runtime::{RuntimeHost, MAX_REQUEST_BYTES};
 use std::io::{self, BufRead, Write};
 
 fn read_bounded_line(reader: &mut impl BufRead) -> io::Result<Option<String>> {
@@ -77,7 +77,7 @@ fn main() {
 #[cfg(test)]
 mod tests {
     use super::read_bounded_line;
-    use kia_cognitive_runtime::MAX_REQUEST_BYTES;
+    use kba_cognitive_runtime::MAX_REQUEST_BYTES;
     use std::io::Cursor;
 
     #[test]

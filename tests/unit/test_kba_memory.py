@@ -8,7 +8,12 @@ from pathlib import Path
 
 import pytest
 
-from kia_bridge import KiaMemoryError, KiaMemoryStore, KiaRuntimeClient
+from kba_bridge import (
+    KbaMemoryError,
+    KbaMemoryStore,
+    KbaRuntimeClient,
+    default_kba_memory_path,
+)
 
 
 def sample_network(version: int = 3) -> dict:
@@ -40,7 +45,7 @@ for line in sys.stdin:
 
     if kind == "health":
         result = {
-            "service": "kia-cognitive-runtime",
+            "service": "kba-cognitive-runtime",
             "version": "0.4.0",
             "protocol_version": 2
         }
@@ -85,7 +90,7 @@ def test_memory_store_round_trips_snapshots_and_appends_metadata_only_events(
     database = tmp_path / "private" / "memory.sqlite3"
     network = sample_network()
 
-    with KiaMemoryStore(database) as store:
+    with KbaMemoryStore(database) as store:
         assert store.load_network() is None
         store.save_network(network, event_type="network_synced")
         store.save_network(network, event_type="feedback_applied")
@@ -104,7 +109,7 @@ def test_memory_store_round_trips_snapshots_and_appends_metadata_only_events(
 
 def test_memory_store_rejects_corrupted_snapshot_hash(tmp_path: Path) -> None:
     database = tmp_path / "memory.sqlite3"
-    with KiaMemoryStore(database) as store:
+    with KbaMemoryStore(database) as store:
         store.save_network(sample_network())
 
     connection = sqlite3.connect(database)
@@ -115,14 +120,14 @@ def test_memory_store_rejects_corrupted_snapshot_hash(tmp_path: Path) -> None:
     connection.commit()
     connection.close()
 
-    with KiaMemoryStore(database) as store:
-        with pytest.raises(KiaMemoryError, match="Hash do snapshot"):
+    with KbaMemoryStore(database) as store:
+        with pytest.raises(KbaMemoryError, match="Hash do snapshot"):
             store.load_network()
 
 
 def test_memory_store_rejects_corrupted_event_hash(tmp_path: Path) -> None:
     database = tmp_path / "memory.sqlite3"
-    with KiaMemoryStore(database) as store:
+    with KbaMemoryStore(database) as store:
         store.save_network(sample_network())
 
     connection = sqlite3.connect(database)
@@ -133,25 +138,25 @@ def test_memory_store_rejects_corrupted_event_hash(tmp_path: Path) -> None:
     connection.commit()
     connection.close()
 
-    with KiaMemoryStore(database) as store:
-        with pytest.raises(KiaMemoryError, match="Hash de evento cognitivo"):
+    with KbaMemoryStore(database) as store:
+        with pytest.raises(KbaMemoryError, match="Hash de evento cognitivo"):
             store.list_events()
 
 
 def test_memory_store_rejects_invalid_network_contract(tmp_path: Path) -> None:
-    with KiaMemoryStore(tmp_path / "memory.sqlite3") as store:
-        with pytest.raises(KiaMemoryError, match="Snapshot não contém"):
+    with KbaMemoryStore(tmp_path / "memory.sqlite3") as store:
+        with pytest.raises(KbaMemoryError, match="Snapshot não contém"):
             store.save_network({"version": 1})
 
 
 def test_runtime_client_persists_network_and_feedback_events(tmp_path: Path) -> None:
     database = tmp_path / "memory.sqlite3"
-    store = KiaMemoryStore(database)
+    store = KbaMemoryStore(database)
     log = tmp_path / "host.log"
     command = fake_host(tmp_path / "fake-host.py", log)
     network = sample_network(version=7)
 
-    with KiaRuntimeClient(command, timeout_seconds=2.0, memory_store=store) as client:
+    with KbaRuntimeClient(command, timeout_seconds=2.0, memory_store=store) as client:
         client.replace_state({"network": network, "available_executors": []})
         client.record_feedback(
             {
@@ -179,7 +184,7 @@ def test_runtime_client_persists_network_and_feedback_events(tmp_path: Path) -> 
 
 def test_runtime_client_restores_persisted_network_before_fresh_state(tmp_path: Path) -> None:
     database = tmp_path / "memory.sqlite3"
-    store = KiaMemoryStore(database)
+    store = KbaMemoryStore(database)
     persisted = sample_network(version=11)
     persisted["feedback_history"] = [
         {
@@ -194,7 +199,7 @@ def test_runtime_client_restores_persisted_network_before_fresh_state(tmp_path: 
 
     log = tmp_path / "second-host.log"
     command = fake_host(tmp_path / "second-host.py", log)
-    with KiaRuntimeClient(command, timeout_seconds=2.0, memory_store=store) as client:
+    with KbaRuntimeClient(command, timeout_seconds=2.0, memory_store=store) as client:
         client.replace_state(
             {"network": sample_network(version=1), "available_executors": []}
         )
@@ -222,8 +227,8 @@ def test_memory_database_rejects_chat_and_document_payload_fields(tmp_path: Path
             "metadata": {"prompt": "PRIVATE_CHAT_PROMPT_DO_NOT_PERSIST"},
         }
     }
-    with KiaMemoryStore(database) as store:
-        with pytest.raises(KiaMemoryError, match="conteúdo conversacional"):
+    with KbaMemoryStore(database) as store:
+        with pytest.raises(KbaMemoryError, match="conteúdo conversacional"):
             store.save_network(unsafe)
         store.save_network(sample_network())
 
@@ -250,7 +255,7 @@ def test_memory_store_strips_free_text_feedback_notes(tmp_path: Path) -> None:
         }
     ]
 
-    with KiaMemoryStore(tmp_path / "memory.sqlite3") as store:
+    with KbaMemoryStore(tmp_path / "memory.sqlite3") as store:
         store.save_network(network)
         persisted = store.load_network()
 
@@ -263,6 +268,24 @@ def test_custom_existing_directory_permissions_are_not_modified(tmp_path: Path) 
     directory = tmp_path / "caller-owned"
     directory.mkdir()
     directory.chmod(0o750)
-    with KiaMemoryStore(directory / "memory.sqlite3"):
+    with KbaMemoryStore(directory / "memory.sqlite3"):
         pass
     assert directory.stat().st_mode & 0o777 == 0o750
+
+
+def test_default_memory_path_migrates_legacy_kia_database(tmp_path, monkeypatch):
+    xdg = tmp_path / "xdg"
+    legacy_path = xdg / "ailocal-universal" / "kia" / "cognitive-memory.sqlite3"
+    legacy_network = sample_network(version=7)
+    with KbaMemoryStore(legacy_path) as legacy_store:
+        legacy_store.save_network(legacy_network)
+
+    monkeypatch.setenv("XDG_DATA_HOME", str(xdg))
+    expected_path = xdg / "ailocal-universal" / "kba" / "cognitive-memory.sqlite3"
+    assert default_kba_memory_path() == expected_path
+
+    with KbaMemoryStore() as migrated_store:
+        assert migrated_store.load_network() == legacy_network
+
+    assert expected_path.is_file()
+    assert not legacy_path.exists()
