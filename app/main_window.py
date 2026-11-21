@@ -193,12 +193,21 @@ class MainWindow(QMainWindow):
                 )
                 for record in records
             }
+            resource_estimates = {
+                record.record_id: self.resource_manager.estimator.estimate(
+                    record,
+                    profile,
+                    context_tokens=4096,
+                )
+                for record in records
+            }
             self.model_hub_view.set_data(
                 profile,
                 records,
                 compatibility,
                 runtime_available={"ollama"} if self._ollama_healthy else set(),
                 registry_warning=self.model_hub_registry.load_warning,
+                resource_estimates=resource_estimates,
             )
             if self._catalog_document is not None:
                 installed_refs = {
