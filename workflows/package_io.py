@@ -9,6 +9,7 @@ import re
 import stat
 import tempfile
 import zipfile
+import zlib
 from pathlib import Path, PurePosixPath
 from typing import Any
 
@@ -66,6 +67,11 @@ def _read_package(path: Path) -> dict[str, bytes]:
                 _safe_archive_path(normalized_name)
                 if info.is_dir():
                     continue
+                if info.flag_bits & 0x1:
+                    raise PackageGraphError(
+                        "PACKAGE_ENCRYPTED_ENTRY",
+                        f"Entradas ZIP criptografadas não são aceitas: {info.filename}.",
+                    )
                 if info.filename in files:
                     raise PackageGraphError(
                         "PACKAGE_DUPLICATE_PATH",
@@ -99,6 +105,11 @@ def _read_package(path: Path) -> dict[str, bytes]:
             "PACKAGE_READ_ERROR",
             f"Não foi possível ler o pacote: {exc}",
         ) from exc
+    except (RuntimeError, NotImplementedError, EOFError, zipfile.LargeZipFile, zlib.error) as exc:
+        raise PackageGraphError(
+            "PACKAGE_ENTRY_UNREADABLE",
+            f"Uma entrada do pacote não pôde ser descompactada: {exc}",
+        ) from exc
     return files
 
 
@@ -118,7 +129,7 @@ def _manifest(files: dict[str, bytes]) -> dict[str, Any]:
             "PACKAGE_FORMAT_INVALID",
             "O manifesto não identifica um NeuralInjector Package.",
         )
-    if manifest.get("signature"):
+    if "signature" in manifest:
         raise PackageGraphError(
             "SIGNED_PACKAGE_CANNOT_BE_MODIFIED",
             "Este pacote possui assinatura. Alterá-lo invalidaria a assinatura Ed25519.",
@@ -126,11 +137,23 @@ def _manifest(files: dict[str, bytes]) -> dict[str, Any]:
         )
     components = manifest.get("components")
     integrity = manifest.get("integrity")
-    if not isinstance(components, dict) or not isinstance(components.get("pipelines"), list):
+    pipelines = components.get("pipelines") if isinstance(components, dict) else None
+    if (
+        not isinstance(components, dict)
+        or not isinstance(pipelines, list)
+        or any(not isinstance(item, str) for item in pipelines)
+    ):
         raise PackageGraphError(
             "PACKAGE_PIPELINES_INVALID",
-            "manifest.json precisa declarar components.pipelines como lista.",
+            "manifest.json precisa declarar components.pipelines como lista de caminhos.",
         )
+    if len(set(pipelines)) != len(pipelines):
+        raise PackageGraphError(
+            "PACKAGE_PIPELINES_INVALID",
+            "components.pipelines não pode conter caminhos duplicados.",
+        )
+    for pipeline_path in pipelines:
+        _safe_archive_path(pipeline_path)
     if not isinstance(integrity, dict) or integrity.get("algorithm") != "sha256":
         raise PackageGraphError(
             "PACKAGE_INTEGRITY_INVALID",
@@ -245,7 +268,7 @@ def _verify_checksums(files: dict[str, bytes], checksum_path: str) -> None:
         if not line.strip():
             continue
         digest, separator, name = line.partition("  ")
-        if not separator or len(digest) != 64:
+        if not separator or not re.fullmatch(r"[0-9a-fA-F]{64}", digest):
             raise PackageGraphError(
                 "PACKAGE_CHECKSUMS_INVALID",
                 "Linha inválida no arquivo de checksums SHA-256.",
