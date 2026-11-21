@@ -12,6 +12,7 @@ Este registro organiza as famílias de materiais originais cobertas pelo aviso d
 | NeuralInjector / NIP | Especificação NIP 0.1.0, manifesto, estrutura ZIP, schema, checksums, pacote .neuralinjector e seus leitores/escritores quando codificados | Proposta e implementação em branches dedicadas |
 | Adaptive Resource Management | Perfis de hardware, orçamentos, políticas e scheduler originais quando codificados | Roadmap / parcialmente documentado |
 | Neural Elastic Execution | Contratos de traces MoE, simulador de cache, políticas de substituição, métricas e ferramentas de benchmark originais | Simulador inicial na branch `feature/neural-elastic-simulator-v1` |
+| NAPA — Neural Adaptive Plasticity Architecture | Taxonomia de áreas cognitivas, contratos, registry, classificador multilabel e integração operacional original quando presentes | NAPA 1.0 na branch `feature/napa-cognitive-area-registry-v1` |
 | Swarm / P2P | Contratos, identidade, autorização, protocolos e execução cooperativa originais quando codificados | Roadmap / arquitetura |
 | Documentação e schemas | Texto técnico, diagramas, exemplos, testes e formatos originais | Evolução contínua |
 

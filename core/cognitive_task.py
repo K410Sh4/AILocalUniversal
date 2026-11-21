@@ -57,6 +57,7 @@ class CognitiveTask:
     normalized_text: str | None = None
     intent: str | None = None
     capabilities: dict[str, float] = field(default_factory=dict)
+    cognitive_areas: dict[str, Any] = field(default_factory=dict)
     difficulty: float | None = None
     uncertainty: float | None = None
     risk: float | None = None
@@ -83,6 +84,7 @@ class CognitiveTask:
             "normalized_text": self.normalized_text,
             "intent": self.intent,
             "capabilities": dict(self.capabilities),
+            "cognitive_areas": dict(self.cognitive_areas),
             "difficulty": self.difficulty,
             "uncertainty": self.uncertainty,
             "risk": self.risk,
@@ -111,6 +113,7 @@ class CognitiveTask:
             normalized_text=data.get("normalized_text"),
             intent=data.get("intent"),
             capabilities={str(k): float(v) for k, v in data.get("capabilities", {}).items()},
+            cognitive_areas=dict(data.get("cognitive_areas", {})),
             difficulty=data.get("difficulty"),
             uncertainty=data.get("uncertainty"),
             risk=data.get("risk"),

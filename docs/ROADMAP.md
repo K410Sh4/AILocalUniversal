@@ -126,6 +126,28 @@ As fases são entregas progressivas. Uma funcionalidade só é considerada concl
 
 **Limite:** a Fase 5.0 simula substituição de cache, não inferência completa. Bytes lidos são misses simulados, não I/O físico; traces sintéticos não demonstram aceleração, qualidade ou viabilidade em hardware de 4 GB. Consulte `docs/NEURAL_ELASTIC_EXECUTION.md`.
 
+## NAPA — Neural Adaptive Plasticity Architecture
+
+### NAPA 1.0 — Cognitive Area Registry & Classifier
+- [x] Registro declarativo e extensível de áreas cognitivas.
+- [x] Separação entre ferramentas determinísticas, capacidades cognitivas e especialistas neurais.
+- [x] Classificação multilabel com afinidades heurísticas explicáveis.
+- [x] Reuso do Semantic Analysis e do Capability Vectorizer, sem duplicar as 12 dimensões existentes.
+- [x] Integração retrocompatível em CognitiveTask.cognitive_areas.
+- [x] Testes de contratos, classificação multilabel, integração e compatibilidade.
+
+**Limites:** NAPA 1.0 classifica capacidades, mas não executa roteamento, não mede custos, não carrega especialistas e não modifica pesos. Scores são afinidades lexicais, não probabilidades calibradas. Consulte `docs/NAPA.md`.
+
+### NAPA 1.1–1.6 — evolução planejada
+- [ ] NAPA 1.1 — Neural Cognitive Cost Predictor (RAM, VRAM, CPU, GPU, I/O, latência e energia).
+- [ ] NAPA 1.2 — Adaptive Cognitive Routing com orçamento, dependências, fallback e validação.
+- [ ] NAPA 1.3 — Neural Progressive Retrieval integrado ao Knowledge/RAG.
+- [ ] NAPA 1.4 — Neural Plasticity Engine para aprender prioridades a partir de resultados avaliados.
+- [ ] NAPA 1.5 — Adaptive Neural Reorganization com versionamento, avaliação e rollback.
+- [ ] NAPA 1.6 — Continual Performance Learning com proteção contra regressões e esquecimento.
+
+A NAPA coordena Cognitive Core, NeuralModel Hub, NeuralMap, Knowledge/RAG, Adaptive Resource Manager e Neural Elastic Execution. Ela não substitui esses subsistemas nem lhes concede autoridade de execução.
+
 ## Fase 6 — Agentes especialistas e autoengenharia
 
 - [ ] System Analyst em modo somente leitura.

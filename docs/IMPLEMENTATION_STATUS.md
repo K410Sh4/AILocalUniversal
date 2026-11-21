@@ -23,6 +23,7 @@ Este documento diferencia código integrado, cobertura automatizada e validaçã
 | NeuralModel Hub | Registro local, perfil de hardware e compatibilidade conservadora; catálogo remoto curado por categorias com fallback local; fichas e variantes Ollama com fontes; busca/filtros; pull NDJSON com progresso/cancelamento e remoção com confirmação, na branch `feature/neural-model-hub-v1` | Catálogo inicial ainda pequeno; catálogo expandido, licença/proveniência por versão/artefato, compatibilidade medida por runtime/contexto, Adaptive Model Selector e validação de cancelamento/retomada/remoção no Arch pendentes; pull e uso no Chat já validados pelo usuário |
 | Adaptive Resource Manager | Estimativa de RAM/VRAM e seleção automática conservadora na `feature/adaptive-resource-manager-v1`; Fase 4.6 acrescenta perfis persistidos e orçamento aproximado de threads CPU para Ollama | Validar no Arch; medição real, controle genérico de GPU e ciclo de vida automático continuam pendentes |
 | Neural Elastic Execution Simulator | Simulador offline de traces MoE com LRU, LFU, política estatística e Belady MIN (somente tamanhos uniformes); CLI e testes | Ainda sem traces reais de roteamento; sem modelagem de latência de SSD, prefetch ou integração com runtime |
+| NAPA 1.0 | Registro de áreas cognitivas, classificação multilabel, afinidades explicáveis e integração com SemanticAnalysisStage/CognitiveTask | Heurístico; sem roteamento, predictor de custos, plasticidade, busca progressiva ou reorganização |
 | Roteamento especialista | Planejado | Fase 5 |
 | Swarm P2P | Planejado | Fase 6 |
 | BitNet / RPC | Experimental futuro | Fase 7 |
@@ -211,3 +212,17 @@ Implementação inicial na branch `feature/neural-elastic-simulator-v1`:
 - métricas de hits, misses, bytes lidos simulados, bytes por token, evictions, bypass e ocupação.
 
 **Limites:** ainda não há trace real de IDs de especialistas capturado do Qwen/Ollama. A API de chat não expõe decisões do roteador MoE. O simulador não mede SSD, não executa kernels, não modela prefetch nem prova ganho de tokens/s. A predição neural e a validação em máquinas de 4 GB permanecem futuras. Consulte `docs/NEURAL_ELASTIC_EXECUTION.md`.
+
+
+## NAPA 1.0 — Cognitive Area Registry & Classifier
+
+Implementado na branch `feature/napa-cognitive-area-registry-v1`:
+- registro declarativo de 13 áreas cognitivas em três tipos: deterministic_tool, cognitive_capability e neural_specialist;
+- classificador multilabel que permite ativar capacidades simultâneas;
+- reuso do intent e das 12 dimensões existentes do Capability Vectorizer;
+- sinais explicáveis por dimensão legada, intent e âncoras lexicais;
+- integração à SemanticAnalysisStage e armazenamento em CognitiveTask.cognitive_areas;
+- leitura retrocompatível de tarefas serializadas antes do campo NAPA;
+- testes unitários específicos e documentação da arquitetura.
+
+**Limites:** a classificação é lexical/heurística e seus scores são afinidades, não probabilidades. A presença de uma área não aciona ferramenta, modelo ou plugin. Ainda não há estimador de custo, roteamento adaptativo, busca progressiva, aprendizado de conexões, modificação de parâmetros ou prova de economia de recursos. Validação operacional no Arch Linux permanece pendente.

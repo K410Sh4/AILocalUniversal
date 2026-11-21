@@ -10,6 +10,7 @@ on:
       - feature/adaptive-resource-manager-v1
       - feature/chat-management-resource-profiles-v1
       - feature/neural-elastic-simulator-v1
+      - feature/napa-cognitive-area-registry-v1
   pull_request:
     branches:
       - main
@@ -19,6 +20,7 @@ on:
       - feature/adaptive-resource-manager-v1
       - feature/chat-management-resource-profiles-v1
       - feature/neural-elastic-simulator-v1
+      - feature/napa-cognitive-area-registry-v1
 
 jobs:
   unit-tests:

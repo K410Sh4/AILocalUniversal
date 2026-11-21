@@ -56,3 +56,15 @@ Descoberta de peer não concede autorização. O primeiro caso de uso divide sub
 ## Princípios
 
 Local-first, contratos versionados, segurança por padrão e benchmarks reproduzíveis que meçam qualidade e custo, não apenas tokens/s.
+
+
+## NAPA — coordenação cognitiva adaptativa
+
+A Neural Adaptive Plasticity Architecture (NAPA) é a camada de coordenação acima do Cognitive Core e dos subsistemas especializados. O registro cognitivo classifica uma solicitação em múltiplas áreas sem pressupor uma IA independente por área.
+
+Os tipos iniciais são:
+- deterministic_tool: calculadoras, conversores, recuperação e operações locais com contratos;
+- cognitive_capability: comunicação, raciocínio, criatividade, conhecimento e apresentação;
+- neural_specialist: especialistas de programação ou percepção quando um modelo adequado estiver disponível.
+
+NAPA 1.0 reutiliza Semantic Analysis e Capability Vectorizer, grava as ativações explicáveis em CognitiveTask.cognitive_areas e não seleciona ou executa modelos/ferramentas. O NeuralModel Hub descreve os modelos; o NeuralMap representa estruturas; o Adaptive Resource Manager avalia limites; Neural Elastic Execution pesquisa a execução de especialistas; o Neural Plasticity Engine futuro aprenderá prioridades sob avaliação e rollback.
