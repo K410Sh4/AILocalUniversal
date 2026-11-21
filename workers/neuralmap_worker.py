@@ -27,7 +27,7 @@ class NeuralMapWorker(QThread):
     ) -> None:
         super().__init__(parent)
         self.runtime = runtime
-        self.graph = graph
+        self.graph = WorkflowGraph.from_dict(graph.to_dict())
         self.input_text = input_text
         self.dry_run = dry_run
         self._cancel_requested = threading.Event()
