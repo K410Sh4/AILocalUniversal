@@ -1,6 +1,6 @@
+from workers.neuralmap_worker import NeuralMapWorker
 from workflows.graph import GraphNode, WorkflowGraph
 from workflows.runtime import GraphRuntime, HandlerRegistry
-from workers.neuralmap_worker import NeuralMapWorker
 
 
 def test_worker_uses_immutable_graph_snapshot() -> None:
