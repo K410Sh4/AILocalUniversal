@@ -25,7 +25,7 @@ neural-elastic-sim = "neural_elastic.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["app*", "core*", "engines*", "pipeline*", "resources*", "knowledge*", "swarm*", "storage*", "workers*", "model_hub*", "neural_elastic*", "napa*", "kia_bridge*"]
+include = ["app*", "core*", "engines*", "pipeline*", "resources*", "knowledge*", "swarm*", "storage*", "workers*", "model_hub*", "neural_elastic*", "napa*", "kia_bridge*", "workflows*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -57,4 +57,5 @@ known-first-party = [
     "resources",
     "storage",
     "workers",
+    "workflows",
 ]
